@@ -1,6 +1,6 @@
 # Cobra IDE
 
-Cobra IDE is an editor for making Python games on Windows. It brings together code editing, scene design, debugging, package management, and game building in one simple tool.
+This is an editor for making Python games on Windows. It brings together code editing, scene design, debugging, package management, and game building in one simple tool.
 
 ## Key Facts
 
@@ -111,8 +111,3 @@ Cobra IDE is an editor for making Python games on Windows. It brings together co
 1. Open `Cobra.sln` in Visual Studio (2019, 2022, or 2026).
 2. Right-click the **Cobra** project and select **Set as Startup Project**.
 3. Press **F5** to build and run.
-
-### Option 3: VS Code / Antigravity
-
-1. Install the C# extension.
-2. Press **F5** or run `dotnet run --project Cobra/Cobra.csproj`.
