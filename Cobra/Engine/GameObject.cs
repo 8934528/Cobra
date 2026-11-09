@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Cobra.Engine.ECS.Components;
 using Cobra.Engine.Physics;
 
@@ -16,7 +11,7 @@ namespace Cobra.Engine
         public Rigidbody? Rigidbody { get; set; }
         public Collider? Collider { get; set; }
 
-        private readonly List<Component> components = [];
+        private readonly List<Component> _components = [];
 
         public T AddComponent<T>() where T : Component, new()
         {
@@ -24,15 +19,15 @@ namespace Cobra.Engine
             {
                 GameObject = this
             };
-            components.Add(comp);
+            _components.Add(comp);
             return comp;
         }
 
         public T? GetComponent<T>() where T : Component
         {
-            return components.OfType<T>().FirstOrDefault();
+            return _components.OfType<T>().FirstOrDefault();
         }
 
-        public List<Component> GetAllComponents() => components;
+        public List<Component> GetAllComponents() => _components;
     }
 }

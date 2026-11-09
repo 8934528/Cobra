@@ -1,19 +1,16 @@
-using Cobra.Core.Environment;
-using Cobra.Core.ProjectSystem;
-using Cobra.Core.Settings;
-using Cobra.UI.Views;
-using Microsoft.Win32;
-using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Windows;
-using System.Windows.Shell;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Media.Animation;
+using System.Windows.Shell;
+using Cobra.Core.Environment;
+using Cobra.Core.ProjectSystem;
+using Cobra.Core.Security;
+using Cobra.Core.Settings;
 using MahApps.Metro.IconPacks;
 
 using Color = System.Windows.Media.Color;
@@ -21,137 +18,178 @@ using Brushes = System.Windows.Media.Brushes;
 using TextBox = System.Windows.Controls.TextBox;
 using Button = System.Windows.Controls.Button;
 using CheckBox = System.Windows.Controls.CheckBox;
-using ProgressBar = System.Windows.Controls.ProgressBar;
+using ComboBox = System.Windows.Controls.ComboBox;
 using ListBox = System.Windows.Controls.ListBox;
-using Orientation = System.Windows.Controls.Orientation;
 using Application = System.Windows.Application;
 
-namespace Cobra
+namespace Cobra.UI.Views
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow
     {
-        private bool isFullScreen = false;
-        private WindowState previousState;
-        private readonly ProjectManager projectManager;
-        private readonly ObservableCollection<ProjectModel> recentProjects;
+        private bool _isFullScreen;
+        private WindowState _previousState;
+        private readonly ProjectManager _projectManager;
+        private readonly ObservableCollection<ProjectModel> _recentProjects;
 
         public string ProjectsPath { get; set; }
 
         public MainWindow()
         {
             InitializeComponent();
-            projectManager = new ProjectManager();
-            recentProjects = [];
-            RecentProjectsList.ItemsSource = recentProjects;
+            _projectManager = new ProjectManager();
+            _recentProjects = [];
+            RecentProjectsList.ItemsSource = _recentProjects;
 
-            ProjectsPath = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile), "CobraProjects");
+            ProjectsPath = _projectManager.GetProjectsPath();
             DataContext = this;
 
             Loaded += MainWindow_Loaded;
-            SettingsManager.Instance.SettingsUpdated += (s, e) => ApplySettings();
+            SettingsManager.Instance.SettingsUpdated += (_, _) => ApplySettings();
             ApplySettings();
         }
 
         private void ApplySettings()
         {
             var settings = SettingsManager.Instance.CurrentSettings;
-            
-            // Apply Theme colors
-            if (settings.Theme == "Light")
-            {
-                this.Background = new SolidColorBrush(Color.FromRgb(240, 240, 240));
-            }
-            else
-            {
-                this.Background = new SolidColorBrush(Color.FromRgb(30, 30, 30));
-            }
+            Background = settings.Theme == "Light"
+                ? new SolidColorBrush(Color.FromRgb(242, 242, 245))
+                : new SolidColorBrush(Color.FromRgb(30, 30, 30));
         }
 
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            await CheckPython();
-            await LoadProjects();
-            await CheckPythonStatus();
-            await CheckNodeStatus();
-            await CheckNpmStatus();
+            try
+            {
+                PopulateTemplateShowcase();
+                CheckPythonStatus();
+                LoadProjects();
+                await CheckPython();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
         }
 
-        private async System.Threading.Tasks.Task LoadProjects()
+        private void PopulateTemplateShowcase()
         {
-            var projects = projectManager.GetAllProjects();
-            recentProjects.Clear();
+            if (TemplateShowcasePanel == null) return;
+            TemplateShowcasePanel.Children.Clear();
+
+            foreach (var tmpl in ProjectTemplate.GetAvailableTemplates())
+            {
+                var card = new Border
+                {
+                    Width = 225,
+                    Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
+                    BorderBrush = new SolidColorBrush(Color.FromRgb(60, 60, 60)),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(4),
+                    Padding = new Thickness(12),
+                    Margin = new Thickness(0, 0, 10, 10),
+                    Cursor = System.Windows.Input.Cursors.Hand,
+                    ToolTip = $"Click to create a new '{tmpl.Name}' project"
+                };
+
+                var stack = new StackPanel();
+                var headerRow = new Grid();
+                headerRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                headerRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                var titleText = new TextBlock
+                {
+                    Text = tmpl.Name,
+                    Foreground = Brushes.White,
+                    FontWeight = FontWeights.SemiBold,
+                    FontSize = 12,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                var badge = new Border
+                {
+                    Background = tmpl.Category == "3D"
+                        ? new SolidColorBrush(Color.FromRgb(78, 110, 180))
+                        : new SolidColorBrush(Color.FromRgb(45, 90, 65)),
+                    CornerRadius = new CornerRadius(3),
+                    Padding = new Thickness(5, 1, 5, 1),
+                    Child = new TextBlock
+                    {
+                        Text = $"{tmpl.Category} • {tmpl.Framework}",
+                        Foreground = Brushes.White,
+                        FontSize = 10
+                    }
+                };
+                Grid.SetColumn(titleText, 0);
+                Grid.SetColumn(badge, 1);
+                headerRow.Children.Add(titleText);
+                headerRow.Children.Add(badge);
+
+                var descText = new TextBlock
+                {
+                    Text = tmpl.Description,
+                    Foreground = new SolidColorBrush(Color.FromRgb(160, 160, 160)),
+                    FontSize = 11,
+                    TextWrapping = TextWrapping.Wrap,
+                    Margin = new Thickness(0, 6, 0, 0),
+                    Height = 34
+                };
+
+                stack.Children.Add(headerRow);
+                stack.Children.Add(descText);
+                card.Child = stack;
+
+                string templateId = tmpl.Id;
+                card.MouseLeftButtonDown += async (_, _) =>
+                {
+                    try
+                    {
+                        await PromptCreateProjectAsync(templateId);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine(ex.Message);
+                    }
+                };
+                TemplateShowcasePanel.Children.Add(card);
+            }
+        }
+
+        private void LoadProjects()
+        {
+            var projects = _projectManager.GetAllProjects();
+            _recentProjects.Clear();
             foreach (var project in projects)
-            {
-                recentProjects.Add(project);
-            }
-            ProjectCountText.Text = recentProjects.Count.ToString();
-            await System.Threading.Tasks.Task.CompletedTask;
+                _recentProjects.Add(project);
+
+            ProjectCountText.Text = _recentProjects.Count.ToString();
         }
 
-        private async System.Threading.Tasks.Task CheckPythonStatus()
+        private void CheckPythonStatus()
         {
-            if (PythonService.IsPythonInstalled())
+            string configured = SettingsManager.Instance.CurrentSettings.PythonInterpreter;
+            if (PythonService.IsPythonInstalled(configured))
             {
-                string version = PythonService.GetPythonVersion();
-
+                string version = PythonService.GetPythonVersion(configured);
                 PythonStatusText.Text = version;
-                PythonStatusText.Foreground = System.Windows.Media.Brushes.LightGreen;
+                PythonStatusText.Foreground = new SolidColorBrush(Color.FromRgb(78, 201, 176));
             }
             else
             {
-                PythonStatusText.Text = "Python not found. Please install Python and add to PATH.";
-                PythonStatusText.Foreground = System.Windows.Media.Brushes.Red;
+                PythonStatusText.Text = "Python not found in PATH (Configure in Settings)";
+                PythonStatusText.Foreground = new SolidColorBrush(Color.FromRgb(220, 53, 69));
             }
-            await System.Threading.Tasks.Task.CompletedTask;
         }
 
-        private async System.Threading.Tasks.Task CheckNodeStatus()
-        {
-            if (FindName("NodeStatusText") is not TextBlock nodeText) return;
-
-            if (NodeService.IsNodeInstalled())
-            {
-                string version = NodeService.GetNodeVersion();
-                nodeText.Text = version;
-                nodeText.Foreground = System.Windows.Media.Brushes.LightGreen;
-            }
-            else
-            {
-                nodeText.Text = "Node.js not found. Please install Node.js.";
-                nodeText.Foreground = System.Windows.Media.Brushes.Red;
-            }
-            await System.Threading.Tasks.Task.CompletedTask;
-        }
-
-        private async System.Threading.Tasks.Task CheckNpmStatus()
-        {
-            if (FindName("NpmStatusText") is not TextBlock npmText) return;
-
-            if (NodeService.IsNpmInstalled())
-            {
-                string version = NodeService.GetNpmVersion();
-                npmText.Text = version;
-                npmText.Foreground = System.Windows.Media.Brushes.LightGreen;
-            }
-            else
-            {
-                npmText.Text = "NPM not found. Please install NPM.";
-                npmText.Foreground = System.Windows.Media.Brushes.Red;
-            }
-            await System.Threading.Tasks.Task.CompletedTask;
-        }
-
-        private static async System.Threading.Tasks.Task CheckPython()
+        private static async Task CheckPython()
         {
             if (!PythonService.IsPythonInstalled())
             {
                 var result = await CustomDialog.ShowAsync(
                     Application.Current.MainWindow,
-                    "Python is not installed or not added to PATH.\n\nPlease install Python to use Cobra IDE.\n\nDo you want to open the Python download page?",
-                    "Python Not Found",
+                    "Python is not installed or not added to PATH.\n\nPlease install Python 3.10+ to run and debug Python games in Cobra IDE.\n\nDo you want to open the official Python download page?",
+                    "Python Interpreter Not Found",
                     DialogIcon.Warning,
-                    "Yes",
-                    "No");
+                    "Download Python",
+                    "Later");
 
                 if (result)
                 {
@@ -162,112 +200,136 @@ namespace Cobra
                     });
                 }
             }
-            await System.Threading.Tasks.Task.CompletedTask;
         }
 
         public async void OnNewProjectClicked(object sender, RoutedEventArgs e)
         {
-            // Create custom content for the modal
+            try
+            {
+                await PromptCreateProjectAsync("pygame-2d-starter");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async Task PromptCreateProjectAsync(string initialTemplateId)
+        {
+            var templates = ProjectTemplate.GetAvailableTemplates();
             var mainContentGrid = new Grid();
-            mainContentGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Language Tabs
-            mainContentGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Name Label
-            mainContentGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Name Input
-            mainContentGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Location Label
-            mainContentGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Location Input
-            mainContentGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Default Checkbox
-            mainContentGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Config Section (Venv or JS)
+            for (int i = 0; i < 8; i++)
+                mainContentGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-            // Custom Style for TabItems to make them look premium
-            var tabItemStyle = new Style(typeof(System.Windows.Controls.TabItem));
-            tabItemStyle.Setters.Add(new Setter(System.Windows.Controls.TabItem.BackgroundProperty, Brushes.Transparent));
-            tabItemStyle.Setters.Add(new Setter(System.Windows.Controls.TabItem.BorderThicknessProperty, new Thickness(0)));
-            tabItemStyle.Setters.Add(new Setter(System.Windows.Controls.TabItem.ForegroundProperty, new SolidColorBrush(Color.FromRgb(170, 170, 170))));
-            tabItemStyle.Setters.Add(new Setter(System.Windows.Controls.TabItem.TemplateProperty, CreateTabItemTemplate()));
-
-            var langTabControl = new System.Windows.Controls.TabControl
+            // Template Picker
+            var tmplLabel = new TextBlock
             {
-                Background = Brushes.Transparent,
-                BorderThickness = new Thickness(0),
-                Margin = new Thickness(0, 0, 0, 20),
-                ItemContainerStyle = tabItemStyle
-            };
-            Grid.SetRow(langTabControl, 0);
-
-            var pythonTab = new System.Windows.Controls.TabItem
-            {
-                Header = "PYTHON",
-                Padding = new Thickness(20, 10, 20, 10),
+                Text = "Game Project Template:",
+                Foreground = Brushes.White,
+                Margin = new Thickness(0, 0, 0, 6),
                 FontSize = 12,
-                FontWeight = FontWeights.Bold
+                FontWeight = FontWeights.SemiBold
             };
-            
-            var jsTab = new System.Windows.Controls.TabItem
-            {
-                Header = "JS + NPM",
-                Padding = new Thickness(20, 10, 20, 10),
-                FontSize = 12,
-                FontWeight = FontWeights.Bold
-            };
+            Grid.SetRow(tmplLabel, 0);
+            mainContentGrid.Children.Add(tmplLabel);
 
-            langTabControl.Items.Add(pythonTab);
-            langTabControl.Items.Add(jsTab);
-            mainContentGrid.Children.Add(langTabControl);
+            var templateCombo = new ComboBox
+            {
+                Height = 34,
+                Margin = new Thickness(0, 0, 0, 10),
+                FontSize = 12,
+                Background = new SolidColorBrush(Color.FromRgb(45, 45, 48)),
+                Foreground = Brushes.Black
+            };
+            foreach (var t in templates)
+            {
+                templateCombo.Items.Add(new ComboBoxItem
+                {
+                    Content = $"{t.Name} ({t.Category} — {t.Framework})",
+                    Tag = t
+                });
+            }
+            templateCombo.SelectedIndex = Math.Max(0, templates.FindIndex(t => t.Id == initialTemplateId));
+            Grid.SetRow(templateCombo, 1);
+            mainContentGrid.Children.Add(templateCombo);
+
+            var tmplDescText = new TextBlock
+            {
+                Foreground = new SolidColorBrush(Color.FromRgb(78, 201, 176)),
+                FontSize = 11,
+                Margin = new Thickness(0, 0, 0, 14),
+                TextWrapping = TextWrapping.Wrap
+            };
+            Grid.SetRow(tmplDescText, 2);
+            mainContentGrid.Children.Add(tmplDescText);
+
+            void UpdateTemplateDescription()
+            {
+                if (templateCombo.SelectedItem is ComboBoxItem { Tag: ProjectTemplateDescriptor desc })
+                {
+                    tmplDescText.Text = $"{desc.Description}  |  Dependencies: {string.Join(", ", desc.Packages)}";
+                }
+            }
+            templateCombo.SelectionChanged += (_, _) => UpdateTemplateDescription();
+            UpdateTemplateDescription();
 
             // Project Name
             var nameLabel = new TextBlock
             {
                 Text = "Project Name:",
                 Foreground = Brushes.White,
-                Margin = new Thickness(0, 0, 0, 8),
-                FontSize = 14,
+                Margin = new Thickness(0, 0, 0, 6),
+                FontSize = 12,
                 FontWeight = FontWeights.SemiBold
             };
-            Grid.SetRow(nameLabel, 1);
+            Grid.SetRow(nameLabel, 3);
             mainContentGrid.Children.Add(nameLabel);
 
             var textBox = new TextBox
             {
-                Text = "MyGame",
-                Margin = new Thickness(0, 0, 0, 15),
-                FontSize = 14,
-                Height = 35,
-                Background = new SolidColorBrush(Color.FromRgb(60, 60, 60)),
+                Text = "MyPythonGame",
+                Margin = new Thickness(0, 0, 0, 14),
+                FontSize = 12,
+                Height = 32,
+                VerticalContentAlignment = VerticalAlignment.Center,
+                Background = new SolidColorBrush(Color.FromRgb(45, 45, 48)),
                 Foreground = Brushes.White,
                 BorderBrush = new SolidColorBrush(Color.FromRgb(85, 85, 85)),
                 BorderThickness = new Thickness(1),
-                Padding = new Thickness(10, 0, 10, 0)
+                Padding = new Thickness(8, 0, 8, 0)
             };
-            Grid.SetRow(textBox, 2);
+            Grid.SetRow(textBox, 4);
             mainContentGrid.Children.Add(textBox);
 
             // Location
             var locationLabel = new TextBlock
             {
-                Text = "Save Location:",
+                Text = "Project Location:",
                 Foreground = Brushes.White,
-                Margin = new Thickness(0, 0, 0, 8),
-                FontSize = 14,
+                Margin = new Thickness(0, 0, 0, 6),
+                FontSize = 12,
                 FontWeight = FontWeights.SemiBold
             };
-            Grid.SetRow(locationLabel, 3);
+            Grid.SetRow(locationLabel, 5);
             mainContentGrid.Children.Add(locationLabel);
 
-            var locationPanel = new Grid();
+            var locationPanel = new Grid { Margin = new Thickness(0, 0, 0, 12) };
             locationPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             locationPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            Grid.SetRow(locationPanel, 4);
+            Grid.SetRow(locationPanel, 6);
 
             var locationTextBox = new TextBox
             {
                 Margin = new Thickness(0, 0, 8, 0),
-                FontSize = 14,
-                Height = 35,
-                Background = new SolidColorBrush(Color.FromRgb(60, 60, 60)),
+                FontSize = 12,
+                Height = 32,
+                VerticalContentAlignment = VerticalAlignment.Center,
+                Background = new SolidColorBrush(Color.FromRgb(45, 45, 48)),
                 Foreground = Brushes.White,
                 BorderBrush = new SolidColorBrush(Color.FromRgb(85, 85, 85)),
                 BorderThickness = new Thickness(1),
-                Padding = new Thickness(10, 0, 10, 0),
-                Text = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "CobraProjects")
+                Padding = new Thickness(8, 0, 8, 0),
+                Text = ProjectsPath
             };
             Grid.SetColumn(locationTextBox, 0);
 
@@ -275,433 +337,276 @@ namespace Cobra
             {
                 Content = "Browse...",
                 Width = 85,
-                Height = 35,
+                Height = 32,
                 Background = new SolidColorBrush(Color.FromRgb(60, 60, 60)),
                 Foreground = Brushes.White,
-                FontSize = 14,
-                Cursor = System.Windows.Input.Cursors.Hand,
+                FontSize = 12,
                 Style = (Style)FindResource("CommonRoundedButtonStyle")
             };
             Grid.SetColumn(browseBtn, 1);
-
             locationPanel.Children.Add(locationTextBox);
             locationPanel.Children.Add(browseBtn);
             mainContentGrid.Children.Add(locationPanel);
 
-            // Use default checkbox
-            var useDefaultCheck = new CheckBox
+            var createVenvCheck = new CheckBox
             {
-                Content = "Use default location (CobraProjects folder in user home directory)",
-                Margin = new Thickness(0, 15, 0, 15),
+                Content = "Create isolated Python virtual environment (venv) and install template packages",
+                Margin = new Thickness(0, 4, 0, 6),
                 Foreground = Brushes.White,
-                FontSize = 13,
-                IsChecked = true
-            };
-            Grid.SetRow(useDefaultCheck, 5);
-            mainContentGrid.Children.Add(useDefaultCheck);
-
-            // Venv Section (For Python)
-            var venvPanel = new Border
-            {
-                Background = new SolidColorBrush(Color.FromRgb(45, 45, 48)),
-                Padding = new Thickness(15),
-                CornerRadius = new CornerRadius(5),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(63, 63, 70)),
-                BorderThickness = new Thickness(1),
-                Margin = new Thickness(0, 5, 0, 0),
-                Visibility = Visibility.Visible
-            };
-            Grid.SetRow(venvPanel, 6);
-            
-            var venvContent = new Grid();
-            venvContent.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            venvContent.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            
-            var venvText = new TextBlock
-            {
-                Text = "Add a virtual environment",
-                Foreground = Brushes.White,
-                FontSize = 14,
-                VerticalAlignment = VerticalAlignment.Center,
-                FontWeight = FontWeights.Medium
-            };
-            Grid.SetColumn(venvText, 0);
-            
-            bool addVenv = false;
-            var venvBtn = new Button
-            {
-                Content = "Add Venv",
-                Padding = new Thickness(25, 10, 25, 10),
-                Background = Brushes.Transparent,
-                Foreground = new SolidColorBrush(Color.FromRgb(150, 150, 150)),
-                FontSize = 13,
-                VerticalAlignment = VerticalAlignment.Center,
-                Cursor = System.Windows.Input.Cursors.Hand,
-                Style = (Style)FindResource("CommonRoundedButtonStyle"),
-                Opacity = 0.6
-            };
-            Grid.SetColumn(venvBtn, 1);
-            
-            venvBtn.Click += (s, args) =>
-            {
-                addVenv = !addVenv;
-                venvBtn.Foreground = addVenv ? Brushes.White : new SolidColorBrush(Color.FromRgb(150, 150, 150));
-                venvBtn.Opacity = addVenv ? 1.0 : 0.6;
-                venvBtn.Background = addVenv ? new SolidColorBrush(Color.FromRgb(255, 140, 0)) : Brushes.Transparent;
-            };
-            
-            venvContent.Children.Add(venvText);
-            venvContent.Children.Add(venvBtn);
-            venvPanel.Child = venvContent;
-            mainContentGrid.Children.Add(venvPanel);
-
-            // JS Config Section (For JS+NPM)
-            var jsConfigPanel = new Border
-            {
-                Background = new SolidColorBrush(Color.FromRgb(45, 45, 48)),
-                Padding = new Thickness(15),
-                CornerRadius = new CornerRadius(5),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(63, 63, 70)),
-                BorderThickness = new Thickness(1),
-                Margin = new Thickness(0, 5, 0, 0),
-                Visibility = Visibility.Collapsed
-            };
-            Grid.SetRow(jsConfigPanel, 6);
-
-            var jsInfoText = new TextBlock
-            {
-                Text = "Project will be initialized with Vite and Phaser engine.\nScalable architecture with scenes, systems, and entities.",
-                Foreground = new SolidColorBrush(Color.FromRgb(200, 200, 200)),
                 FontSize = 12,
-                TextWrapping = TextWrapping.Wrap
+                IsChecked = SettingsManager.Instance.CurrentSettings.AutoCreateVenv
             };
-            jsConfigPanel.Child = jsInfoText;
-            mainContentGrid.Children.Add(jsConfigPanel);
+            Grid.SetRow(createVenvCheck, 7);
+            mainContentGrid.Children.Add(createVenvCheck);
 
-            // Tab selection logic
-            langTabControl.SelectionChanged += (s, args) =>
+            browseBtn.Click += (_, _) =>
             {
-                if (langTabControl.SelectedItem == pythonTab)
-                {
-                    venvPanel.Visibility = Visibility.Visible;
-                    jsConfigPanel.Visibility = Visibility.Collapsed;
-                }
-                else
-                {
-                    venvPanel.Visibility = Visibility.Collapsed;
-                    jsConfigPanel.Visibility = Visibility.Visible;
-                }
-            };
-
-            browseBtn.Click += (s, args) =>
-            {
-                var dialogFolder = new System.Windows.Forms.FolderBrowserDialog();
+                var dialogFolder = new FolderBrowserDialog();
                 if (dialogFolder.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                {
                     locationTextBox.Text = dialogFolder.SelectedPath;
-                    useDefaultCheck.IsChecked = false;
-                }
             };
 
-            useDefaultCheck.Checked += (s, args) =>
+            var (confirmed, _) = await AnimatedModal.ShowCustomModalAsync(this, "Create New Python Game Project", mainContentGrid, "Create Project");
+            if (!confirmed) return;
+
+            string projectName = textBox.Text.Trim();
+            string location = locationTextBox.Text.Trim();
+            string selectedTemplateId = (templateCombo.SelectedItem as ComboBoxItem)?.Tag is ProjectTemplateDescriptor d ? d.Id : "pygame-2d-starter";
+            bool useVenv = createVenvCheck.IsChecked == true;
+
+            if (!SecurityValidator.IsValidProjectName(projectName, out string nameErr))
             {
-                if (useDefaultCheck.IsChecked == true)
-                {
-                    locationTextBox.Text = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "CobraProjects");
-                    locationTextBox.IsEnabled = false;
-                }
-                else
-                {
-                    locationTextBox.IsEnabled = true;
-                }
+                await CustomDialog.ShowAsync(this, nameErr, "Invalid Project Name", DialogIcon.Error);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(location))
+            {
+                await CustomDialog.ShowAsync(this, "Location cannot be empty.", "Error", DialogIcon.Error);
+                return;
+            }
+
+            string projectPath = Path.Combine(location, projectName);
+            if (Directory.Exists(projectPath))
+            {
+                await CustomDialog.ShowAsync(this, "A project directory already exists at this location.", "Project Exists", DialogIcon.Error);
+                return;
+            }
+
+            var statusLabel = new TextBlock
+            {
+                Text = "Creating project files...",
+                Foreground = Brushes.White,
+                FontSize = 12,
+                Margin = new Thickness(20)
             };
-            
-            useDefaultCheck.Unchecked += (s, args) =>
+            var progressWindow = new Window
             {
-                locationTextBox.IsEnabled = true;
+                Title = "Creating Project",
+                Width = 420,
+                Height = 110,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Owner = this,
+                WindowStyle = WindowStyle.None,
+                Background = new SolidColorBrush(Color.FromRgb(37, 37, 38)),
+                Content = statusLabel
             };
+            progressWindow.Show();
 
-            useDefaultCheck.IsChecked = true;
-            locationTextBox.IsEnabled = false;
+            var progress = new Progress<string>(msg => statusLabel.Text = msg);
+            bool isDefaultRoot = string.Equals(
+                Path.GetFullPath(location).TrimEnd(Path.DirectorySeparatorChar),
+                Path.GetFullPath(ProjectsPath).TrimEnd(Path.DirectorySeparatorChar),
+                StringComparison.OrdinalIgnoreCase);
 
-            // Show the modal
-            var (confirmed, _) = await AnimatedModal.ShowCustomModalAsync(this, "Create New Project", mainContentGrid, "Create", "Cancel");
-
-            if (confirmed)
+            string result;
+            if (isDefaultRoot)
             {
-                string projectName = textBox.Text.Trim();
-                string location = locationTextBox.Text.Trim();
-                bool isJsProject = langTabControl.SelectedItem == jsTab;
+                result = useVenv
+                    ? await ProjectCreator.CreateProjectWithVenvAsync(projectName, progress, selectedTemplateId)
+                    : await Task.Run(() => ProjectCreator.CreateProject(projectName, selectedTemplateId));
+            }
+            else
+            {
+                result = useVenv
+                    ? await ProjectCreator.CreateProjectWithVenvAtPathAsync(projectPath, progress, selectedTemplateId)
+                    : await Task.Run(() => ProjectCreator.CreateProjectAtPath(projectPath, selectedTemplateId));
+            }
 
-                if (string.IsNullOrWhiteSpace(projectName))
-                {
-                    await CustomDialog.ShowAsync(this, "Project name cannot be empty.", "Error", DialogIcon.Error);
-                    return;
-                }
+            progressWindow.Close();
 
-                if (string.IsNullOrWhiteSpace(location))
-                {
-                    await CustomDialog.ShowAsync(this, "Location cannot be empty.", "Error", DialogIcon.Error);
-                    return;
-                }
-
-                string projectPath = Path.Combine(location, projectName);
-
-                if (Directory.Exists(projectPath))
-                {
-                    await CustomDialog.ShowAsync(this, "Project already exists at this location!", "Error", DialogIcon.Error);
-                    return;
-                }
-
-                // Show progress dialog
-                var progressDialog = new Window
-                {
-                    Title = "Creating Project",
-                    Width = 450,
-                    Height = 180,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                    Owner = this,
-                    WindowStyle = WindowStyle.None,
-                    AllowsTransparency = true,
-                    Background = Brushes.Transparent
-                };
-
-                var mainBorder = new Border
-                {
-                    Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
-                    CornerRadius = new CornerRadius(10),
-                    BorderBrush = new SolidColorBrush(Color.FromRgb(60, 60, 60)),
-                    BorderThickness = new Thickness(1),
-                    Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 15, Opacity = 0.3 }
-                };
-
-                var progressGrid = new Grid();
-                progressGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                progressGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                progressGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-
-                var progressText = new TextBlock
-                {
-                    Text = isJsProject ? "Setting up JS+NPM Project..." : "Preparing project setup...",
-                    Foreground = Brushes.White,
-                    FontSize = 15,
-                    Margin = new Thickness(25, 25, 25, 10),
-                    HorizontalAlignment = System.Windows.HorizontalAlignment.Left
-                };
-                Grid.SetRow(progressText, 0);
-                progressGrid.Children.Add(progressText);
-
-                var progressBar = new ProgressBar
-                {
-                    Height = 10,
-                    Margin = new Thickness(25, 10, 25, 10),
-                    Minimum = 0,
-                    Maximum = 100,
-                    Value = 0,
-                    Background = new SolidColorBrush(Color.FromRgb(45, 45, 48)),
-                    BorderThickness = new Thickness(0),
-                    Foreground = new LinearGradientBrush(
-                        isJsProject ? Color.FromRgb(203, 56, 55) : Color.FromRgb(255, 140, 0), // NPM Red or Cobra Orange
-                        isJsProject ? Color.FromRgb(255, 100, 100) : Color.FromRgb(255, 165, 0),
-                        0)
-                };
-                Grid.SetRow(progressBar, 1);
-                progressGrid.Children.Add(progressBar);
-                
-                var statusText = new TextBlock
-                {
-                    Text = "Starting...",
-                    Foreground = new SolidColorBrush(Color.FromRgb(150, 150, 150)),
-                    FontSize = 12,
-                    Margin = new Thickness(25, 0, 25, 25),
-                    HorizontalAlignment = System.Windows.HorizontalAlignment.Left
-                };
-                Grid.SetRow(statusText, 2);
-                progressGrid.Children.Add(statusText);
-
-                mainBorder.Child = progressGrid;
-                progressDialog.Content = mainBorder;
-                progressDialog.Show();
-
-                // Animate progress bar
-                var animation = new DoubleAnimation
-                {
-                    From = 0,
-                    To = 100,
-                    Duration = TimeSpan.FromSeconds(isJsProject ? 5 : (addVenv ? 3 : 2)),
-                    EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
-                };
-                progressBar.BeginAnimation(ProgressBar.ValueProperty, animation);
-
-                var progressReporter = new Progress<string>(msg =>
-                {
-                    statusText.Text = msg;
-                });
-
-                string result;
-                if (isJsProject)
-                {
-                    result = await ProjectCreator.CreateJsProjectWithViteAsync(projectPath, progressReporter);
-                }
-                else if (addVenv)
-                {
-                    result = await ProjectCreator.CreateProjectWithVenvAtPathAsync(projectPath, progressReporter);
-                }
-                else
-                {
-                    result = await Task.Run(() => ProjectCreator.CreateProjectAtPath(projectPath));
-                }
-
-                // Wait for animation to finish if it's faster
-                await Task.Delay(500);
-                progressDialog.Close();
-
-                if (result.StartsWith("Error"))
-                {
-                    await CustomDialog.ShowAsync(this, result, "Error", DialogIcon.Error);
-                }
-                else
-                {
-                    ShowToast("Project created successfully!");
-                    OpenProjectEditor(projectPath, projectName);
-                }
+            if (result.StartsWith("Error", StringComparison.OrdinalIgnoreCase))
+            {
+                await CustomDialog.ShowAsync(this, result, "Project Creation Failed", DialogIcon.Error);
+            }
+            else
+            {
+                LoadProjects();
+                ShowToast("Project created! Opening workspace...");
+                OpenProjectEditor(projectPath, projectName);
             }
         }
 
         public async void OnOpenProjectClicked(object sender, RoutedEventArgs e)
         {
-            ProjectManager manager = new();
-            var projects = manager.GetAllProjects();
-
-            if (projects.Count == 0)
+            try
             {
-                await CustomDialog.ShowAsync(this, "No projects found. Create a new project first.", "Information", DialogIcon.Info);
-                return;
-            }
+                var projects = _projectManager.GetAllProjects();
+                var selectionPanel = new StackPanel();
 
-            // Create project selection UI
-            var selectionPanel = new StackPanel();
-
-            var label = new TextBlock
-            {
-                Text = "Select a project to open:",
-                Foreground = Brushes.White,
-                Margin = new Thickness(0, 0, 0, 15),
-                FontSize = 14,
-                FontWeight = FontWeights.SemiBold
-            };
-            selectionPanel.Children.Add(label);
-
-            var listBox = new ListBox
-            {
-                Height = 250,
-                Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
-                Foreground = Brushes.White,
-                BorderBrush = new SolidColorBrush(Color.FromRgb(85, 85, 85)),
-                FontSize = 14
-            };
-
-            foreach (var project in projects)
-            {
-                listBox.Items.Add(project.Name);
-            }
-            selectionPanel.Children.Add(listBox);
-
-            var browseOtherBtn = new Button
-            {
-                Content = "Browse Other Location...",
-                Margin = new Thickness(0, 15, 0, 0),
-                Height = 35,
-                Background = new SolidColorBrush(Color.FromRgb(60, 60, 60)),
-                Foreground = Brushes.White,
-                FontSize = 14,
-                Cursor = System.Windows.Input.Cursors.Hand
-            };
-            selectionPanel.Children.Add(browseOtherBtn);
-
-            ProjectModel? selectedProject = null;
-
-            listBox.SelectionChanged += (s, args) =>
-            {
-                if (listBox.SelectedItem != null)
+                selectionPanel.Children.Add(new TextBlock
                 {
-                    selectedProject = projects.FirstOrDefault(p => p.Name == listBox.SelectedItem.ToString());
-                }
-            };
+                    Text = "Select a Cobra Python Game Project:",
+                    Foreground = Brushes.White,
+                    Margin = new Thickness(0, 0, 0, 10),
+                    FontSize = 12,
+                    FontWeight = FontWeights.SemiBold
+                });
 
-            browseOtherBtn.Click += async (s, args) =>
-            {
-                var folderDialog = new System.Windows.Forms.FolderBrowserDialog();
-                if (folderDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                var listBox = new ListBox
                 {
-                    string selectedPath = folderDialog.SelectedPath;
-                    if (Directory.Exists(selectedPath) && File.Exists(Path.Combine(selectedPath, "main.py")))
+                    Height = 220,
+                    Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
+                    Foreground = Brushes.White,
+                    BorderBrush = new SolidColorBrush(Color.FromRgb(75, 75, 75)),
+                    FontSize = 12
+                };
+
+                foreach (var project in projects)
+                    listBox.Items.Add($"{project.Name}  [{project.Framework}]  —  {project.Path}");
+
+                selectionPanel.Children.Add(listBox);
+
+                var browseOtherBtn = new Button
+                {
+                    Content = "Browse Folder on Disk...",
+                    Margin = new Thickness(0, 12, 0, 0),
+                    Height = 32,
+                    Background = new SolidColorBrush(Color.FromRgb(60, 60, 60)),
+                    Foreground = Brushes.White,
+                    FontSize = 12,
+                    Style = (Style)FindResource("CommonRoundedButtonStyle")
+                };
+                selectionPanel.Children.Add(browseOtherBtn);
+
+                ProjectModel? selectedProject = null;
+                listBox.SelectionChanged += (_, _) =>
+                {
+                    if (listBox.SelectedIndex >= 0 && listBox.SelectedIndex < projects.Count)
+                        selectedProject = projects[listBox.SelectedIndex];
+                };
+
+                browseOtherBtn.Click += async (_, _) =>
+                {
+                    try
                     {
-                        selectedProject = new ProjectModel
+                        var folderDialog = new FolderBrowserDialog();
+                        if (folderDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                         {
-                            Name = Path.GetFileName(selectedPath),
-                            Path = selectedPath
-                        };
-                        OpenProjectEditor(selectedProject.Path, selectedProject.Name);
-                        // Close any open dialogs
-                        var window = Window.GetWindow(browseOtherBtn);
-                        if (window is AnimatedModal modal)
-                        {
-                            modal.Close();
+                            string selectedPath = folderDialog.SelectedPath;
+                            if (ProjectManager.IsValidProjectDirectory(selectedPath))
+                            {
+                                selectedProject = ProjectModel.LoadFromDirectory(selectedPath);
+                                var w = Window.GetWindow(browseOtherBtn);
+                                w?.Close();
+                                OpenProjectEditor(selectedProject.Path, selectedProject.Name);
+                            }
+                            else
+                            {
+                                await CustomDialog.ShowAsync(this, "Selected folder does not contain a Python file (.py) or cobra.project.json.", "Invalid Project Folder", DialogIcon.Warning);
+                            }
                         }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        await CustomDialog.ShowAsync(this, "Selected folder does not contain a valid Cobra project (main.py not found).", "Invalid Project", DialogIcon.Warning);
+                        Debug.WriteLine(ex.Message);
                     }
+                };
+
+                var (confirmed, _) = await AnimatedModal.ShowCustomModalAsync(this, "Open Game Project", selectionPanel, "Open Project");
+                if (confirmed && selectedProject != null)
+                {
+                    OpenProjectEditor(selectedProject.Path, selectedProject.Name);
                 }
-            };
-
-            var (confirmed, _) = await AnimatedModal.ShowCustomModalAsync(this, "Open Project", selectionPanel, "Open", "Cancel");
-
-            if (confirmed && selectedProject != null)
+            }
+            catch (Exception ex)
             {
-                OpenProjectEditor(selectedProject.Path, selectedProject.Name);
+                Debug.WriteLine(ex.Message);
             }
         }
 
-        // Navigation Menu Handlers
+        private void OnRecentProjectDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (RecentProjectsList.SelectedItem is ProjectModel project)
+                OpenProjectEditor(project.Path, project.Name);
+        }
+
         private void OnExitClicked(object sender, RoutedEventArgs e) => Application.Current.Shutdown();
         private void OnPreferencesClicked(object sender, RoutedEventArgs e) => OnSettingsIconClicked(sender, e);
         private void OnSettingsClicked(object sender, RoutedEventArgs e) => OnSettingsIconClicked(sender, e);
         private void OnToggleFullScreenClicked(object sender, RoutedEventArgs e) => ToggleFullScreen();
-        private async void OnResetLayoutClicked(object sender, RoutedEventArgs e) => await CustomDialog.ShowAsync(this, "Layout reset.", "Reset Layout", DialogIcon.Info);
-        private async void OnRecentProjectsClicked(object sender, RoutedEventArgs e) => await CustomDialog.ShowAsync(this, "Recent projects list would appear here.", "Recent Projects", DialogIcon.Info);
+
+        private void OnResetLayoutClicked(object sender, RoutedEventArgs e)
+        {
+            SettingsManager.Instance.CurrentSettings.WorkspaceLayout = "Default";
+            SettingsManager.Instance.Save();
+            ShowToast("Default workspace layout restored.");
+        }
+
+        private void OnRecentProjectsClicked(object sender, RoutedEventArgs e) => OnOpenProjectClicked(sender, e);
+
         private async void OnProjectSettingsClicked(object sender, RoutedEventArgs e)
         {
-            if (RecentProjectsList.SelectedItem is ProjectModel project)
+            try
             {
-                var folderSettings = new FolderSettings(project.Path);
-                var settingsView = new SettingsView(folderSettings);
-                var settingsWindow = new Window
+                if (RecentProjectsList.SelectedItem is ProjectModel project)
                 {
-                    Title = $"Project Settings - {project.Name}",
-                    Content = settingsView,
-                    Width = 1200,
-                    Height = 800,
-                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                    Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
-                    WindowStyle = WindowStyle.None
-                };
-                WindowChrome.SetWindowChrome(settingsWindow, new WindowChrome { CaptionHeight = 35, ResizeBorderThickness = new Thickness(5), GlassFrameThickness = new Thickness(0), CornerRadius = new CornerRadius(0) });
-                settingsWindow.ShowDialog();
+                    var folderSettings = new FolderSettings(project.Path);
+                    var settingsView = new SettingsView(folderSettings);
+                    var settingsWindow = new Window
+                    {
+                        Title = $"Project Settings - {project.Name}",
+                        Content = settingsView,
+                        Width = 1150,
+                        Height = 760,
+                        WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                        Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
+                        WindowStyle = WindowStyle.None
+                    };
+                    WindowChrome.SetWindowChrome(settingsWindow, new WindowChrome { CaptionHeight = 35, ResizeBorderThickness = new Thickness(5), GlassFrameThickness = new Thickness(0), CornerRadius = new CornerRadius(0) });
+                    settingsWindow.ShowDialog();
+                }
+                else
+                {
+                    await CustomDialog.ShowAsync(this, "Select a project from 'Your Game Projects' first to configure its settings.", "Select Project");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                await CustomDialog.ShowAsync(this, "Please select a project from the list to view its settings.", "No Selection", DialogIcon.Info);
+                Debug.WriteLine(ex.Message);
             }
         }
-        private async void OnBuildClicked(object sender, RoutedEventArgs e) => await CustomDialog.ShowAsync(this, "Build process would start here.", "Build", DialogIcon.Info);
-        private async void OnExportClicked(object sender, RoutedEventArgs e) => await CustomDialog.ShowAsync(this, "Export options would appear here.", "Export", DialogIcon.Info);
-        private async void OnPackageManagerClicked(object sender, RoutedEventArgs e) => await CustomDialog.ShowAsync(this, "Package manager would open here.", "Package Manager", DialogIcon.Info);
-        private async void OnExtensionsClicked(object sender, RoutedEventArgs e) => await CustomDialog.ShowAsync(this, "Extensions manager would open here.", "Extensions", DialogIcon.Info);
-        private async void OnOpenTerminalClicked(object sender, RoutedEventArgs e) => await CustomDialog.ShowAsync(this, "Terminal would open here.", "Terminal", DialogIcon.Info);
-        private async void OnRunCommandClicked(object sender, RoutedEventArgs e) => await CustomDialog.ShowAsync(this, "Command runner would open here.", "Run Command", DialogIcon.Info);
+
+        private async void OnBuildClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (RecentProjectsList.SelectedItem is ProjectModel project)
+                    OpenProjectEditor(project.Path, project.Name);
+                else
+                    await CustomDialog.ShowAsync(this, "Open or select a project to build and package your game.", "Build Game");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private void OnExportClicked(object sender, RoutedEventArgs e) => OnBuildClicked(sender, e);
+        private void OnPackageManagerClicked(object sender, RoutedEventArgs e) => OnBuildClicked(sender, e);
+        private void OnExtensionsClicked(object sender, RoutedEventArgs e) => OnSettingsIconClicked(sender, e);
+        private void OnOpenTerminalClicked(object sender, RoutedEventArgs e) => OnBuildClicked(sender, e);
+        private void OnRunCommandClicked(object sender, RoutedEventArgs e) => OnBuildClicked(sender, e);
 
         private void OnSettingsIconClicked(object sender, RoutedEventArgs e)
         {
@@ -710,8 +615,8 @@ namespace Cobra
             {
                 Title = "Cobra IDE - Settings",
                 Content = settingsView,
-                Width = 1200,
-                Height = 800,
+                Width = 1150,
+                Height = 760,
                 WindowStartupLocation = WindowStartupLocation.CenterScreen,
                 Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
                 WindowStyle = WindowStyle.None
@@ -720,96 +625,102 @@ namespace Cobra
             settingsWindow.ShowDialog();
         }
 
-        // Dashboard Event Handlers
-        private void OnProjectSelected(object sender, SelectionChangedEventArgs e)
-        {
-            // Open button 
-        }
+        private void OnProjectSelected(object sender, SelectionChangedEventArgs e) { }
 
         private async void OnOpenSelectedProject(object sender, RoutedEventArgs e)
         {
-            if (RecentProjectsList.SelectedItem is ProjectModel project)
+            try
             {
-                OpenProjectEditor(project.Path, project.Name);
+                if (RecentProjectsList.SelectedItem is ProjectModel project)
+                    OpenProjectEditor(project.Path, project.Name);
+                else
+                    await CustomDialog.ShowAsync(this, "Please select a project from the list to open.", "No Selection");
             }
-            else
+            catch (Exception ex)
             {
-                await CustomDialog.ShowAsync(this, "Please select a project to open.", "No Selection", DialogIcon.Info);
+                Debug.WriteLine(ex.Message);
             }
         }
 
-        private async void OnRefreshClicked(object sender, RoutedEventArgs e)
+        private void OnRefreshClicked(object sender, RoutedEventArgs e)
         {
-            await LoadProjects();
-            await CheckPythonStatus();
-            await CustomDialog.ShowAsync(this, "Projects refreshed successfully!", "Success", DialogIcon.Success);
-        }
-
-        private async void OnInstallDepsClicked(object sender, RoutedEventArgs e)
-        {
-            await CustomDialog.ShowAsync(this,
-                "To install dependencies, please follow these steps:\n\n1. Open your project.\n2. In the explorer, click on the requirements.txt file.\n3. Click the 'Install Requirements' button that appears.",
-                "Install Dependencies",
-                DialogIcon.Info);
+            LoadProjects();
+            CheckPythonStatus();
+            ShowToast("Projects and Python environment status refreshed.");
         }
 
         private async void OnCheckPythonClicked(object sender, RoutedEventArgs e)
         {
-            string version = PythonService.GetPythonVersion();
-            await CustomDialog.ShowAsync(this,
-                $"Installed Python Version:\n\n{version}",
-                "Python Status",
-                DialogIcon.Info);
-        }
-
-        private async void OnCheckNodeClicked(object sender, RoutedEventArgs e)
-        {
-            string version = NodeService.GetNodeVersion();
-            await CustomDialog.ShowAsync(this,
-                $"Installed Node.js Version:\n\n{version}",
-                "Node.js Status",
-                DialogIcon.Info);
-        }
-
-        private async void OnCheckNpmClicked(object sender, RoutedEventArgs e)
-        {
-            string version = NodeService.GetNpmVersion();
-            await CustomDialog.ShowAsync(this,
-                $"Installed NPM Version:\n\n{version}",
-                "NPM Status",
-                DialogIcon.Info);
-        }
-
-        public void OnDocumentationClicked(object sender, RoutedEventArgs e)
-        {
-            Process.Start(new ProcessStartInfo
+            try
             {
-                FileName = "#",
-                UseShellExecute = true
-            });
+                var interpreters = PythonService.DetectAvailableInterpreters();
+                string list = interpreters.Count > 0
+                    ? string.Join("\n• ", interpreters.Select(i => i.DisplayName))
+                    : "No Python interpreters detected.";
+
+                await CustomDialog.ShowAsync(this,
+                    $"Detected Python Interpreters:\n\n• {list}",
+                    "Python Environment Detection");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        public async void OnDocumentationClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await CustomDialog.ShowAsync(this,
+                    "Cobra IDE Documentation is available in the repository under Docs/:\n\n" +
+                    "• README.md — Getting Started & Overview\n" +
+                    "• ARCHITECTURE.md — System & Engine Design\n" +
+                    "• Docs/user_guide.md — Creating, Running, Debugging & Packaging Games\n" +
+                    "• Docs/configuration.md — Python & Workspace Configuration\n" +
+                    "• policies/data_protection.md — Privacy & POPIA Data Protection Policy",
+                    "Cobra IDE Documentation");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
         }
 
         public async void OnAboutClicked(object sender, RoutedEventArgs e)
         {
-            await CustomDialog.ShowAsync(this, "Cobra IDE\nVersion 1.0\n\nA modern environment for Python development.", "About Cobra", DialogIcon.Info);
+            try
+            {
+                await CustomDialog.ShowAsync(this,
+                    "Cobra IDE v2.0 — Python Game Development Environment\n\n" +
+                    "Primary Language: Python\n" +
+                    "Primary Framework: Pygame (pygame-ce)\n" +
+                    "Optional 3D Frameworks: Panda3D & Ursina Engine\n" +
+                    "Desktop Stack: .NET 8, WPF, WebView2 & Monaco Editor",
+                    "About Cobra IDE");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
         }
 
         private void ToggleFullScreen()
         {
-            if (!isFullScreen)
+            if (!_isFullScreen)
             {
-                previousState = WindowState;
+                _previousState = WindowState;
                 WindowStyle = WindowStyle.None;
                 WindowState = WindowState.Maximized;
                 ResizeMode = ResizeMode.NoResize;
-                isFullScreen = true;
+                _isFullScreen = true;
             }
             else
             {
                 WindowStyle = WindowStyle.SingleBorderWindow;
-                WindowState = previousState;
+                WindowState = _previousState;
                 ResizeMode = ResizeMode.CanResize;
-                isFullScreen = false;
+                _isFullScreen = false;
             }
         }
 
@@ -823,41 +734,15 @@ namespace Cobra
             {
                 From = 100,
                 To = 0,
-                Duration = TimeSpan.FromMilliseconds(400),
+                Duration = TimeSpan.FromMilliseconds(300),
                 EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
             };
-
-            DoubleAnimation fadeIn = new()
-            {
-                From = 0,
-                To = 1,
-                Duration = TimeSpan.FromMilliseconds(400)
-            };
-
             ToastTranslate.BeginAnimation(TranslateTransform.YProperty, slideUp);
-            ToastOverlay.BeginAnimation(OpacityProperty, fadeIn);
 
-            // Hide after delay
-            var timer = new System.Windows.Threading.DispatcherTimer
+            var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+            timer.Tick += (_, _) =>
             {
-                Interval = TimeSpan.FromSeconds(3)
-            };
-            timer.Tick += (s, args) =>
-            {
-                DoubleAnimation slideDown = new()
-                {
-                    To = 100,
-                    Duration = TimeSpan.FromMilliseconds(400),
-                    EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn }
-                };
-                DoubleAnimation fadeOut = new()
-                {
-                    To = 0,
-                    Duration = TimeSpan.FromMilliseconds(400)
-                };
-                slideDown.Completed += (s2, args2) => ToastOverlay.Visibility = Visibility.Collapsed;
-                ToastTranslate.BeginAnimation(TranslateTransform.YProperty, slideDown);
-                ToastOverlay.BeginAnimation(OpacityProperty, fadeOut);
+                ToastOverlay.Visibility = Visibility.Collapsed;
                 timer.Stop();
             };
             timer.Start();
@@ -868,9 +753,9 @@ namespace Cobra
             var editorView = new EditorView(projectPath);
             var editorWindow = new Window
             {
-                Title = $"Cobra Editor - {projectName}",
+                Title = $"Cobra IDE - {projectName}",
                 Content = editorView,
-                Width = 1400,
+                Width = 1440,
                 Height = 900,
                 WindowStartupLocation = WindowStartupLocation.CenterScreen,
                 WindowState = WindowState.Maximized,
@@ -878,38 +763,13 @@ namespace Cobra
             };
             WindowChrome.SetWindowChrome(editorWindow, new WindowChrome { CaptionHeight = 35, ResizeBorderThickness = new Thickness(5), GlassFrameThickness = new Thickness(0), CornerRadius = new CornerRadius(0) });
             editorWindow.Show();
-            this.Hide();
-            editorWindow.Closed += (s, args) => this.Show();
-        }
-        private static ControlTemplate CreateTabItemTemplate()
-        {
-            var template = new ControlTemplate(typeof(System.Windows.Controls.TabItem));
-            
-            var border = new FrameworkElementFactory(typeof(Border)) { Name = "Border" };
-            border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(System.Windows.Controls.TabItem.BackgroundProperty));
-            border.SetValue(Border.BorderThicknessProperty, new Thickness(0, 0, 0, 2));
-            border.SetValue(Border.BorderBrushProperty, Brushes.Transparent);
-            border.SetValue(Border.PaddingProperty, new TemplateBindingExtension(System.Windows.Controls.TabItem.PaddingProperty));
-
-            var contentPresenter = new FrameworkElementFactory(typeof(ContentPresenter));
-            contentPresenter.SetValue(ContentPresenter.HorizontalAlignmentProperty, System.Windows.HorizontalAlignment.Center);
-            contentPresenter.SetValue(ContentPresenter.VerticalAlignmentProperty, System.Windows.VerticalAlignment.Center);
-            contentPresenter.SetValue(ContentPresenter.ContentSourceProperty, "Header");
-            
-            border.AppendChild(contentPresenter);
-            template.VisualTree = border;
-
-            // Triggers
-            var selectedTrigger = new Trigger { Property = System.Windows.Controls.TabItem.IsSelectedProperty, Value = true };
-            selectedTrigger.Setters.Add(new Setter(System.Windows.Controls.TabItem.ForegroundProperty, Brushes.White));
-            selectedTrigger.Setters.Add(new Setter(Border.BorderBrushProperty, new SolidColorBrush(Color.FromRgb(255, 140, 0)), "Border"));
-            template.Triggers.Add(selectedTrigger);
-
-            var mouseOverTrigger = new Trigger { Property = System.Windows.Controls.TabItem.IsMouseOverProperty, Value = true };
-            mouseOverTrigger.Setters.Add(new Setter(System.Windows.Controls.TabItem.ForegroundProperty, Brushes.White));
-            template.Triggers.Add(mouseOverTrigger);
-
-            return template;
+            Hide();
+            editorWindow.Closed += (_, _) =>
+            {
+                editorView.CleanupResources();
+                Show();
+                LoadProjects();
+            };
         }
     }
 }

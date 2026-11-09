@@ -1,4 +1,4 @@
-using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 
@@ -11,7 +11,7 @@ namespace Cobra.Core.Settings
 
         private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
         
-        public SettingsModel Settings { get; private set; }
+        public SettingsModel Settings { get; }
         private readonly string _folderPath;
 
         public FolderSettings(string folderPath)
@@ -56,7 +56,7 @@ namespace Cobra.Core.Settings
                 {
                     Directory.CreateDirectory(directory);
                     // Hide the .Cobra folder on Windows
-                    try { File.SetAttributes(directory, File.GetAttributes(directory) | FileAttributes.Hidden); } catch { }
+                    try { File.SetAttributes(directory, File.GetAttributes(directory) | FileAttributes.Hidden); } catch (Exception ex) { Debug.WriteLine(ex.Message); }
                 }
 
                 string json = JsonSerializer.Serialize(Settings, JsonOptions);

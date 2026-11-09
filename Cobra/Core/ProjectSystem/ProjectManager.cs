@@ -1,21 +1,14 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
 
 namespace Cobra.Core.ProjectSystem
 {
     public class ProjectManager
     {
-        private readonly string basePath;
+        private readonly string _basePath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
 
-        public ProjectManager()
+        public string GetProjectsPath()
         {
-            basePath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
-        }
-
-        private string GetProjectsPath()
-        {
-            return Path.Combine(basePath, "CobraProjects");
+            return Path.Combine(_basePath, "CobraProjects");
         }
 
         public List<ProjectModel> GetAllProjects()
@@ -29,17 +22,23 @@ namespace Cobra.Core.ProjectSystem
             var dirs = Directory.GetDirectories(projectsPath);
             foreach (var dir in dirs)
             {
-                // Detect Python (main.py) or JS/NPM (package.json) projects
-                if (File.Exists(Path.Combine(dir, "main.py")) || File.Exists(Path.Combine(dir, "package.json")))
+                if (IsValidProjectDirectory(dir))
                 {
-                    projects.Add(new ProjectModel
-                    {
-                        Name = Path.GetFileName(dir),
-                        Path = dir
-                    });
+                    projects.Add(ProjectModel.LoadFromDirectory(dir));
                 }
             }
-            return projects;
+            return [.. projects.OrderByDescending(p => p.LastModified)];
+        }
+
+        public static bool IsValidProjectDirectory(string dir)
+        {
+            if (string.IsNullOrWhiteSpace(dir) || !Directory.Exists(dir))
+                return false;
+
+            if (File.Exists(Path.Combine(dir, "cobra.project.json")) || File.Exists(Path.Combine(dir, "main.py")))
+                return true;
+
+            return Directory.GetFiles(dir, "*.py").Length > 0;
         }
     }
 }

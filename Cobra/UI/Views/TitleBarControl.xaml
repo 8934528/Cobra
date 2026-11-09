@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:Cobra.UI.Views"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              mc:Ignorable="d"
              d:DesignWidth="1400">
@@ -160,7 +159,7 @@
                             </MenuItem.Header>
                         </MenuItem>
                         <Separator Style="{StaticResource ModernSeparatorStyle}"/>
-                        <MenuItem Style="{StaticResource ModernSubMenuItemStyle}" InputGestureText="Ctrl+Shift+S">
+                        <MenuItem Click="OnProjectSettingsClicked" Style="{StaticResource ModernSubMenuItemStyle}" InputGestureText="Ctrl+Shift+S">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <iconPacks:PackIconMaterial Kind="ContentSaveAll" Width="14" Height="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
@@ -197,7 +196,7 @@
                                 <TextBlock Text="Edit" VerticalAlignment="Center"/>
                             </StackPanel>
                         </MenuItem.Header>
-                        <MenuItem Style="{StaticResource ModernSubMenuItemStyle}" InputGestureText="Ctrl+X">
+                        <MenuItem Command="ApplicationCommands.Cut" Style="{StaticResource ModernSubMenuItemStyle}" InputGestureText="Ctrl+X">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <iconPacks:PackIconMaterial Kind="ContentCut" Width="14" Height="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
@@ -205,7 +204,7 @@
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
-                        <MenuItem Style="{StaticResource ModernSubMenuItemStyle}" InputGestureText="Ctrl+C">
+                        <MenuItem Command="ApplicationCommands.Copy" Style="{StaticResource ModernSubMenuItemStyle}" InputGestureText="Ctrl+C">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <iconPacks:PackIconMaterial Kind="ContentCopy" Width="14" Height="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
@@ -213,7 +212,7 @@
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
-                        <MenuItem Style="{StaticResource ModernSubMenuItemStyle}" InputGestureText="Ctrl+V">
+                        <MenuItem Command="ApplicationCommands.Paste" Style="{StaticResource ModernSubMenuItemStyle}" InputGestureText="Ctrl+V">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <iconPacks:PackIconMaterial Kind="ContentPaste" Width="14" Height="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
@@ -267,7 +266,7 @@
                             </MenuItem.Header>
                         </MenuItem>
                         <Separator Style="{StaticResource ModernSeparatorStyle}"/>
-                        <MenuItem Style="{StaticResource ModernSubMenuItemStyle}" InputGestureText="Ctrl+1">
+                        <MenuItem Click="OnRecentProjectsClicked" Style="{StaticResource ModernSubMenuItemStyle}" InputGestureText="Ctrl+1">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <iconPacks:PackIconMaterial Kind="ViewDashboard" Width="14" Height="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
@@ -275,7 +274,7 @@
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
-                        <MenuItem Style="{StaticResource ModernSubMenuItemStyle}" InputGestureText="Ctrl+2">
+                        <MenuItem Click="OnResetLayoutClicked" Style="{StaticResource ModernSubMenuItemStyle}" InputGestureText="Ctrl+2">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <iconPacks:PackIconMaterial Kind="CodeBraces" Width="14" Height="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
@@ -283,7 +282,7 @@
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
-                        <MenuItem Style="{StaticResource ModernSubMenuItemStyle}" InputGestureText="Ctrl+`">
+                        <MenuItem Click="OnOpenTerminalClicked" Style="{StaticResource ModernSubMenuItemStyle}" InputGestureText="Ctrl+`">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <iconPacks:PackIconMaterial Kind="Console" Width="14" Height="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
@@ -336,7 +335,7 @@
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
-                        <MenuItem Style="{StaticResource ModernSubMenuItemStyle}">
+                        <MenuItem Click="OnPackageManagerClicked" Style="{StaticResource ModernSubMenuItemStyle}">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <iconPacks:PackIconMaterial Kind="PackageVariant" Width="14" Height="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
@@ -364,7 +363,7 @@
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
-                        <MenuItem Style="{StaticResource ModernSubMenuItemStyle}" InputGestureText="F5">
+                        <MenuItem Click="OnBuildClicked" Style="{StaticResource ModernSubMenuItemStyle}" InputGestureText="F5">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <iconPacks:PackIconMaterial Kind="Play" Width="14" Height="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
@@ -372,7 +371,7 @@
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
-                        <MenuItem Style="{StaticResource ModernSubMenuItemStyle}" InputGestureText="F6">
+                        <MenuItem Click="OnBuildClicked" Style="{StaticResource ModernSubMenuItemStyle}" InputGestureText="F6">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <iconPacks:PackIconMaterial Kind="Bug" Width="14" Height="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
@@ -389,7 +388,7 @@
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
-                        <MenuItem Style="{StaticResource ModernSubMenuItemStyle}">
+                        <MenuItem Click="OnBuildClicked" Style="{StaticResource ModernSubMenuItemStyle}">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <iconPacks:PackIconMaterial Kind="CogOutline" Width="14" Height="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
@@ -426,7 +425,7 @@
                             </MenuItem.Header>
                         </MenuItem>
                         <Separator Style="{StaticResource ModernSeparatorStyle}"/>
-                        <MenuItem Style="{StaticResource ModernSubMenuItemStyle}">
+                        <MenuItem Click="OnPackageManagerClicked" Style="{StaticResource ModernSubMenuItemStyle}">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <iconPacks:PackIconMaterial Kind="LanguagePython" Width="14" Height="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
@@ -434,7 +433,7 @@
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
-                        <MenuItem Style="{StaticResource ModernSubMenuItemStyle}">
+                        <MenuItem Click="OnRunCommandClicked" Style="{StaticResource ModernSubMenuItemStyle}">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <iconPacks:PackIconMaterial Kind="Magnify" Width="14" Height="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
@@ -471,7 +470,7 @@
                             </MenuItem.Header>
                         </MenuItem>
                         <Separator Style="{StaticResource ModernSeparatorStyle}"/>
-                        <MenuItem Style="{StaticResource ModernSubMenuItemStyle}" InputGestureText="Ctrl+L">
+                        <MenuItem Click="OnOpenTerminalClicked" Style="{StaticResource ModernSubMenuItemStyle}" InputGestureText="Ctrl+L">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <iconPacks:PackIconMaterial Kind="Eraser" Width="14" Height="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
@@ -479,7 +478,7 @@
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
-                        <MenuItem Style="{StaticResource ModernSubMenuItemStyle}" InputGestureText="Ctrl+Shift+T">
+                        <MenuItem Click="OnOpenTerminalClicked" Style="{StaticResource ModernSubMenuItemStyle}" InputGestureText="Ctrl+Shift+T">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <iconPacks:PackIconMaterial Kind="PlusBox" Width="14" Height="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
@@ -507,7 +506,7 @@
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
-                        <MenuItem Style="{StaticResource ModernSubMenuItemStyle}">
+                        <MenuItem Click="OnDocumentationClicked" Style="{StaticResource ModernSubMenuItemStyle}">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <iconPacks:PackIconMaterial Kind="Lightbulb" Width="14" Height="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
@@ -515,7 +514,7 @@
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
-                        <MenuItem Style="{StaticResource ModernSubMenuItemStyle}">
+                        <MenuItem Click="OnAboutClicked" Style="{StaticResource ModernSubMenuItemStyle}">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <iconPacks:PackIconMaterial Kind="Bug" Width="14" Height="14" Margin="0,0,8,0" VerticalAlignment="Center"/>

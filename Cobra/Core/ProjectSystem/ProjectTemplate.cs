@@ -1,31 +1,171 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
 
 namespace Cobra.Core.ProjectSystem
 {
+    public class ProjectTemplateDescriptor
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Framework { get; set; } = "Pygame";
+        public string Category { get; set; } = "2D";
+        public string Description { get; set; } = string.Empty;
+        public string[] Packages { get; set; } = ["pygame-ce"];
+    }
+
     public static class ProjectTemplate
     {
-        public static void ApplyPygameTemplate(string projectPath)
+        public static List<ProjectTemplateDescriptor> GetAvailableTemplates()
         {
-            // Create .gitignore
+            return
+            [
+                new ProjectTemplateDescriptor
+                {
+                    Id = "pygame-2d-starter",
+                    Name = "Pygame 2D Starter",
+                    Framework = "Pygame",
+                    Category = "2D",
+                    Description = "Classic 2D Pygame starter with game loop, scenes, input handling, and HUD.",
+                    Packages = ["pygame-ce"]
+                },
+                new ProjectTemplateDescriptor
+                {
+                    Id = "pygame-platformer",
+                    Name = "Pygame Platformer",
+                    Framework = "Pygame",
+                    Category = "2D",
+                    Description = "Side-scrolling platformer with gravity, jump physics, tile collisions, and camera follow.",
+                    Packages = ["pygame-ce"]
+                },
+                new ProjectTemplateDescriptor
+                {
+                    Id = "pygame-topdown",
+                    Name = "Pygame Top-Down Game",
+                    Framework = "Pygame",
+                    Category = "2D",
+                    Description = "8-directional top-down adventure with smooth movement, obstacles, and collectibles.",
+                    Packages = ["pygame-ce"]
+                },
+                new ProjectTemplateDescriptor
+                {
+                    Id = "pygame-rpg",
+                    Name = "Pygame RPG Starter",
+                    Framework = "Pygame",
+                    Category = "2D",
+                    Description = "RPG foundation featuring player stats, inventory, NPC dialogue box, and tile world.",
+                    Packages = ["pygame-ce"]
+                },
+                new ProjectTemplateDescriptor
+                {
+                    Id = "pygame-arcade",
+                    Name = "Pygame Arcade Game",
+                    Framework = "Pygame",
+                    Category = "2D",
+                    Description = "Fast-paced space arcade shooter with enemy waves, projectiles, particles, and high scores.",
+                    Packages = ["pygame-ce"]
+                },
+                new ProjectTemplateDescriptor
+                {
+                    Id = "pygame-puzzle",
+                    Name = "Pygame Puzzle Game",
+                    Framework = "Pygame",
+                    Category = "2D",
+                    Description = "Grid-based block matching and sliding puzzle starter with move counter and level progression.",
+                    Packages = ["pygame-ce"]
+                },
+                new ProjectTemplateDescriptor
+                {
+                    Id = "pygame-multiplayer",
+                    Name = "Pygame Multiplayer Starter",
+                    Framework = "Pygame",
+                    Category = "2D",
+                    Description = "Local & UDP/socket networked multiplayer arena starter with synchronized player states.",
+                    Packages = ["pygame-ce"]
+                },
+                new ProjectTemplateDescriptor
+                {
+                    Id = "panda3d-starter",
+                    Name = "Panda3D 3D Starter",
+                    Framework = "Panda3D",
+                    Category = "3D",
+                    Description = "Python 3D game starter using Panda3D ShowBase with camera orbit, directional lighting, and 3D scene graph.",
+                    Packages = ["panda3d"]
+                },
+                new ProjectTemplateDescriptor
+                {
+                    Id = "ursina-starter",
+                    Name = "Ursina 3D Starter",
+                    Framework = "Ursina",
+                    Category = "3D",
+                    Description = "Python 3D game starter using Ursina Engine with Entities, 3D controller, skybox, and lighting.",
+                    Packages = ["ursina"]
+                }
+            ];
+        }
+
+        public static void ApplyTemplate(string projectPath, string templateId)
+        {
+            WriteCommonGitIgnore(projectPath);
+            Directory.CreateDirectory(Path.Combine(projectPath, "assets"));
+            Directory.CreateDirectory(Path.Combine(projectPath, "scenes"));
+            Directory.CreateDirectory(Path.Combine(projectPath, "scripts"));
+
+            switch (templateId.ToLowerInvariant())
+            {
+                case "pygame-platformer":
+                    ApplyPlatformerTemplate(projectPath);
+                    break;
+                case "pygame-topdown":
+                    ApplyTopDownTemplate(projectPath);
+                    break;
+                case "pygame-rpg":
+                    ApplyRpgTemplate(projectPath);
+                    break;
+                case "pygame-arcade":
+                    ApplyArcadeTemplate(projectPath);
+                    break;
+                case "pygame-puzzle":
+                    ApplyPuzzleTemplate(projectPath);
+                    break;
+                case "pygame-multiplayer":
+                    ApplyMultiplayerTemplate(projectPath);
+                    break;
+                case "panda3d-starter":
+                    ApplyPanda3DTemplate(projectPath);
+                    break;
+                case "ursina-starter":
+                    ApplyUrsinaTemplate(projectPath);
+                    break;
+                default:
+                    ApplyPygameTemplate(projectPath);
+                    break;
+            }
+        }
+
+        private static void WriteCommonGitIgnore(string projectPath)
+        {
             File.WriteAllText(Path.Combine(projectPath, ".gitignore"),
 @"venv/
+.venv/
 __pycache__/
 *.pyc
 .env
 .DS_Store
-bin/
-obj/
+build/
+dist/
+*.spec
 .vscode/
 .idea/
 *.log
 ");
+        }
 
-            // Create main.py
+        public static void ApplyPygameTemplate(string projectPath)
+        {
+            WriteCommonGitIgnore(projectPath);
+            Directory.CreateDirectory(Path.Combine(projectPath, "assets"));
+            Directory.CreateDirectory(Path.Combine(projectPath, "scenes"));
+            Directory.CreateDirectory(Path.Combine(projectPath, "scripts"));
+
             File.WriteAllText(Path.Combine(projectPath, "main.py"),
 @"import pygame
 import random
@@ -34,18 +174,15 @@ import math
 
 pygame.init()
 
-# ================= SETTINGS =================
 WIDTH, HEIGHT = 800, 600
 GRID_SIZE = 30
 ROWS = WIDTH // GRID_SIZE
 COLS = HEIGHT // GRID_SIZE
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption(""Cobra - Wraparound Edition"")
-
+pygame.display.set_caption(""Cobra 2D Starter"")
 clock = pygame.time.Clock()
 
-# Colors
 BLACK = (20, 20, 20)
 GREEN = (0, 255, 100)
 DARK_GREEN = (0, 200, 80)
@@ -53,50 +190,35 @@ RED = (255, 60, 60)
 YELLOW = (255, 220, 50)
 WHITE = (240, 240, 240)
 BLUE = (50, 150, 255)
-PURPLE = (150, 50, 255)
-ORANGE = (255, 140, 50)
 
-# ================= GAME VARIABLES =================
 snake = [[ROWS // 2, COLS // 2]]
-dx, dy = 1, 0  # Start moving right
-
+dx, dy = 1, 0
 food = [random.randint(0, ROWS - 1), random.randint(0, COLS - 1)]
 score = 0
 high_score = 0
 game_speed = 10
-speed_increase_score = 5  # Increase speed every 5 points
-
 core_pos = (WIDTH // 2, HEIGHT // 2)
-pulse = 0
+pulse = 0.0
 
-# Game states
-MENU = 0
-PLAYING = 1
-GAME_OVER = 2
+MENU, PLAYING, GAME_OVER = 0, 1, 2
 game_state = MENU
 
-# ================= HELPER FUNCTIONS =================
 def get_random_empty_position():
-    """"""Get a random position that's not occupied by the snake""""""
     while True:
         pos = [random.randint(0, ROWS - 1), random.randint(0, COLS - 1)]
         if pos not in snake:
             return pos
 
-# ================= DRAW FUNCTIONS =================
 def draw_grid():
     for x in range(0, WIDTH, GRID_SIZE):
         for y in range(0, HEIGHT, GRID_SIZE):
-            pygame.draw.rect(screen, (40, 40, 40), (x, y, GRID_SIZE, GRID_SIZE), 1)
+            pygame.draw.rect(screen, (35, 35, 35), (x, y, GRID_SIZE, GRID_SIZE), 1)
 
 def draw_snake():
-    for i, segment in enumerate(snake):
-        x, y = segment
-        # Gradient effect - head is brighter
+    for i, (x, y) in enumerate(snake):
         color = GREEN if i == 0 else DARK_GREEN
         rect = pygame.Rect(x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE - 1, GRID_SIZE - 1)
         pygame.draw.rect(screen, color, rect)
-        pygame.draw.rect(screen, (0, 150, 50), rect, 1)
 
 def draw_food():
     x, y = food
@@ -104,145 +226,18 @@ def draw_food():
     pygame.draw.circle(screen, RED, center, GRID_SIZE // 2 - 2)
     pygame.draw.circle(screen, YELLOW, center, GRID_SIZE // 4)
 
-def draw_core():
-    global pulse
-    pulse += 0.1
-    radius = 50 + int(8 * math.sin(pulse))
-    
-    # Draw pulsing glow effect
-    for r in range(radius, radius - 20, -5):
-        alpha = 255 - (radius - r) * 15
-        color = (min(255, BLUE[0] + alpha // 3), 
-                 min(255, BLUE[1] + alpha // 3), 
-                 min(255, BLUE[2] + alpha // 3))
-        pygame.draw.circle(screen, color, core_pos, r, 2)
-    
-    pygame.draw.circle(screen, BLUE, core_pos, radius - 15)
-    pygame.draw.circle(screen, WHITE, core_pos, radius - 25)
-
-def draw_score():
-    font = pygame.font.Font(None, 36)
-    score_text = font.render(f""Score: {score}"", True, WHITE)
-    screen.blit(score_text, (10, 10))
-    
-    high_score_text = font.render(f""Best: {high_score}"", True, WHITE)
-    screen.blit(high_score_text, (10, 50))
-    
-    if game_state == PLAYING:
-        speed_text = pygame.font.Font(None, 24).render(f""Speed: {game_speed}"", True, WHITE)
-        screen.blit(speed_text, (10, 90))
-
-def draw_menu():
-    # Semi-transparent overlay
-    overlay = pygame.Surface((WIDTH, HEIGHT))
-    overlay.set_alpha(128)
-    overlay.fill(BLACK)
-    screen.blit(overlay, (0, 0))
-    
-    font_title = pygame.font.Font(None, 72)
-    font_text = pygame.font.Font(None, 36)
-    font_small = pygame.font.Font(None, 24)
-    
-    title = font_title.render(""Cobra"", True, GREEN)
-    title_rect = title.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 100))
-    screen.blit(title, title_rect)
-    
-    subtitle = font_text.render(""Wraparound Snake Game"", True, WHITE)
-    subtitle_rect = subtitle.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 40))
-    screen.blit(subtitle, subtitle_rect)
-    
-    controls = [
-        ""Controls:"",
-        ""Arrow Keys - Move the snake"",
-        ""ESC - Quit game"",
-        ""R - Restart (when game over)"",
-        """",
-        ""Features:"",
-        ""- No walls - wrap around the screen!"",
-        ""- Score increases near the core"",
-        ""- Speed increases every 5 points"",
-        ""- Press SPACE to start""
-    ]
-    
-    y_offset = HEIGHT // 2 + 20
-    for line in controls:
-        text = font_small.render(line, True, WHITE if line else BLACK)
-        text_rect = text.get_rect(center=(WIDTH // 2, y_offset))
-        if line:
-            screen.blit(text, text_rect)
-        y_offset += 25
-
-def draw_game_over():
-    # Semi-transparent overlay
-    overlay = pygame.Surface((WIDTH, HEIGHT))
-    overlay.set_alpha(180)
-    overlay.fill(BLACK)
-    screen.blit(overlay, (0, 0))
-    
-    font_game_over = pygame.font.Font(None, 64)
-    font_text = pygame.font.Font(None, 36)
-    
-    game_over_text = font_game_over.render(""GAME OVER"", True, RED)
-    game_over_rect = game_over_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 50))
-    screen.blit(game_over_text, game_over_rect)
-    
-    score_text = font_text.render(f""Final Score: {score}"", True, WHITE)
-    score_rect = score_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 20))
-    screen.blit(score_text, score_rect)
-    
-    high_score_text = font_text.render(f""High Score: {high_score}"", True, YELLOW)
-    high_score_rect = high_score_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 60))
-    screen.blit(high_score_text, high_score_rect)
-    
-    restart_text = font_text.render(""Press R to Restart or ESC to Quit"", True, WHITE)
-    restart_rect = restart_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 120))
-    screen.blit(restart_text, restart_rect)
-
-# ================= GAME LOGIC =================
-def distance_to_core(pos):
-    """"""Calculate distance from a position to the core""""""
-    px = pos[0] * GRID_SIZE + GRID_SIZE // 2
-    py = pos[1] * GRID_SIZE + GRID_SIZE // 2
-    return math.sqrt((px - core_pos[0])**2 + (py - core_pos[1])**2)
-
 def move_snake():
     global food, score, game_speed, high_score
-    
     head = snake[0]
-    new_head = [head[0] + dx, head[1] + dy]
-    
-    # Wraparound logic - no walls!
-    new_head[0] = new_head[0] % ROWS
-    new_head[1] = new_head[1] % COLS
-    
+    new_head = [(head[0] + dx) % ROWS, (head[1] + dy) % COLS]
     snake.insert(0, new_head)
-    
     if new_head == food:
-        # Score depends on distance to core
-        dist = distance_to_core(new_head)
-        points_earned = max(1, int(100 / (dist + 1)) + random.randint(0, 5))
-        score += points_earned
-        
-        # Update high score
-        if score > high_score:
-            high_score = score
-        
-        # Increase speed every speed_increase_score points
-        game_speed = min(25, 10 + (score // speed_increase_score))
-        
-        # Spawn new food at empty position
+        score += 10
+        high_score = max(high_score, score)
+        game_speed = min(25, 10 + score // 50)
         food = get_random_empty_position()
     else:
         snake.pop()
-
-def check_collision():
-    head = snake[0]
-    
-    # Self collision (now without wall collision)
-    if head in snake[1:]:
-        return True
-    
-    return False
 
 def reset_game():
     global snake, dx, dy, food, score, game_speed, game_state
@@ -253,375 +248,666 @@ def reset_game():
     food = get_random_empty_position()
     game_state = PLAYING
 
-# ================= GAME LOOP =================
-while True:
-    clock.tick(game_speed)
-    
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
-        
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
+def main():
+    global dx, dy, game_state
+    font = pygame.font.Font(None, 36)
+    while True:
+        clock.tick(game_speed if game_state == PLAYING else 60)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            
-            elif game_state == MENU and event.key == pygame.K_SPACE:
-                reset_game()
-            
-            elif game_state == PLAYING:
-                # Prevent 180-degree turns
-                if event.key == pygame.K_UP and dy != 1:
-                    dx, dy = 0, -1
-                elif event.key == pygame.K_DOWN and dy != -1:
-                    dx, dy = 0, 1
-                elif event.key == pygame.K_LEFT and dx != 1:
-                    dx, dy = -1, 0
-                elif event.key == pygame.K_RIGHT and dx != -1:
-                    dx, dy = 1, 0
-            
-            elif game_state == GAME_OVER:
-                if event.key == pygame.K_r:
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
+                elif game_state == MENU and event.key == pygame.K_SPACE:
                     reset_game()
-    
-    if game_state == PLAYING:
-        move_snake()
-        
-        if check_collision():
-            game_state = GAME_OVER
-        
-        # Draw game
+                elif game_state == PLAYING:
+                    if event.key in (pygame.K_UP, pygame.K_w) and dy != 1: dx, dy = 0, -1
+                    elif event.key in (pygame.K_DOWN, pygame.K_s) and dy != -1: dx, dy = 0, 1
+                    elif event.key in (pygame.K_LEFT, pygame.K_a) and dx != 1: dx, dy = -1, 0
+                    elif event.key in (pygame.K_RIGHT, pygame.K_d) and dx != -1: dx, dy = 1, 0
+                elif game_state == GAME_OVER and event.key == pygame.K_r:
+                    reset_game()
+
         screen.fill(BLACK)
         draw_grid()
-        draw_core()
-        draw_snake()
-        draw_food()
-        draw_score()
-    
-    elif game_state == MENU:
-        screen.fill(BLACK)
-        draw_grid()
-        draw_core()
-        draw_menu()
-    
-    elif game_state == GAME_OVER:
-        screen.fill(BLACK)
-        draw_grid()
-        draw_core()
-        draw_snake()
-        draw_food()
-        draw_score()
-        draw_game_over()
-    
-    pygame.display.flip()
+        if game_state == PLAYING:
+            move_snake()
+            if snake[0] in snake[1:]:
+                game_state = GAME_OVER
+            draw_snake()
+            draw_food()
+            screen.blit(font.render(f'Score: {score}  Best: {high_score}', True, WHITE), (12, 12))
+        elif game_state == MENU:
+            screen.blit(font.render('Cobra 2D Starter - Press SPACE to Start', True, GREEN), (160, HEIGHT // 2 - 20))
+        elif game_state == GAME_OVER:
+            draw_snake()
+            screen.blit(font.render(f'Game Over! Score: {score} - Press R to Restart', True, RED), (140, HEIGHT // 2 - 20))
+
+        pygame.display.flip()
+
+if __name__ == '__main__':
+    main()
 ");
 
-            // Create README.md
             File.WriteAllText(Path.Combine(projectPath, "README.md"),
-@"# Cobra Game Project
+@"# Cobra Pygame 2D Starter
 
 ## Getting Started
-1. Make sure you have Python and pygame-ce installed
-2. Run `main.py` to start the game
-3. Use WASD or Arrow Keys to move the white square
-
-## Project Structure
-- `main.py` - Main game file
-- `assets/` - Game assets (images, sounds, etc.)
-- `scenes/` - Game scenes/levels
-- `scripts/` - Additional Python scripts
-
-## Controls
-- WASD or Arrow Keys - Move player
-- ESC - Exit game
-
-## Customization
-Edit `main.py` to change game behavior, add features, or create your own game!
-
-Built with Cobra IDE");
-
-            // Create requirements.txt
-            File.WriteAllText(Path.Combine(projectPath, "requirements.txt"),
-@"pygame-ce");
+1. Ensure your project Python virtual environment has `pygame-ce` installed.
+2. Run `main.py` using the Run button (`F5`) in Cobra IDE.
+3. Use Arrow Keys or WASD to control the player.
+");
+            File.WriteAllText(Path.Combine(projectPath, "requirements.txt"), "pygame-ce\n");
+            WriteDefaultSceneFile(projectPath, "Pygame");
         }
-        public static void ApplyJsPhaserTemplate(string projectPath, string projectName)
+
+        private static void ApplyPlatformerTemplate(string projectPath)
         {
-            // Create directories
-            Directory.CreateDirectory(Path.Combine(projectPath, "public", "assets"));
-            Directory.CreateDirectory(Path.Combine(projectPath, "src", "scenes"));
-            Directory.CreateDirectory(Path.Combine(projectPath, "src", "entities"));
-            Directory.CreateDirectory(Path.Combine(projectPath, "src", "systems"));
-            Directory.CreateDirectory(Path.Combine(projectPath, "src", "ui"));
-            Directory.CreateDirectory(Path.Combine(projectPath, "src", "physics"));
-            Directory.CreateDirectory(Path.Combine(projectPath, "src", "multiplayer"));
+            File.WriteAllText(Path.Combine(projectPath, "main.py"),
+@"import pygame
+import sys
 
-            // package.json
-            File.WriteAllText(Path.Combine(projectPath, "package.json"),
-$@"{{
-  ""name"": ""{projectName.ToLower().Replace(" ", "-")}"",
-  ""private"": true,
-  ""version"": ""0.0.0"",
-  ""type"": ""module"",
-  ""scripts"": {{
-    ""dev"": ""vite"",
-    ""build"": ""vite build"",
-    ""preview"": ""vite preview""
-  }},
-  ""dependencies"": {{
-    ""phaser"": ""^3.60.0""
-  }},
-  ""devDependencies"": {{
-    ""vite"": ""^4.4.5""
-  }}
-}}");
+pygame.init()
+WIDTH, HEIGHT = 960, 540
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption(""Cobra Platformer Starter"")
+clock = pygame.time.Clock()
 
-            // vite.config.js
-            File.WriteAllText(Path.Combine(projectPath, "vite.config.js"),
-@"import { defineConfig } from 'vite'
+GRAVITY = 0.65
+JUMP_FORCE = -13.5
+MOVE_SPEED = 5.5
 
-export default defineConfig({
-  base: './',
-  build: {
-    chunkSizeWarningLimit: 1500,
-  },
-})");
+class Player:
+    def __init__(self, x, y):
+        self.rect = pygame.Rect(x, y, 36, 48)
+        self.vx = 0.0
+        self.vy = 0.0
+        self.on_ground = False
 
-            // .gitignore
-            File.WriteAllText(Path.Combine(projectPath, ".gitignore"),
-@"node_modules/
-dist/
-.env
-.DS_Store
-package-lock.json
-bin/
-obj/
-.vscode/
-.idea/
-*.log
+    def update(self, keys, platforms):
+        self.vx = 0.0
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+            self.vx = -MOVE_SPEED
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            self.vx = MOVE_SPEED
+        if (keys[pygame.K_SPACE] or keys[pygame.K_w] or keys[pygame.K_UP]) and self.on_ground:
+            self.vy = JUMP_FORCE
+            self.on_ground = False
+
+        self.vy = min(self.vy + GRAVITY, 16.0)
+
+        self.rect.x += int(self.vx)
+        for plat in platforms:
+            if self.rect.colliderect(plat):
+                if self.vx > 0: self.rect.right = plat.left
+                elif self.vx < 0: self.rect.left = plat.right
+
+        self.rect.y += int(self.vy)
+        self.on_ground = False
+        for plat in platforms:
+            if self.rect.colliderect(plat):
+                if self.vy > 0:
+                    self.rect.bottom = plat.top
+                    self.vy = 0
+                    self.on_ground = True
+                elif self.vy < 0:
+                    self.rect.top = plat.bottom
+                    self.vy = 0
+
+def main():
+    player = Player(100, 300)
+    platforms = [
+        pygame.Rect(0, 490, 960, 50),
+        pygame.Rect(200, 390, 180, 20),
+        pygame.Rect(450, 300, 200, 20),
+        pygame.Rect(700, 210, 180, 20),
+        pygame.Rect(150, 180, 180, 20),
+    ]
+    coins = [pygame.Rect(275, 355, 18, 18), pygame.Rect(540, 265, 18, 18), pygame.Rect(780, 175, 18, 18), pygame.Rect(230, 145, 18, 18)]
+    score = 0
+    font = pygame.font.Font(None, 32)
+
+    while True:
+        dt = clock.tick(60)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+                pygame.quit()
+                sys.exit()
+
+        keys = pygame.key.get_pressed()
+        player.update(keys, platforms)
+
+        for coin in coins[:]:
+            if player.rect.colliderect(coin):
+                coins.remove(coin)
+                score += 100
+
+        screen.fill((24, 28, 40))
+        for plat in platforms:
+            pygame.draw.rect(screen, (75, 95, 130), plat, border_radius=4)
+        for coin in coins:
+            pygame.draw.ellipse(screen, (255, 210, 50), coin)
+        pygame.draw.rect(screen, (255, 140, 0), player.rect, border_radius=6)
+
+        hud = font.render(f'Score: {score}  |  Coins Left: {len(coins)}  |  FPS: {int(clock.get_fps())}', True, (240, 240, 240))
+        screen.blit(hud, (16, 16))
+        pygame.display.flip()
+
+if __name__ == '__main__':
+    main()
 ");
-
-            // src/main.js
-            File.WriteAllText(Path.Combine(projectPath, "src", "main.js"),
-@"import Phaser from 'phaser';
-import MainScene from './scenes/MainScene';
-
-const config = {
-    type: Phaser.AUTO,
-    width: 800,
-    height: 600,
-    parent: 'game-container',
-    physics: {
-        default: 'arcade',
-        arcade: {
-            gravity: { y: 0 },
-            debug: false
+            File.WriteAllText(Path.Combine(projectPath, "requirements.txt"), "pygame-ce\n");
+            File.WriteAllText(Path.Combine(projectPath, "README.md"), "# Cobra Platformer Project\n\nSide-scrolling 2D platformer built with Python and Pygame.\n");
+            WriteDefaultSceneFile(projectPath, "Pygame");
         }
-    },
-    scene: [MainScene]
-};
 
-const game = new Phaser.Game(config);
+        private static void ApplyTopDownTemplate(string projectPath)
+        {
+            File.WriteAllText(Path.Combine(projectPath, "main.py"),
+@"import pygame
+import sys
+import math
+
+pygame.init()
+WIDTH, HEIGHT = 900, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption(""Cobra Top-Down Game"")
+clock = pygame.time.Clock()
+
+def main():
+    player_pos = pygame.Vector2(WIDTH / 2, HEIGHT / 2)
+    speed = 260.0
+    walls = [pygame.Rect(200, 150, 140, 40), pygame.Rect(520, 240, 40, 180), pygame.Rect(300, 420, 220, 40)]
+    font = pygame.font.Font(None, 28)
+
+    while True:
+        dt = clock.tick(60) / 1000.0
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+                pygame.quit()
+                sys.exit()
+
+        keys = pygame.key.get_pressed()
+        move = pygame.Vector2(0, 0)
+        if keys[pygame.K_w] or keys[pygame.K_UP]: move.y -= 1
+        if keys[pygame.K_s] or keys[pygame.K_DOWN]: move.y += 1
+        if keys[pygame.K_a] or keys[pygame.K_LEFT]: move.x -= 1
+        if keys[pygame.K_d] or keys[pygame.K_RIGHT]: move.x += 1
+        if move.length_squared() > 0:
+            move = move.normalize() * speed * dt
+
+        next_x = pygame.Rect(int(player_pos.x + move.x) - 18, int(player_pos.y) - 18, 36, 36)
+        if not any(next_x.colliderect(w) for w in walls):
+            player_pos.x = max(20, min(WIDTH - 20, player_pos.x + move.x))
+
+        next_y = pygame.Rect(int(player_pos.x) - 18, int(player_pos.y + move.y) - 18, 36, 36)
+        if not any(next_y.colliderect(w) for w in walls):
+            player_pos.y = max(20, min(HEIGHT - 20, player_pos.y + move.y))
+
+        screen.fill((28, 36, 32))
+        for x in range(0, WIDTH, 45):
+            pygame.draw.line(screen, (36, 46, 40), (x, 0), (x, HEIGHT))
+        for y in range(0, HEIGHT, 45):
+            pygame.draw.line(screen, (36, 46, 40), (0, y), (WIDTH, y))
+
+        for w in walls:
+            pygame.draw.rect(screen, (90, 105, 95), w, border_radius=4)
+
+        pygame.draw.circle(screen, (78, 201, 176), (int(player_pos.x), int(player_pos.y)), 18)
+        screen.blit(font.render('WASD / Arrows to explore top-down world', True, (220, 220, 220)), (16, 16))
+        pygame.display.flip()
+
+if __name__ == '__main__':
+    main()
 ");
+            File.WriteAllText(Path.Combine(projectPath, "requirements.txt"), "pygame-ce\n");
+            File.WriteAllText(Path.Combine(projectPath, "README.md"), "# Cobra Top-Down Starter\n\n8-directional top-down adventure template.\n");
+            WriteDefaultSceneFile(projectPath, "Pygame");
+        }
 
-            // src/scenes/MainScene.js
-            File.WriteAllText(Path.Combine(projectPath, "src", "scenes", "MainScene.js"),
-@"import Phaser from 'phaser';
+        private static void ApplyRpgTemplate(string projectPath)
+        {
+            File.WriteAllText(Path.Combine(projectPath, "main.py"),
+@"import pygame
+import sys
 
-export default class MainScene extends Phaser.Scene {
-    constructor() {
-        super('MainScene');
-    }
+pygame.init()
+WIDTH, HEIGHT = 960, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption(""Cobra RPG Starter"")
+clock = pygame.time.Clock()
 
-    preload() {
-        // Load assets here
-        this.load.setBaseURL('https://labs.phaser.io');
-        this.load.image('sky', 'assets/skies/space3.png');
-        this.load.image('logo', 'assets/sprites/phaser3-logo.png');
-        this.load.image('red', 'assets/particles/red.png');
-    }
+def main():
+    player = {'x': 180.0, 'y': 300.0, 'hp': 100, 'max_hp': 100, 'gold': 50, 'level': 1}
+    npc = pygame.Rect(520, 260, 40, 40)
+    chest = pygame.Rect(680, 160, 36, 36)
+    chest_opened = False
+    dialogue = 'Press E near the Elder NPC or Treasure Chest to interact.'
+    font = pygame.font.Font(None, 28)
 
-    create() {
-        this.add.image(400, 300, 'sky');
+    while True:
+        dt = clock.tick(60) / 1000.0
+        player_rect = pygame.Rect(int(player['x']), int(player['y']), 38, 38)
 
-        const particles = this.add.particles(0, 0, 'red', {
-            speed: 100,
-            scale: { start: 1, end: 0 },
-            blendMode: 'ADD'
-        });
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_e:
+                if player_rect.inflate(36, 36).colliderect(npc):
+                    dialogue = 'Elder: Welcome, adventurer! Seek the golden chest to the northeast.'
+                elif player_rect.inflate(36, 36).colliderect(chest):
+                    if not chest_opened:
+                        chest_opened = True
+                        player['gold'] += 120
+                        player['level'] += 1
+                        dialogue = 'You opened the chest and found 120 Gold! Level Up!'
+                    else:
+                        dialogue = 'The treasure chest is empty.'
 
-        const logo = this.physics.add.image(400, 100, 'logo');
+        keys = pygame.key.get_pressed()
+        speed = 220.0
+        if keys[pygame.K_w] or keys[pygame.K_UP]: player['y'] -= speed * dt
+        if keys[pygame.K_s] or keys[pygame.K_DOWN]: player['y'] += speed * dt
+        if keys[pygame.K_a] or keys[pygame.K_LEFT]: player['x'] -= speed * dt
+        if keys[pygame.K_d] or keys[pygame.K_RIGHT]: player['x'] += speed * dt
 
-        logo.setVelocity(100, 200);
-        logo.setBounce(1, 1);
-        logo.setCollideWorldBounds(true);
+        screen.fill((30, 42, 34))
+        pygame.draw.rect(screen, (195, 155, 60) if not chest_opened else (100, 90, 70), chest, border_radius=4)
+        pygame.draw.rect(screen, (110, 160, 240), npc, border_radius=6)
+        pygame.draw.rect(screen, (255, 140, 0), player_rect, border_radius=6)
 
-        particles.startFollow(logo);
+        # Dialogue & RPG HUD
+        pygame.draw.rect(screen, (20, 20, 24), (20, HEIGHT - 100, WIDTH - 40, 80), border_radius=8)
+        pygame.draw.rect(screen, (255, 140, 0), (20, HEIGHT - 100, WIDTH - 40, 80), 2, border_radius=8)
+        screen.blit(font.render(dialogue, True, (240, 240, 240)), (40, HEIGHT - 70))
 
-        this.add.text(10, 10, 'Cobra JS+NPM Template', { font: '16px Courier', fill: '#00ff00' });
-    }
+        stats = f""Lv.{player['level']}  |  HP: {player['hp']}/{player['max_hp']}  |  Gold: {player['gold']}""
+        screen.blit(font.render(stats, True, (255, 215, 80)), (20, 20))
+        pygame.display.flip()
 
-    update() {
-        // Game loop logic
-    }
-}
+if __name__ == '__main__':
+    main()
 ");
+            File.WriteAllText(Path.Combine(projectPath, "requirements.txt"), "pygame-ce\n");
+            File.WriteAllText(Path.Combine(projectPath, "README.md"), "# Cobra RPG Starter\n\nRPG template with stats, inventory gold, and NPC dialogue system.\n");
+            WriteDefaultSceneFile(projectPath, "Pygame");
+        }
 
-            // index.html (Required for Vite)
-            File.WriteAllText(Path.Combine(projectPath, "index.html"),
-$@"<!DOCTYPE html>
-<html lang=""en"">
-  <head>
-    <meta charset=""UTF-8"" />
-    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"" />
-    <title>{projectName}</title>
-    <style>
-      body {{
-        margin: 0;
-        background-color: #000;
-        overflow: hidden;
-      }}
-      #game-container {{
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-      }}
-    </style>
-  </head>
-  <body>
-    <div id=""game-container""></div>
-    <script type=""module"" src=""/src/main.js""></script>
-  </body>
-</html>");
+        private static void ApplyArcadeTemplate(string projectPath)
+        {
+            File.WriteAllText(Path.Combine(projectPath, "main.py"),
+@"import pygame
+import random
+import sys
 
-            // README.md
-            File.WriteAllText(Path.Combine(projectPath, "README.md"),
-$@"# {projectName}
+pygame.init()
+WIDTH, HEIGHT = 800, 650
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption(""Cobra Arcade Shooter"")
+clock = pygame.time.Clock()
 
-JS+NPM Game Project built with Cobra IDE and Phaser engine.
+def main():
+    player = pygame.Rect(WIDTH // 2 - 24, HEIGHT - 70, 48, 32)
+    bullets = []
+    enemies = []
+    spawn_timer = 0.0
+    score = 0
+    font = pygame.font.Font(None, 32)
 
-## Scalable Architecture
-- `src/scenes/`: Manage different game states/levels.
-- `src/entities/`: Reusable game objects and behaviors.
-- `src/systems/`: Core game logic and processing.
-- `src/ui/`: User interface components.
-- `src/physics/`: Custom physics configurations.
-- `src/multiplayer/`: Networking and synchronization logic.
+    while True:
+        dt = clock.tick(60) / 1000.0
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                bullets.append(pygame.Rect(player.centerx - 3, player.top - 12, 6, 14))
 
-## Workflow
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-2. Run development server:
-   ```bash
-   npm run dev
-   ```
-3. Build for production:
-   ```bash
-   npm run build
-   ```
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]: player.x = max(10, player.x - int(380 * dt))
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]: player.x = min(WIDTH - 58, player.x + int(380 * dt))
 
-Built with Cobra IDE");
+        spawn_timer += dt
+        if spawn_timer >= 0.75:
+            spawn_timer = 0.0
+            enemies.append(pygame.Rect(random.randint(20, WIDTH - 56), -40, 36, 36))
+
+        for b in bullets[:]:
+            b.y -= int(550 * dt)
+            if b.bottom < 0:
+                bullets.remove(b)
+
+        for e in enemies[:]:
+            e.y += int(180 * dt)
+            if e.top > HEIGHT:
+                enemies.remove(e)
+            for b in bullets[:]:
+                if e.colliderect(b):
+                    enemies.remove(e)
+                    bullets.remove(b)
+                    score += 25
+                    break
+
+        screen.fill((12, 14, 24))
+        pygame.draw.rect(screen, (78, 201, 176), player, border_radius=4)
+        for b in bullets:
+            pygame.draw.rect(screen, (255, 220, 60), b)
+        for e in enemies:
+            pygame.draw.rect(screen, (235, 65, 85), e, border_radius=5)
+
+        screen.blit(font.render(f'SCORE: {score}   (SPACE to Fire)', True, (240, 240, 240)), (16, 16))
+        pygame.display.flip()
+
+if __name__ == '__main__':
+    main()
+");
+            File.WriteAllText(Path.Combine(projectPath, "requirements.txt"), "pygame-ce\n");
+            File.WriteAllText(Path.Combine(projectPath, "README.md"), "# Cobra Arcade Game\n\nSpace shooter arcade game starter.\n");
+            WriteDefaultSceneFile(projectPath, "Pygame");
+        }
+
+        private static void ApplyPuzzleTemplate(string projectPath)
+        {
+            File.WriteAllText(Path.Combine(projectPath, "main.py"),
+@"import pygame
+import random
+import sys
+
+pygame.init()
+WIDTH, HEIGHT = 600, 680
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption(""Cobra Puzzle Starter"")
+clock = pygame.time.Clock()
+
+GRID_N = 4
+TILE = 110
+MARGIN = 60
+
+def main():
+    board = list(range(1, GRID_N * GRID_N)) + [0]
+    moves = 0
+    font = pygame.font.Font(None, 42)
+    small_font = pygame.font.Font(None, 28)
+
+    # Perform valid shuffles
+    for _ in range(80):
+        zero_idx = board.index(0)
+        zr, zc = divmod(zero_idx, GRID_N)
+        neighbors = []
+        for dr, dc in [(-1,0),(1,0),(0,-1),(0,1)]:
+            nr, nc = zr + dr, zc + dc
+            if 0 <= nr < GRID_N and 0 <= nc < GRID_N:
+                neighbors.append(nr * GRID_N + nc)
+        swap_idx = random.choice(neighbors)
+        board[zero_idx], board[swap_idx] = board[swap_idx], board[zero_idx]
+
+    while True:
+        clock.tick(60)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mx, my = event.pos
+                c = (mx - MARGIN) // TILE
+                r = (my - 120) // TILE
+                if 0 <= r < GRID_N and 0 <= c < GRID_N:
+                    idx = r * GRID_N + c
+                    zero_idx = board.index(0)
+                    zr, zc = divmod(zero_idx, GRID_N)
+                    if abs(r - zr) + abs(c - zc) == 1:
+                        board[zero_idx], board[idx] = board[idx], board[zero_idx]
+                        moves += 1
+
+        solved = board == list(range(1, GRID_N * GRID_N)) + [0]
+        screen.fill((26, 28, 34))
+        screen.blit(small_font.render(f'Moves: {moves}   |   Status: {""SOLVED!"" if solved else ""Slide tiles to order 1-15""}', True, (240, 240, 240)), (MARGIN, 50))
+
+        for i, val in enumerate(board):
+            if val == 0:
+                continue
+            r, c = divmod(i, GRID_N)
+            rect = pygame.Rect(MARGIN + c * TILE + 6, 120 + r * TILE + 6, TILE - 12, TILE - 12)
+            pygame.draw.rect(screen, (78, 201, 176) if solved else (255, 140, 0), rect, border_radius=8)
+            txt = font.render(str(val), True, (20, 20, 20))
+            screen.blit(txt, txt.get_rect(center=rect.center))
+
+        pygame.display.flip()
+
+if __name__ == '__main__':
+    main()
+");
+            File.WriteAllText(Path.Combine(projectPath, "requirements.txt"), "pygame-ce\n");
+            File.WriteAllText(Path.Combine(projectPath, "README.md"), "# Cobra Puzzle Game\n\nGrid-based sliding puzzle game template.\n");
+            WriteDefaultSceneFile(projectPath, "Pygame");
+        }
+
+        private static void ApplyMultiplayerTemplate(string projectPath)
+        {
+            File.WriteAllText(Path.Combine(projectPath, "main.py"),
+@"import pygame
+import socket
+import json
+import threading
+import sys
+
+pygame.init()
+WIDTH, HEIGHT = 900, 560
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption(""Cobra Multiplayer Arena Starter"")
+clock = pygame.time.Clock()
+
+# Local + UDP Loopback state synchronization starter
+UDP_PORT = 54545
+peer_state = {'x': 680.0, 'y': 280.0}
+
+def network_listener(stop_event):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    try:
+        sock.bind(('127.0.0.1', UDP_PORT))
+        sock.settimeout(0.2)
+        while not stop_event.is_set():
+            try:
+                data, _ = sock.recvfrom(1024)
+                msg = json.loads(data.decode('utf-8'))
+                peer_state['x'] = float(msg.get('x', peer_state['x']))
+                peer_state['y'] = float(msg.get('y', peer_state['y']))
+            except socket.timeout:
+                pass
+    except Exception:
+        pass
+    finally:
+        sock.close()
+
+def main():
+    stop_event = threading.Event()
+    listener = threading.Thread(target=network_listener, args=(stop_event,), daemon=True)
+    listener.start()
+
+    p1 = pygame.Vector2(220, 280)
+    p2 = pygame.Vector2(680, 280)
+    speed = 250.0
+    font = pygame.font.Font(None, 28)
+
+    while True:
+        dt = clock.tick(60) / 1000.0
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+                stop_event.set()
+                pygame.quit()
+                sys.exit()
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_w]: p1.y -= speed * dt
+        if keys[pygame.K_s]: p1.y += speed * dt
+        if keys[pygame.K_a]: p1.x -= speed * dt
+        if keys[pygame.K_d]: p1.x += speed * dt
+
+        if keys[pygame.K_UP]: p2.y -= speed * dt
+        if keys[pygame.K_DOWN]: p2.y += speed * dt
+        if keys[pygame.K_LEFT]: p2.x -= speed * dt
+        if keys[pygame.K_RIGHT]: p2.x += speed * dt
+
+        screen.fill((22, 26, 34))
+        pygame.draw.line(screen, (50, 60, 75), (WIDTH // 2, 0), (WIDTH // 2, HEIGHT), 2)
+        pygame.draw.circle(screen, (255, 140, 0), (int(p1.x), int(p1.y)), 22)
+        pygame.draw.circle(screen, (78, 201, 176), (int(p2.x), int(p2.y)), 22)
+
+        screen.blit(font.render('Player 1 (WASD) vs Player 2 (Arrows) + UDP Socket Sync Ready', True, (235, 235, 235)), (16, 16))
+        pygame.display.flip()
+
+if __name__ == '__main__':
+    main()
+");
+            File.WriteAllText(Path.Combine(projectPath, "requirements.txt"), "pygame-ce\n");
+            File.WriteAllText(Path.Combine(projectPath, "README.md"), "# Cobra Multiplayer Starter\n\n2-Player local and UDP socket multiplayer starter.\n");
+            WriteDefaultSceneFile(projectPath, "Pygame");
+        }
+
+        private static void ApplyPanda3DTemplate(string projectPath)
+        {
+            File.WriteAllText(Path.Combine(projectPath, "main.py"),
+@"from direct.showbase.ShowBase import ShowBase
+from panda3d.core import AmbientLight, DirectionalLight, Vec4, Vec3
+import math
+
+class CobraPanda3DGame(ShowBase):
+    def __init__(self):
+        super().__init__()
+        self.set_background_color(0.1, 0.12, 0.16, 1.0)
+        self.disable_mouse()
+        self.camera.set_pos(0, -14, 6)
+        self.camera.look_at(0, 0, 0)
+
+        # Load default environment model included with Panda3D
+        self.cube = self.loader.load_model('models/box')
+        self.cube.reparent_to(self.render)
+        self.cube.set_scale(1.5, 1.5, 1.5)
+        self.cube.set_pos(-0.75, -0.75, 0)
+
+        # Setup lighting
+        ambient = AmbientLight('ambient')
+        ambient.set_color(Vec4(0.35, 0.35, 0.4, 1))
+        self.render.set_light(self.render.attach_new_node(ambient))
+
+        dlight = DirectionalLight('dlight')
+        dlight.set_color(Vec4(0.9, 0.85, 0.8, 1))
+        dlnp = self.render.attach_new_node(dlight)
+        dlnp.set_hpr(45, -45, 0)
+        self.render.set_light(dlnp)
+
+        self.angle = 0.0
+        self.taskMgr.add(self.spin_task, 'SpinTask')
+
+    def spin_task(self, task):
+        dt = globalClock.get_dt()
+        self.angle += 45.0 * dt
+        self.cube.set_hpr(self.angle, self.angle * 0.5, 0)
+        return task.cont
+
+if __name__ == '__main__':
+    game = CobraPanda3DGame()
+    game.run()
+");
+            File.WriteAllText(Path.Combine(projectPath, "requirements.txt"), "panda3d\n");
+            File.WriteAllText(Path.Combine(projectPath, "README.md"), "# Cobra Panda3D 3D Starter\n\n3D Python game project powered by Panda3D.\n");
+            WriteDefaultSceneFile(projectPath, "Panda3D");
+        }
+
+        private static void ApplyUrsinaTemplate(string projectPath)
+        {
+            File.WriteAllText(Path.Combine(projectPath, "main.py"),
+@"from ursina import *
+
+app = Ursina(title='Cobra Ursina 3D Game')
+
+window.color = color.rgb(25, 30, 42)
+ground = Entity(model='plane', scale=(20, 1, 20), color=color.rgb(55, 65, 80), texture='white_cube', texture_scale=(20, 20), collider='box')
+player = Entity(model='cube', color=color.orange, position=(0, 0.5, 0), scale=(1, 1, 1), collider='box')
+
+DirectionalLight(y=2, z=3, shadows=True)
+AmbientLight(color=color.rgba(100, 100, 120, 0.4))
+EditorCamera()
+
+def update():
+    speed = 6 * time.dt
+    player.x += (held_keys['d'] - held_keys['a']) * speed
+    player.z += (held_keys['w'] - held_keys['s']) * speed
+    player.rotation_y += 40 * time.dt
+
+if __name__ == '__main__':
+    app.run()
+");
+            File.WriteAllText(Path.Combine(projectPath, "requirements.txt"), "ursina\n");
+            File.WriteAllText(Path.Combine(projectPath, "README.md"), "# Cobra Ursina 3D Starter\n\n3D Python game project powered by Ursina Engine.\n");
+            WriteDefaultSceneFile(projectPath, "Ursina");
+        }
+
+        private static void WriteDefaultSceneFile(string projectPath, string framework)
+        {
+            string sceneDir = Path.Combine(projectPath, "scenes");
+            Directory.CreateDirectory(sceneDir);
+            string scenePath = Path.Combine(sceneDir, "main.Cobra");
+            if (File.Exists(scenePath)) return;
+
+            bool is3D = framework.Equals("Panda3D", StringComparison.OrdinalIgnoreCase) || framework.Equals("Ursina", StringComparison.OrdinalIgnoreCase);
+            string json = $@"{{
+  ""FormatVersion"": 2,
+  ""SceneName"": ""MainScene"",
+  ""Framework"": ""{framework}"",
+  ""Is3D"": {(is3D ? "true" : "false")},
+  ""CameraWidth"": 800,
+  ""CameraHeight"": 600,
+  ""Objects"": [
+    {{
+      ""Id"": ""player-1"",
+      ""Name"": ""Player"",
+      ""X"": 160,
+      ""Y"": 200,
+      ""Z"": 0,
+      ""Width"": 64,
+      ""Height"": 64,
+      ""Depth"": 64,
+      ""Rotation"": 0,
+      ""ScaleX"": 1,
+      ""ScaleY"": 1,
+      ""ScaleZ"": 1,
+      ""Color"": ""#ff8c00"",
+      ""Layer"": ""Default"",
+      ""IsVisible"": true,
+      ""IsLocked"": false,
+      ""ColliderType"": ""Rectangle"",
+      ""HasRigidbody"": true,
+      ""Mass"": 1.0,
+      ""UseGravity"": false
+    }}
+  ]
+}}";
+            File.WriteAllText(scenePath, json);
         }
 
         public static void ApplyBackendTemplate(string backendPath, string backendType)
         {
             Directory.CreateDirectory(backendPath);
-
-            switch (backendType)
-            {
-                case "Python":
-                    ApplyPythonBackend(backendPath);
-                    break;
-                case "C#":
-                    ApplyCSharpBackend(backendPath);
-                    break;
-                case "Node.js":
-                    ApplyNodeBackend(backendPath);
-                    break;
-            }
-        }
-
-        private static void ApplyPythonBackend(string path)
-        {
-            File.WriteAllText(Path.Combine(path, "app.py"),
-@"from flask import Flask, jsonify
-from flask_cors import CORS
+            string engineName = string.IsNullOrWhiteSpace(backendType) ? "Python/Flask" : backendType;
+            File.WriteAllText(Path.Combine(backendPath, "app.py"),
+$@"from flask import Flask, jsonify
 
 app = Flask(__name__)
-CORS(app)
 
 @app.route('/api/status')
 def status():
-    return jsonify({""status"": ""Backend is running"", ""engine"": ""Python/Flask""})
+    return jsonify({{'status': 'Backend is running', 'engine': '{engineName}'}})
 
 if __name__ == '__main__':
-    app.run(port=5000, debug=True)");
-
-            File.WriteAllText(Path.Combine(path, "requirements.txt"),
-@"flask
-flask-cors");
-        }
-
-        private static void ApplyCSharpBackend(string path)
-        {
-            string projectName = "Backend";
-            File.WriteAllText(Path.Combine(path, $"{projectName}.csproj"),
-@"<Project Sdk=""Microsoft.NET.Sdk.Web"">
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-  </PropertyGroup>
-</Project>");
-
-            File.WriteAllText(Path.Combine(path, "Program.cs"),
-@"var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddCors();
-var app = builder.Build();
-
-app.UseCors(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-
-app.MapGet(""/api/status"", () => new { status = ""Backend is running"", engine = ""C#/.NET Minimal API"" });
-
-app.Run();");
-        }
-
-        private static void ApplyNodeBackend(string path)
-        {
-            File.WriteAllText(Path.Combine(path, "package.json"),
-@"{
-  ""name"": ""backend"",
-  ""version"": ""1.0.0"",
-  ""main"": ""index.js"",
-  ""scripts"": {
-    ""start"": ""node index.js"",
-    ""dev"": ""nodemon index.js""
-  },
-  ""dependencies"": {
-    ""express"": ""^4.18.2"",
-    ""cors"": ""^2.8.5""
-  }
-}");
-
-            File.WriteAllText(Path.Combine(path, "index.js"),
-@"const express = require('express');
-const cors = require('cors');
-const app = express();
-const port = 5000;
-
-app.use(cors());
-app.use(express.json());
-
-app.get('/api/status', (req, res) => {
-  res.json({ status: 'Backend is running', engine: 'Node.js/Express' });
-});
-
-app.listen(port, () => {
-  console.log(`Backend listening at http://localhost:${port}`);
-});");
+    app.run(port=5000, debug=False)
+");
+            File.WriteAllText(Path.Combine(backendPath, "requirements.txt"), "flask\n");
         }
     }
 }

@@ -1,23 +1,21 @@
-using System.Collections.Generic;
-
 namespace Cobra.Engine.ECS
 {
     public class World
     {
-        private int nextId = 0;
+        private int _nextId;
 
-        private readonly Dictionary<int, Dictionary<System.Type, IComponent>> entities = [];
+        private readonly Dictionary<int, Dictionary<Type, IComponent>> _entities = [];
 
         public Entity CreateEntity()
         {
-            var entity = new Entity(nextId++);
-            entities[entity.Id] = [];
+            var entity = new Entity(_nextId++);
+            _entities[entity.Id] = [];
             return entity;
         }
 
         public void AddComponent<T>(Entity entity, T component) where T : IComponent
         {
-            if (entities.TryGetValue(entity.Id, out var components))
+            if (_entities.TryGetValue(entity.Id, out var components))
             {
                 components[typeof(T)] = component;
             }
@@ -25,7 +23,7 @@ namespace Cobra.Engine.ECS
 
         public T? GetComponent<T>(Entity entity) where T : class, IComponent
         {
-            if (entities.TryGetValue(entity.Id, out var compDict))
+            if (_entities.TryGetValue(entity.Id, out var compDict))
             {
                 if (compDict.TryGetValue(typeof(T), out var comp))
                     return comp as T;
@@ -38,7 +36,7 @@ namespace Cobra.Engine.ECS
             where T1 : class, IComponent
             where T2 : class, IComponent
         {
-            foreach (var e in entities)
+            foreach (var e in _entities)
             {
                 if (e.Value.ContainsKey(typeof(T1)) &&
                     e.Value.ContainsKey(typeof(T2)))

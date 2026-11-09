@@ -1,9 +1,8 @@
-using System;
 using System.Diagnostics;
 
 namespace Cobra.Core.Environment
 {
-    public class NodeService
+    public static class NodeService
     {
         public static bool IsNodeInstalled()
         {
@@ -24,8 +23,9 @@ namespace Cobra.Core.Environment
                 process.WaitForExit(5000);
                 return process.ExitCode == 0;
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine(ex.Message);
                 return false;
             }
         }
@@ -49,8 +49,9 @@ namespace Cobra.Core.Environment
                 process.WaitForExit(5000);
                 return process.ExitCode == 0;
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine(ex.Message);
                 return false;
             }
         }
@@ -75,8 +76,9 @@ namespace Cobra.Core.Environment
                 process.WaitForExit(5000);
                 return output.Trim();
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine(ex.Message);
                 return "Not installed";
             }
         }
@@ -101,8 +103,9 @@ namespace Cobra.Core.Environment
                 process.WaitForExit(5000);
                 return output.Trim();
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine(ex.Message);
                 return "Not installed";
             }
         }

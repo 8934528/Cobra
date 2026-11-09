@@ -11,19 +11,11 @@
     <AssemblyName>Cobra</AssemblyName>
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
     <NuGetAudit>false</NuGetAudit>
+    <TargetPlatformDisplayName>Windows</TargetPlatformDisplayName>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Docs\**" />
-    <EmbeddedResource Remove="Docs\**" />
-    <None Remove="Docs\**" />
-    <Page Remove="Docs\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Folder Include="Core\Settings\" />
-    <Folder Include="Config\" />
-    <Folder Include="Projects\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -35,6 +27,9 @@
 
   <ItemGroup>
     <None Update="Assets\monaco.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\viewport3d.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <Resource Include="Assets\AppIcon.ico" />

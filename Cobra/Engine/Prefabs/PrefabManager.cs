@@ -1,42 +1,37 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace Cobra.Engine.Prefabs
 {
     public class PrefabManager
     {
-        private readonly string prefabFolder;
+        private readonly string _prefabFolder;
         private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
         public PrefabManager(string projectPath)
         {
-            prefabFolder = Path.Combine(projectPath, "prefabs");
+            _prefabFolder = Path.Combine(projectPath, "prefabs");
 
-            if (!Directory.Exists(prefabFolder))
-                Directory.CreateDirectory(prefabFolder);
+            if (!Directory.Exists(_prefabFolder))
+                Directory.CreateDirectory(_prefabFolder);
         }
 
         public void SavePrefab(string name, object gameObject)
         {
             string json = JsonSerializer.Serialize(gameObject, JsonOptions);
 
-            File.WriteAllText(Path.Combine(prefabFolder, name + ".json"), json);
+            File.WriteAllText(Path.Combine(_prefabFolder, name + ".json"), json);
         }
 
-        public T LoadPrefab<T>(string name)
+        public T? LoadPrefab<T>(string name)
         {
-            string path = Path.Combine(prefabFolder, name + ".json");
+            string path = Path.Combine(_prefabFolder, name + ".json");
 
             if (!File.Exists(path))
-                return default!;
+                return default;
 
             string json = File.ReadAllText(path);
-            return JsonSerializer.Deserialize<T>(json)!;
+            return JsonSerializer.Deserialize<T>(json);
         }
     }
 }

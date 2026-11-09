@@ -1,41 +1,29 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Windows.Media.Animation;
 using Cobra.Core.Settings;
-using Microsoft.Win32;
 
 using MediaColor = System.Windows.Media.Color;
 using MediaBrushes = System.Windows.Media.Brushes;
 
 namespace Cobra.UI.Views
 {
-    public partial class SettingsView : Page
+    public partial class SettingsView
     {
-        private Border? currentSelectedNav;
-        private readonly Dictionary<string, StackPanel> sections = [];
-        private SettingsModel originalSettings;
-
+        private Border? _currentSelectedNav;
+        private readonly Dictionary<string, StackPanel> _sections = [];
+        private SettingsModel _originalSettings;
         private readonly FolderSettings? _folderSettings;
 
         public SettingsView()
         {
             InitializeComponent();
             InitializeSections();
-            
-            // Global Settings
-            originalSettings = LoadCurrentSettings(SettingsManager.Instance.CurrentSettings);
+
+            _originalSettings = LoadCurrentSettings(SettingsManager.Instance.CurrentSettings);
             DataContext = SettingsManager.Instance.CurrentSettings;
         }
 
@@ -43,13 +31,11 @@ namespace Cobra.UI.Views
         {
             InitializeComponent();
             InitializeSections();
-            
-            // Folder Specific Settings
+
             _folderSettings = folderSettings;
-            originalSettings = LoadCurrentSettings(folderSettings.Settings);
+            _originalSettings = LoadCurrentSettings(folderSettings.Settings);
             DataContext = folderSettings.Settings;
 
-            // Change header to reflect project settings
             if (FindName("MainHeader") is TextBlock mainHeader)
                 mainHeader.Text = "Project Settings";
             if (FindName("SubHeader") is TextBlock subHeader)
@@ -58,7 +44,6 @@ namespace Cobra.UI.Views
 
         private static SettingsModel LoadCurrentSettings(SettingsModel current)
         {
-            // Simple clone
             return new SettingsModel
             {
                 Language = current.Language,
@@ -75,10 +60,13 @@ namespace Cobra.UI.Views
                 ShowMinimap = current.ShowMinimap,
                 WordWrap = current.WordWrap,
                 ShowLineNumbers = current.ShowLineNumbers,
+                TabSize = current.TabSize,
+                FormatOnSave = current.FormatOnSave,
                 PythonInterpreter = current.PythonInterpreter,
                 AutoCreateVenv = current.AutoCreateVenv,
                 PipIndexUrl = current.PipIndexUrl,
                 DefaultPackages = current.DefaultPackages,
+                DefaultFramework = current.DefaultFramework,
                 AutoCompletion = current.AutoCompletion,
                 Linting = current.Linting,
                 DefaultResolution = current.DefaultResolution,
@@ -86,27 +74,74 @@ namespace Cobra.UI.Views
                 VSync = current.VSync,
                 FrameRateLimit = current.FrameRateLimit,
                 PhysicsEngine = current.PhysicsEngine,
+                ShowCollisionGizmos = current.ShowCollisionGizmos,
+                EnableGridSnap = current.EnableGridSnap,
+                GridSnapSize = current.GridSnapSize,
                 TerminalPath = current.TerminalPath,
                 ExternalEditor = current.ExternalEditor,
                 BuildTool = current.BuildTool,
                 KeymapPreset = current.KeymapPreset,
-                TranslationApiKey = current.TranslationApiKey
+                WorkspaceLayout = current.WorkspaceLayout,
+                AiConsentGranted = current.AiConsentGranted,
+                EncryptedApiKey = current.EncryptedApiKey
             };
+        }
+
+        private static void CopySettings(SettingsModel source, SettingsModel target)
+        {
+            target.Language = source.Language;
+            target.StartupBehavior = source.StartupBehavior;
+            target.AutoSave = source.AutoSave;
+            target.AutoSaveInterval = source.AutoSaveInterval;
+            target.CheckForUpdates = source.CheckForUpdates;
+            target.Telemetry = source.Telemetry;
+            target.Theme = source.Theme;
+            target.AccentColor = source.AccentColor;
+            target.FontFamily = source.FontFamily;
+            target.FontSize = Math.Clamp(source.FontSize, 10, 28);
+            target.LineSpacing = Math.Clamp(source.LineSpacing, 1.0, 2.5);
+            target.ShowMinimap = source.ShowMinimap;
+            target.WordWrap = source.WordWrap;
+            target.ShowLineNumbers = source.ShowLineNumbers;
+            target.TabSize = Math.Clamp(source.TabSize, 2, 8);
+            target.FormatOnSave = source.FormatOnSave;
+            target.PythonInterpreter = source.PythonInterpreter;
+            target.AutoCreateVenv = source.AutoCreateVenv;
+            target.PipIndexUrl = source.PipIndexUrl;
+            target.DefaultPackages = source.DefaultPackages;
+            target.DefaultFramework = source.DefaultFramework;
+            target.AutoCompletion = source.AutoCompletion;
+            target.Linting = source.Linting;
+            target.DefaultResolution = source.DefaultResolution;
+            target.FullscreenDefault = source.FullscreenDefault;
+            target.VSync = source.VSync;
+            target.FrameRateLimit = Math.Clamp(source.FrameRateLimit, 0, 240);
+            target.PhysicsEngine = source.PhysicsEngine;
+            target.ShowCollisionGizmos = source.ShowCollisionGizmos;
+            target.EnableGridSnap = source.EnableGridSnap;
+            target.GridSnapSize = Math.Clamp(source.GridSnapSize, 4, 128);
+            target.TerminalPath = source.TerminalPath;
+            target.ExternalEditor = source.ExternalEditor;
+            target.BuildTool = source.BuildTool;
+            target.KeymapPreset = source.KeymapPreset;
+            target.WorkspaceLayout = source.WorkspaceLayout;
+            target.AiConsentGranted = source.AiConsentGranted;
+            target.EncryptedApiKey = source.EncryptedApiKey;
         }
 
         private void InitializeSections()
         {
-            sections.Add("General", GeneralSection);
-            sections.Add("Theme", ThemeSection);
-            sections.Add("Python", PythonSection);
-            sections.Add("Editor", EditorSection);
-            sections.Add("GameEngine", GameEngineSection);
-            sections.Add("Tools", ToolsSection);
-            sections.Add("Extensions", ExtensionsSection);
-            sections.Add("Keymap", KeymapSection);
-            sections.Add("About", AboutSection);
-            
-            currentSelectedNav = NavGeneral;
+            _sections.Add("General", GeneralSection);
+            _sections.Add("Theme", ThemeSection);
+            _sections.Add("Python", PythonSection);
+            _sections.Add("Editor", EditorSection);
+            _sections.Add("GameEngine", GameEngineSection);
+            _sections.Add("Tools", ToolsSection);
+            _sections.Add("Extensions", ExtensionsSection);
+            _sections.Add("Keymap", KeymapSection);
+            _sections.Add("About", AboutSection);
+
+            _currentSelectedNav = NavGeneral;
         }
 
         private void NavItem_Click(object sender, MouseButtonEventArgs e)
@@ -114,146 +149,216 @@ namespace Cobra.UI.Views
             if (sender is Border clickedNav)
             {
                 string? tag = clickedNav.Tag?.ToString();
-                if (!string.IsNullOrEmpty(tag) && sections.ContainsKey(tag))
+                if (!string.IsNullOrEmpty(tag) && _sections.ContainsKey(tag))
                 {
-                    if (currentSelectedNav != null)
+                    if (_currentSelectedNav != null)
                     {
-                        currentSelectedNav.Background = MediaBrushes.Transparent;
+                        _currentSelectedNav.Background = MediaBrushes.Transparent;
                     }
                     clickedNav.Background = new SolidColorBrush(MediaColor.FromRgb(45, 45, 45));
-                    currentSelectedNav = clickedNav;
+                    _currentSelectedNav = clickedNav;
 
                     SwitchSection(tag);
                 }
             }
         }
 
-        private async void SwitchSection(string sectionName)
+        private void SwitchSection(string sectionName)
         {
-            if (FindResource("FadeOutAnimation") is Storyboard fadeOut)
+            var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(150));
+            fadeOut.Completed += (_, _) =>
             {
-                fadeOut.Completed += (s, _) =>
-                {
-                    foreach (var section in sections.Values)
-                    {
-                        section.Visibility = Visibility.Collapsed;
-                    }
-
-                    if (sections.TryGetValue(sectionName, out var selectedSection))
-                    {
-                        selectedSection.Visibility = Visibility.Visible;
-
-                        if (FindResource("FadeInAnimation") is Storyboard fadeIn)
-                        {
-                            fadeIn.Begin(ContentContainer);
-                        }
-                    }
-                };
-                fadeOut.Begin(ContentContainer);
-                await Task.Delay(150);
-            }
-            else
-            {
-                foreach (var section in sections.Values)
+                foreach (var section in _sections.Values)
                 {
                     section.Visibility = Visibility.Collapsed;
                 }
 
-                if (sections.TryGetValue(sectionName, out var selectedSection))
+                if (_sections.TryGetValue(sectionName, out var selectedSection))
                 {
                     selectedSection.Visibility = Visibility.Visible;
+                    var fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200));
+                    ContentContainer.BeginAnimation(OpacityProperty, fadeIn);
                 }
-            }
+            };
+            ContentContainer.BeginAnimation(OpacityProperty, fadeOut);
         }
 
         private async void ApplyButton_Click(object sender, RoutedEventArgs e)
         {
-            if (_folderSettings != null)
+            try
             {
-                _folderSettings.Save();
+                var owner = Window.GetWindow(this);
+                var active = _folderSettings != null ? _folderSettings.Settings : SettingsManager.Instance.CurrentSettings;
+
+                if (!string.IsNullOrWhiteSpace(active.PipIndexUrl) &&
+                    !Uri.TryCreate(active.PipIndexUrl, UriKind.Absolute, out _))
+                {
+                    await CustomDialog.ShowAsync(owner, "Pip Index URL must be a valid HTTP/HTTPS URL.", "Validation Error", DialogIcon.Error);
+                    return;
+                }
+
+                if (_folderSettings != null)
+                {
+                    _folderSettings.Save();
+                }
+                else
+                {
+                    SettingsManager.Instance.Save();
+                    SettingsManager.Instance.NotifySettingsUpdated();
+                }
+
+                await CustomDialog.ShowAsync(owner, "Settings applied and persisted successfully!", "Settings Applied", DialogIcon.Success);
+
+                if (NavigationService is { CanGoBack: true })
+                    NavigationService.GoBack();
             }
-            else
+            catch (Exception ex)
             {
-                SettingsManager.Instance.Save();
-                SettingsManager.Instance.NotifySettingsUpdated();
+                Debug.WriteLine(ex.Message);
             }
-            
-            var owner = Window.GetWindow(this);
-            await CustomDialog.ShowAsync(owner, "Settings applied successfully!", "Settings Applied", DialogIcon.Success);
-            
-            if (NavigationService != null && NavigationService.CanGoBack)
-                NavigationService.GoBack();
         }
 
         private async void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-            var owner = Window.GetWindow(this);
-            bool discard = await CustomDialog.ShowAsync(owner, "Are you sure you want to discard unsaved changes?", "Discard Changes", DialogIcon.Warning, "Discard", "Cancel");
-
-            if (discard)
+            try
             {
-                // Revert changes by copying back original values
-                var current = SettingsManager.Instance.CurrentSettings;
-                current.Language = originalSettings.Language;
-                current.StartupBehavior = originalSettings.StartupBehavior;
-                current.AutoSave = originalSettings.AutoSave;
-                current.AutoSaveInterval = originalSettings.AutoSaveInterval;
-                current.CheckForUpdates = originalSettings.CheckForUpdates;
-                current.Telemetry = originalSettings.Telemetry;
-                current.Theme = originalSettings.Theme;
-                current.AccentColor = originalSettings.AccentColor;
-                current.FontFamily = originalSettings.FontFamily;
-                current.FontSize = originalSettings.FontSize;
-                current.LineSpacing = originalSettings.LineSpacing;
-                current.ShowMinimap = originalSettings.ShowMinimap;
-                current.WordWrap = originalSettings.WordWrap;
-                current.ShowLineNumbers = originalSettings.ShowLineNumbers;
-                current.PythonInterpreter = originalSettings.PythonInterpreter;
-                current.AutoCreateVenv = originalSettings.AutoCreateVenv;
-                current.PipIndexUrl = originalSettings.PipIndexUrl;
-                current.DefaultPackages = originalSettings.DefaultPackages;
-                current.AutoCompletion = originalSettings.AutoCompletion;
-                current.Linting = originalSettings.Linting;
-                current.DefaultResolution = originalSettings.DefaultResolution;
-                current.FullscreenDefault = originalSettings.FullscreenDefault;
-                current.VSync = originalSettings.VSync;
-                current.FrameRateLimit = originalSettings.FrameRateLimit;
-                current.PhysicsEngine = originalSettings.PhysicsEngine;
-                current.TerminalPath = originalSettings.TerminalPath;
-                current.ExternalEditor = originalSettings.ExternalEditor;
-                current.BuildTool = originalSettings.BuildTool;
-                current.KeymapPreset = originalSettings.KeymapPreset;
-                current.TranslationApiKey = originalSettings.TranslationApiKey;
+                var owner = Window.GetWindow(this);
+                bool discard = await CustomDialog.ShowAsync(owner, "Are you sure you want to discard unsaved changes?", "Discard Changes", DialogIcon.Warning, "Discard", "Cancel");
 
-                if (NavigationService != null && NavigationService.CanGoBack)
-                    NavigationService.GoBack();
+                if (discard)
+                {
+                    var target = _folderSettings != null ? _folderSettings.Settings : SettingsManager.Instance.CurrentSettings;
+                    CopySettings(_originalSettings, target);
+
+                    if (NavigationService is { CanGoBack: true })
+                        NavigationService.GoBack();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
             }
         }
 
         private async void CheckNowButton_Click(object sender, RoutedEventArgs e)
         {
-            var owner = Window.GetWindow(this);
-            await CustomDialog.ShowAsync(owner, "Checking for updates...\n\nYou are running the latest version of Cobra IDE (v1.0.0).", "Update Check", DialogIcon.Info);
+            try
+            {
+                var owner = Window.GetWindow(this);
+                await CustomDialog.ShowAsync(owner, "Checking for updates...\n\nYou are running the latest version of Cobra IDE (v2.0.0).", "Update Check");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void ManageDefaultPackagesButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var owner = Window.GetWindow(this);
+                await CustomDialog.ShowAsync(owner,
+                    "Recommended default Python game packages:\n• pygame-ce\n• pymunk\n• numpy\n• pillow\n• pyinstaller\n\nSeparate multiple package names with commas in the Default Packages field.",
+                    "Default Python Game Packages");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void OpenExtensionManagerButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var owner = Window.GetWindow(this);
+                await CustomDialog.ShowAsync(owner,
+                    "Built-in extensions are active. Place custom plugin DLLs and their matching .plugin.json manifests in your project's Plugins/ folder to load them into the IDE Extension Registry.",
+                    "Extension Manager");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void EditKeybindingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var owner = Window.GetWindow(this);
+                await CustomDialog.ShowAsync(owner,
+                    "Active Keyboard Shortcuts:\n" +
+                    "• Ctrl+S: Save Active File\n" +
+                    "• Ctrl+Shift+S: Save All Modified Files\n" +
+                    "• Ctrl+F / Ctrl+H: Find / Replace in Editor\n" +
+                    "• F5: Run Game / Continue Debugger\n" +
+                    "• F6: Start Python Debugger\n" +
+                    "• F7: Build & Package Game\n" +
+                    "• F10 / F11: Step Over / Step Into",
+                    "Keyboard Shortcuts Reference");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void ViewLicenseButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var owner = Window.GetWindow(this);
+                await CustomDialog.ShowAsync(owner,
+                    "Cobra IDE is licensed for Python game development.\nIncludes embedded Monaco Editor (MIT) and optional Three.js 3D viewport (MIT).",
+                    "License Information");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void ReportIssueButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var owner = Window.GetWindow(this);
+                await CustomDialog.ShowAsync(owner,
+                    "To report an issue or security incident, consult policies/access_incident.md or export the Output/Debug Console logs from the bottom panel.",
+                    "Report Issue");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
         }
 
         private void ThemeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (!IsLoaded) return;
         }
 
         private async void ResetButton_Click(object sender, RoutedEventArgs e)
         {
-            var owner = Window.GetWindow(this);
-            bool confirm = await CustomDialog.ShowAsync(owner, "Are you sure you want to reset all settings to defaults?", "Reset Settings", DialogIcon.Warning, "Yes", "No");
-            
-            if (confirm)
+            try
             {
-                SettingsManager.Instance.Reset();
-                DataContext = SettingsManager.Instance.CurrentSettings;
-                originalSettings = LoadCurrentSettings(SettingsManager.Instance.CurrentSettings);
-                SettingsManager.Instance.NotifySettingsUpdated();
-                
-                await CustomDialog.ShowAsync(owner, "Settings have been reset to defaults.", "Reset Complete", DialogIcon.Info);
+                var owner = Window.GetWindow(this);
+                bool confirm = await CustomDialog.ShowAsync(owner, "Are you sure you want to reset all settings to defaults?", "Reset Settings", DialogIcon.Warning, "Yes", "No");
+
+                if (confirm)
+                {
+                    SettingsManager.Instance.Reset();
+                    DataContext = SettingsManager.Instance.CurrentSettings;
+                    _originalSettings = LoadCurrentSettings(SettingsManager.Instance.CurrentSettings);
+                    SettingsManager.Instance.NotifySettingsUpdated();
+
+                    await CustomDialog.ShowAsync(owner, "Settings have been reset to defaults.", "Reset Complete");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
             }
         }
 
@@ -273,76 +378,57 @@ namespace Cobra.UI.Views
 
         private void AutoSaveToggle_Checked(object sender, RoutedEventArgs e)
         {
-            if (!IsLoaded) return;
         }
 
         private async void AutoSaveToggle_Unchecked(object sender, RoutedEventArgs e)
         {
-            if (!IsLoaded) return;
-            var owner = Window.GetWindow(this);
-            
-            var textBlock = new TextBlock
+            try
             {
-                Text = "Turning off Auto Save might result in data loss if the application crashes. Do you want to proceed?",
-                Foreground = new SolidColorBrush(MediaColor.FromRgb(224, 224, 224)),
-                TextWrapping = TextWrapping.Wrap
-            };
-            
-            var result = await AnimatedModal.ShowCustomModalAsync(owner, "Warning: Auto Save Disabled", textBlock, "Proceed", "Keep Auto Save");
-            if (!result.confirmed)
-            {
-                // Revert
-                if (sender is System.Windows.Controls.Primitives.ToggleButton toggle)
+                if (!IsLoaded) return;
+                var owner = Window.GetWindow(this);
+
+                var textBlock = new TextBlock
+                {
+                    Text = "Turning off Auto Save might result in data loss if the application crashes. Do you want to proceed?",
+                    Foreground = new SolidColorBrush(MediaColor.FromRgb(224, 224, 224)),
+                    TextWrapping = TextWrapping.Wrap
+                };
+
+                var result = await AnimatedModal.ShowCustomModalAsync(owner, "Warning: Auto Save Disabled", textBlock, "Proceed", "Keep Auto Save");
+                if (!result.confirmed && sender is System.Windows.Controls.Primitives.ToggleButton toggle)
                 {
                     toggle.IsChecked = true;
                 }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
             }
         }
 
         private void AutoSaveIntervalCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (!IsLoaded) return;
         }
-
-
 
         private void AccentColor_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (!IsLoaded) return;
-            if (sender is Border border && border.Tag is string colorName)
+            if (sender is Border { Tag: string colorName })
             {
                 SettingsManager.Instance.CurrentSettings.AccentColor = colorName;
             }
         }
 
-        private void FontFamilyCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (!IsLoaded) return;
-        }
-
-        private void FontSizeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (!IsLoaded) return;
-        }
-
-        private void LineSpacingSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (!IsLoaded) return;
-        }
-
-        private void MinimapToggle_Checked(object sender, RoutedEventArgs e) { if (!IsLoaded) return; }
-        private void MinimapToggle_Unchecked(object sender, RoutedEventArgs e) { if (!IsLoaded) return; }
-        
-        private void WordWrapToggle_Checked(object sender, RoutedEventArgs e) { if (!IsLoaded) return; }
-        private void WordWrapToggle_Unchecked(object sender, RoutedEventArgs e) { if (!IsLoaded) return; }
-        
-        private void LineNumbersToggle_Checked(object sender, RoutedEventArgs e) { if (!IsLoaded) return; }
-        private void LineNumbersToggle_Unchecked(object sender, RoutedEventArgs e) { if (!IsLoaded) return; }
-
-        private void GenericSetting_Changed(object sender, EventArgs e)
-        {
-            if (!IsLoaded) return;
-        }
+        private void FontFamilyCombo_SelectionChanged(object sender, SelectionChangedEventArgs e) { }
+        private void FontSizeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) { }
+        private void LineSpacingSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) { }
+        private void MinimapToggle_Checked(object sender, RoutedEventArgs e) { }
+        private void MinimapToggle_Unchecked(object sender, RoutedEventArgs e) { }
+        private void WordWrapToggle_Checked(object sender, RoutedEventArgs e) { }
+        private void WordWrapToggle_Unchecked(object sender, RoutedEventArgs e) { }
+        private void LineNumbersToggle_Checked(object sender, RoutedEventArgs e) { }
+        private void LineNumbersToggle_Unchecked(object sender, RoutedEventArgs e) { }
+        private void GenericSetting_Changed(object sender, RoutedEventArgs e) { }
 
         private void BrowseTerminalButton_Click(object sender, RoutedEventArgs e)
         {

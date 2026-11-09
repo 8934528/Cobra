@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #181a20;
+            font-family: 'Segoe UI', sans-serif;
+            color: #e0e0e0;
+        }
+        #viewport {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(25, 27, 34, 0.85);
+            border: 1px solid #3c3c3c;
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-size: 11px;
+            pointer-events: none;
+        }
+        #controls-bar {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 6px;
+        }
+        .vp-btn {
+            background: #2d2d30;
+            color: #e0e0e0;
+            border: 1px solid #444;
+            border-radius: 3px;
+            padding: 5px 10px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .vp-btn.active, .vp-btn:hover {
+            background: #ff8c00;
+            color: #fff;
+            border-color: #ff8c00;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="viewport"></canvas>
+    <div id="hud">
+        <div id="hud-title" style="font-weight:bold;color:#ff8c00;">Cobra 3D Scene Viewport (Python Panda3D / Ursina Sync)</div>
+        <div id="hud-info">LMB: Select / Gizmo Drag | RMB/Alt+LMB: Orbit | MMB: Pan | Wheel: Zoom</div>
+    </div>
+    <div id="controls-bar">
+        <button class="vp-btn active" id="btn-persp" onclick="setCameraMode('perspective')">Perspective</button>
+        <button class="vp-btn" id="btn-ortho" onclick="setCameraMode('orthographic')">Orthographic</button>
+        <button class="vp-btn active" id="btn-translate" onclick="setGizmoMode('translate')">Translate</button>
+        <button class="vp-btn" id="btn-rotate" onclick="setGizmoMode('rotate')">Rotate</button>
+        <button class="vp-btn" id="btn-scale" onclick="setGizmoMode('scale')">Scale</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script>
+        let sceneData = { Objects: [] };
+        let selectedId = null;
+        let cameraMode = 'perspective';
+        let gizmoMode = 'translate';
+
+        let camYaw = 0.65, camPitch = 0.55, camDistance = 14;
+        let camTarget = { x: 0, y: 0, z: 0 };
+        let isOrbiting = false, isPanning = false, isDraggingObject = false;
+        let lastMouse = { x: 0, y: 0 };
+
+        const canvas = document.getElementById('viewport');
+        const ctx = canvas.getContext('2d');
+
+        function postHost(msg) {
+            if (window.chrome && window.chrome.webview) {
+                window.chrome.webview.postMessage(JSON.stringify(msg));
+            }
+        }
+
+        function setCameraMode(mode) {
+            cameraMode = mode;
+            document.getElementById('btn-persp').classList.toggle('active', mode === 'perspective');
+            document.getElementById('btn-ortho').classList.toggle('active', mode === 'orthographic');
+            drawViewport();
+        }
+
+        function setGizmoMode(mode) {
+            gizmoMode = mode;
+            document.getElementById('btn-translate').classList.toggle('active', mode === 'translate');
+            document.getElementById('btn-rotate').classList.toggle('active', mode === 'rotate');
+            document.getElementById('btn-scale').classList.toggle('active', mode === 'scale');
+            drawViewport();
+        }
+
+        function updateSceneFromHost(jsonStr) {
+            try {
+                sceneData = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
+                const sel = (sceneData.Objects || []).find(o => o.IsSelected);
+                if (sel) selectedId = sel.Id;
+                drawViewport();
+            } catch (e) {}
+        }
+
+        function project3D(x, y, z, w, h) {
+            // Orbit camera transformation
+            const dx = x - camTarget.x;
+            const dy = y - camTarget.y;
+            const dz = z - camTarget.z;
+
+            const cosY = Math.cos(camYaw), sinY = Math.sin(camYaw);
+            const cosP = Math.cos(camPitch), sinP = Math.sin(camPitch);
+
+            const rx = dx * cosY - dz * sinY;
+            const rz1 = dx * sinY + dz * cosY;
+            const ry = dy * cosP - rz1 * sinP;
+            const rz = dy * sinP + rz1 * cosP + camDistance;
+
+            if (cameraMode === 'orthographic') {
+                const orthoScale = Math.max(12, 420 / camDistance);
+                return { x: w / 2 + rx * orthoScale, y: h / 2 - ry * orthoScale, depth: rz };
+            }
+
+            const fovScale = 520 / Math.max(1.0, rz);
+            return { x: w / 2 + rx * fovScale, y: h / 2 - ry * fovScale, depth: rz };
+        }
+
+        function drawViewport() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            const w = canvas.width, h = canvas.height;
+
+            ctx.fillStyle = '#181a20';
+            ctx.fillRect(0, 0, w, h);
+
+            // Draw 3D ground grid (XZ plane)
+            ctx.lineWidth = 1;
+            for (let i = -10; i <= 10; i++) {
+                const p1 = project3D(i, 0, -10, w, h);
+                const p2 = project3D(i, 0, 10, w, h);
+                ctx.strokeStyle = i === 0 ? '#4e80e0' : '#2a2e38';
+                ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+
+                const q1 = project3D(-10, 0, i, w, h);
+                const q2 = project3D(10, 0, i, w, h);
+                ctx.strokeStyle = i === 0 ? '#e04e4e' : '#2a2e38';
+                ctx.beginPath(); ctx.moveTo(q1.x, q1.y); ctx.lineTo(q2.x, q2.y); ctx.stroke();
+            }
+
+            // Draw Y axis indicator
+            const origin = project3D(0, 0, 0, w, h);
+            const yTop = project3D(0, 4, 0, w, h);
+            ctx.strokeStyle = '#4ec9b0';
+            ctx.beginPath(); ctx.moveTo(origin.x, origin.y); ctx.lineTo(yTop.x, yTop.y); ctx.stroke();
+
+            // Draw 3D objects
+            const objs = (sceneData.Objects || []).filter(o => o.IsVisible !== false);
+            for (const obj of objs) {
+                const ox = (obj.X || 0) / 50.0;
+                const oy = (obj.Z || 0) / 50.0;
+                const oz = (obj.Y || 0) / 50.0;
+                const sx = Math.max(0.4, (obj.ScaleX || 1) * ((obj.Width || 64) / 64.0));
+                const sy = Math.max(0.4, (obj.ScaleZ || 1) * ((obj.Depth || 64) / 64.0));
+                const sz = Math.max(0.4, (obj.ScaleY || 1) * ((obj.Height || 64) / 64.0));
+
+                drawWireCube(ox, oy + sy / 2, oz, sx, sy, sz, obj.Color || '#ff8c00', obj.Id === selectedId, obj.Name, w, h);
+            }
+        }
+
+        function drawWireCube(cx, cy, cz, sx, sy, sz, color, isSel, name, w, h) {
+            const hx = sx / 2, hy = sy / 2, hz = sz / 2;
+            const verts = [
+                project3D(cx - hx, cy - hy, cz - hz, w, h),
+                project3D(cx + hx, cy - hy, cz - hz, w, h),
+                project3D(cx + hx, cy + hy, cz - hz, w, h),
+                project3D(cx - hx, cy + hy, cz - hz, w, h),
+                project3D(cx - hx, cy - hy, cz + hz, w, h),
+                project3D(cx + hx, cy - hy, cz + hz, w, h),
+                project3D(cx + hx, cy + hy, cz + hz, w, h),
+                project3D(cx - hx, cy + hy, cz + hz, w, h)
+            ];
+            const edges = [
+                [0,1],[1,2],[2,3],[3,0],
+                [4,5],[5,6],[6,7],[7,4],
+                [0,4],[1,5],[2,6],[3,7]
+            ];
+
+            ctx.strokeStyle = isSel ? '#ffd700' : color;
+            ctx.lineWidth = isSel ? 2.5 : 1.5;
+            for (const [a, b] of edges) {
+                ctx.beginPath();
+                ctx.moveTo(verts[a].x, verts[a].y);
+                ctx.lineTo(verts[b].x, verts[b].y);
+                ctx.stroke();
+            }
+
+            const center2D = project3D(cx, cy, cz, w, h);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '11px Segoe UI';
+            ctx.fillText(name || 'Entity', center2D.x - 18, center2D.y - 12);
+
+            if (isSel) {
+                // Draw 3D Transform Gizmo Axes
+                const gx = project3D(cx + 1.8, cy, cz, w, h);
+                const gy = project3D(cx, cy + 1.8, cz, w, h);
+                const gz = project3D(cx, cy, cz + 1.8, w, h);
+
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#ff4444'; ctx.beginPath(); ctx.moveTo(center2D.x, center2D.y); ctx.lineTo(gx.x, gx.y); ctx.stroke();
+                ctx.strokeStyle = '#44ff44'; ctx.beginPath(); ctx.moveTo(center2D.x, center2D.y); ctx.lineTo(gy.x, gy.y); ctx.stroke();
+                ctx.strokeStyle = '#4488ff'; ctx.beginPath(); ctx.moveTo(center2D.x, center2D.y); ctx.lineTo(gz.x, gz.y); ctx.stroke();
+            }
+        }
+
+        canvas.addEventListener('mousedown', e => {
+            lastMouse = { x: e.clientX, y: e.clientY };
+            if (e.button === 2 || (e.button === 0 && e.altKey)) {
+                isOrbiting = true;
+            } else if (e.button === 1) {
+                isPanning = true;
+            } else if (e.button === 0) {
+                // Hit test nearest object center
+                const w = canvas.width, h = canvas.height;
+                let picked = null, bestDist = 45;
+                for (const obj of (sceneData.Objects || [])) {
+                    const p = project3D((obj.X || 0) / 50.0, ((obj.Z || 0) / 50.0) + 0.5, (obj.Y || 0) / 50.0, w, h);
+                    const d = Math.hypot(e.clientX - p.x, e.clientY - p.y);
+                    if (d < bestDist) { bestDist = d; picked = obj; }
+                }
+                if (picked) {
+                    selectedId = picked.Id;
+                    isDraggingObject = true;
+                    postHost({ type: 'selectObject', id: picked.Id });
+                    drawViewport();
+                } else {
+                    isOrbiting = true;
+                }
+            }
+        });
+
+        window.addEventListener('mousemove', e => {
+            const dx = e.clientX - lastMouse.x;
+            const dy = e.clientY - lastMouse.y;
+            lastMouse = { x: e.clientX, y: e.clientY };
+
+            if (isOrbiting) {
+                camYaw += dx * 0.008;
+                camPitch = Math.max(-1.4, Math.min(1.4, camPitch + dy * 0.008));
+                drawViewport();
+            } else if (isPanning) {
+                camTarget.x -= dx * 0.02;
+                camTarget.y += dy * 0.02;
+                drawViewport();
+            } else if (isDraggingObject && selectedId) {
+                const obj = (sceneData.Objects || []).find(o => o.Id === selectedId);
+                if (obj && !obj.IsLocked) {
+                    if (gizmoMode === 'translate') {
+                        obj.X = Math.round((obj.X || 0) + dx * 1.5);
+                        obj.Y = Math.round((obj.Y || 0) + dy * 1.5);
+                    } else if (gizmoMode === 'rotate') {
+                        obj.Rotation = Math.round(((obj.Rotation || 0) + dx) % 360);
+                    } else if (gizmoMode === 'scale') {
+                        const s = Math.max(0.2, (obj.ScaleX || 1) + dx * 0.01);
+                        obj.ScaleX = Number(s.toFixed(2));
+                        obj.ScaleY = Number(s.toFixed(2));
+                        obj.ScaleZ = Number(s.toFixed(2));
+                    }
+                    postHost({
+                        type: 'transformObject',
+                        id: obj.Id,
+                        x: obj.X,
+                        y: obj.Y,
+                        z: obj.Z || 0,
+                        rotation: obj.Rotation || 0,
+                        scaleX: obj.ScaleX || 1,
+                        scaleY: obj.ScaleY || 1,
+                        scaleZ: obj.ScaleZ || 1
+                    });
+                    drawViewport();
+                }
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            isOrbiting = false;
+            isPanning = false;
+            isDraggingObject = false;
+        });
+
+        canvas.addEventListener('wheel', e => {
+            e.preventDefault();
+            camDistance = Math.max(3, Math.min(50, camDistance + (e.deltaY > 0 ? 1.2 : -1.2)));
+            drawViewport();
+        }, { passive: false });
+
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+        window.addEventListener('resize', drawViewport);
+        drawViewport();
+    </script>
+</body>
+</html>
+

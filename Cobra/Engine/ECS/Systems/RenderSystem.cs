@@ -7,7 +7,7 @@ using EcsTransform = Cobra.Engine.ECS.Components.Transform;
 
 namespace Cobra.Engine.ECS.Systems
 {
-    public class RenderSystem
+    public static class RenderSystem
     {
         public static void Render(World world, Canvas canvas)
         {

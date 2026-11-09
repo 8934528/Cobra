@@ -1,16 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using System.Windows.Media.Animation;
 using Color = System.Windows.Media.Color;
 using Brushes = System.Windows.Media.Brushes;
@@ -19,10 +9,10 @@ using TextBlock = System.Windows.Controls.TextBlock;
 
 namespace Cobra.UI.Views
 {
-    public partial class AnimatedModal : Window
+    public partial class AnimatedModal
     {
-        private readonly object? result = null;
-        private bool isConfirmed = false;
+        private object? _result;
+        private bool _isConfirmed;
 
         public AnimatedModal()
         {
@@ -32,14 +22,12 @@ namespace Cobra.UI.Views
 
         private void AnimatedModal_Loaded(object sender, RoutedEventArgs e)
         {
-            if (FindResource("ShowModalAnimation") is Storyboard showAnimation)
-            {
-                showAnimation.Begin(this);
-            }
+            var fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(250));
+            BeginAnimation(OpacityProperty, fadeIn);
         }
 
         public static async Task<(bool confirmed, object? result)> ShowCustomModalAsync(
-            Window owner,
+            Window? owner,
             string title,
             UIElement content,
             string confirmText = "Create",
@@ -48,10 +36,10 @@ namespace Cobra.UI.Views
             var modal = new AnimatedModal
             {
                 Owner = owner,
-                Title = title
+                Title = title,
+                TitleText = { Text = title }
             };
 
-            modal.TitleText.Text = title;
             modal.ContentPanel.Children.Clear();
             modal.ContentPanel.Children.Add(content);
 
@@ -68,7 +56,7 @@ namespace Cobra.UI.Views
                 Cursor = System.Windows.Input.Cursors.Hand
             };
 
-            confirmButton.Click += (s, e) => modal.Confirm();
+            confirmButton.Click += (_, _) => modal.Confirm();
 
             var cancelButton = new System.Windows.Controls.Button
             {
@@ -82,18 +70,18 @@ namespace Cobra.UI.Views
                 Cursor = System.Windows.Input.Cursors.Hand
             };
 
-            cancelButton.Click += (s, e) => modal.Cancel();
+            cancelButton.Click += (_, _) => modal.Cancel();
 
             modal.ButtonsPanel.Children.Add(cancelButton);
             modal.ButtonsPanel.Children.Add(confirmButton);
 
             modal.ShowDialog();
             await Task.Delay(10);
-            return (modal.isConfirmed, modal.result);
+            return (modal._isConfirmed, modal._result);
         }
 
         public static async Task<string?> ShowInputModalAsync(
-            Window owner,
+            Window? owner,
             string title,
             string message,
             string defaultValue = "")
@@ -120,45 +108,40 @@ namespace Cobra.UI.Views
             stack.Children.Add(textBox);
 
             // Focus the textbox when loaded
-            textBox.Loaded += (s, e) => {
+            textBox.Loaded += (_, _) =>
+            {
                 textBox.Focus();
                 textBox.SelectAll();
             };
 
-            var (confirmed, _) = await ShowCustomModalAsync(owner, title, stack, "OK", "Cancel");
+            var (confirmed, _) = await ShowCustomModalAsync(owner, title, stack, "OK");
             return confirmed ? textBox.Text : null;
         }
 
-        private async void Confirm()
+        private void Confirm()
         {
-            isConfirmed = true;
-            await CloseWithAnimation();
+            _isConfirmed = true;
+            _result = TitleText.Text;
+            CloseWithAnimation();
         }
 
-        private async void Cancel()
+        private void Cancel()
         {
-            isConfirmed = false;
-            await CloseWithAnimation();
+            _isConfirmed = false;
+            CloseWithAnimation();
         }
 
-        private async void CloseButton_Click(object sender, RoutedEventArgs e)
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            isConfirmed = false;
-            await CloseWithAnimation();
+            _isConfirmed = false;
+            CloseWithAnimation();
         }
 
-        private async Task CloseWithAnimation()
+        private void CloseWithAnimation()
         {
-            if (FindResource("HideModalAnimation") is Storyboard hideAnimation)
-            {
-                hideAnimation.Completed += (s, _) => Close();
-                hideAnimation.Begin(this);
-            }
-            else
-            {
-                Close();
-            }
-            await Task.CompletedTask;
+            var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(180));
+            fadeOut.Completed += (_, _) => Close();
+            BeginAnimation(OpacityProperty, fadeOut);
         }
     }
 }

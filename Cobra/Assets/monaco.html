@@ -11,10 +11,17 @@
             overflow: hidden;
             background-color: #1e1e1e;
         }
-
         #editor {
             height: 100%;
             width: 100%;
+        }
+        .cobra-breakpoint-glyph {
+            background: #e51400;
+            border-radius: 50%;
+            width: 10px !important;
+            height: 10px !important;
+            margin-left: 5px;
+            margin-top: 5px;
         }
     </style>
     <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/editor/editor.main.min.css">
@@ -24,21 +31,82 @@
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
     <script>
         let editor;
+        let breakpointLines = new Set();
+        let breakpointDecorations = [];
 
         require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
         require(['vs/editor/editor.main'], function () {
+            RegisterPythonGameCompletions();
+
             editor = monaco.editor.create(document.getElementById('editor'), {
-                value: '# Welcome to Cobra IDE\n\n# Write your Python code here\n',
+                value: '# Welcome to Cobra IDE\n# Write your Python game code here\n',
                 language: 'python',
                 theme: 'vs-dark',
                 automaticLayout: true,
                 fontSize: 14,
-                minimap: { enabled: false },
+                tabSize: 4,
+                insertSpaces: true,
+                glyphMargin: true,
+                folding: true,
+                minimap: { enabled: true },
                 scrollBeyondLastLine: false,
                 renderWhitespace: 'selection',
                 fontFamily: 'Consolas, monospace'
             });
+
+            editor.onMouseDown(function (e) {
+                if (e.target.type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN ||
+                    e.target.type === monaco.editor.MouseTargetType.GUTTER_LINE_NUMBERS) {
+                    const line = e.target.position.lineNumber;
+                    toggleBreakpoint(line);
+                }
+            });
+
+            editor.onDidChangeModelContent(function () {
+                postHostMessage({ type: 'contentChanged' });
+            });
+
+            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, function () {
+                postHostMessage({ type: 'saveShortcut' });
+            });
+
+            editor.addCommand(monaco.KeyCode.F5, function () {
+                postHostMessage({ type: 'runShortcut' });
+            });
         });
+
+        function postHostMessage(payload) {
+            if (window.chrome && window.chrome.webview) {
+                window.chrome.webview.postMessage(JSON.stringify(payload));
+            }
+        }
+
+        function toggleBreakpoint(line) {
+            if (breakpointLines.has(line)) {
+                breakpointLines.delete(line);
+            } else {
+                breakpointLines.add(line);
+            }
+            renderBreakpoints();
+            postHostMessage({ type: 'breakpointsChanged', lines: Array.from(breakpointLines) });
+        }
+
+        function renderBreakpoints() {
+            if (!editor) return;
+            const decs = Array.from(breakpointLines).map(l => ({
+                range: new monaco.Range(l, 1, l, 1),
+                options: {
+                    isWholeLine: false,
+                    glyphMarginClassName: 'cobra-breakpoint-glyph',
+                    glyphMarginHoverMessage: { value: 'Breakpoint (Line ' + l + ')' }
+                }
+            }));
+            breakpointDecorations = editor.deltaDecorations(breakpointDecorations, decs);
+        }
+
+        function getBreakpoints() {
+            return Array.from(breakpointLines);
+        }
 
         function setCode(code) {
             if (editor) {
@@ -48,6 +116,91 @@
 
         function getCode() {
             return editor ? editor.getValue() : '';
+        }
+
+        function revealLine(line, col) {
+            if (!editor) return;
+            editor.revealLineInCenter(line);
+            editor.setPosition({ lineNumber: line, column: col || 1 });
+            editor.focus();
+        }
+
+        function setDiagnostics(diagnosticsList) {
+            if (!editor || !monaco) return;
+            const model = editor.getModel();
+            if (!model) return;
+            const markers = (diagnosticsList || []).map(d => ({
+                severity: d.Severity === 'Error' ? monaco.MarkerSeverity.Error : monaco.MarkerSeverity.Warning,
+                startLineNumber: d.Line || 1,
+                startColumn: d.Column || 1,
+                endLineNumber: d.Line || 1,
+                endColumn: 120,
+                message: d.Message || ''
+            }));
+            monaco.editor.setModelMarkers(model, 'cobra-python', markers);
+        }
+
+        function undo() { if (editor) editor.trigger('keyboard', 'undo'); }
+        function redo() { if (editor) editor.trigger('keyboard', 'redo'); }
+        function find() { if (editor) editor.trigger('keyboard', 'actions.find'); }
+        function replace() { if (editor) editor.trigger('keyboard', 'editor.action.startFindReplaceAction'); }
+        function foldAll() { if (editor) editor.trigger('keyboard', 'editor.foldAll'); }
+        function unfoldAll() { if (editor) editor.trigger('keyboard', 'editor.unfoldAll'); }
+        function renameSymbol() { if (editor) editor.trigger('keyboard', 'editor.action.rename'); }
+
+        function RegisterPythonGameCompletions() {
+            const items = [
+                { label: 'pygame.init', kind: 'Function', insertText: 'pygame.init()', detail: 'Initialize all imported Pygame modules', doc: 'Initializes display, mixer, font, and input subsystems.' },
+                { label: 'pygame.display.set_mode', kind: 'Function', insertText: 'pygame.display.set_mode((${1:800}, ${2:600}))', detail: 'set_mode(size=(width, height), flags=0)', doc: 'Initializes a window or screen for display.' },
+                { label: 'pygame.time.Clock', kind: 'Class', insertText: 'pygame.time.Clock()', detail: 'Create an object to help track time and frame rate', doc: 'Use clock.tick(60) inside your game loop.' },
+                { label: 'pygame.Rect', kind: 'Class', insertText: 'pygame.Rect(${1:x}, ${2:y}, ${3:width}, ${4:height})', detail: 'Rect(left, top, width, height)', doc: 'Pygame object for storing rectangular coordinates and AABB collision.' },
+                { label: 'pygame.draw.rect', kind: 'Function', insertText: 'pygame.draw.rect(${1:screen}, ${2:(255, 140, 0)}, ${3:rect})', detail: 'draw.rect(surface, color, rect, width=0)', doc: 'Draws a rectangle on the given surface.' },
+                { label: 'pygame.draw.circle', kind: 'Function', insertText: 'pygame.draw.circle(${1:screen}, ${2:(78, 201, 176)}, (${3:x}, ${4:y}), ${5:radius})', detail: 'draw.circle(surface, color, center, radius)', doc: 'Draws a circle on the given surface.' },
+                { label: 'pygame.image.load', kind: 'Function', insertText: "pygame.image.load('${1:assets/sprite.png}').convert_alpha()", detail: 'Load new image from a file', doc: 'Loads an image surface and converts pixel format for fast blitting.' },
+                { label: 'pygame.mixer.Sound', kind: 'Class', insertText: "pygame.mixer.Sound('${1:assets/sound.wav}')", detail: 'Create a new Sound object from a WAV or OGG file', doc: 'Call .play() to play sound effects.' },
+                { label: 'pygame.Vector2', kind: 'Class', insertText: 'pygame.Vector2(${1:0}, ${2:0})', detail: '2D Euclidean vector for velocity and position', doc: 'Supports normalize(), length(), distance_to(), and lerp().' },
+                { label: 'ShowBase (Panda3D)', kind: 'Class', insertText: 'from direct.showbase.ShowBase import ShowBase', detail: 'Panda3D main application base class', doc: 'Initializes Panda3D 3D rendering window, scene graph (self.render), and taskMgr.' },
+                { label: 'Entity (Ursina)', kind: 'Class', insertText: "Entity(model='${1:cube}', color=color.${2:orange}, position=(${3:0, 0, 0}), scale=(${4:1, 1, 1}))", detail: 'Ursina 3D game object entity', doc: 'Creates a 3D entity in the Ursina scene with model, texture, and collider.' }
+            ];
+
+            monaco.languages.registerCompletionItemProvider('python', {
+                provideCompletionItems: function (model, position) {
+                    const word = model.getWordUntilPosition(position);
+                    const range = {
+                        startLineNumber: position.lineNumber,
+                        endLineNumber: position.lineNumber,
+                        startColumn: word.startColumn,
+                        endColumn: word.endColumn
+                    };
+                    return {
+                        suggestions: items.map(it => ({
+                            label: it.label,
+                            kind: it.kind === 'Class' ? monaco.languages.CompletionItemKind.Class : monaco.languages.CompletionItemKind.Function,
+                            insertText: it.insertText,
+                            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                            detail: it.detail,
+                            documentation: it.doc,
+                            range: range
+                        }))
+                    };
+                }
+            });
+
+            monaco.languages.registerHoverProvider('python', {
+                provideHover: function (model, position) {
+                    const word = model.getWordAtPosition(position);
+                    if (!word) return null;
+                    const found = items.find(i => i.label.includes(word.word));
+                    if (!found) return null;
+                    return {
+                        range: new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn),
+                        contents: [
+                            { value: '**' + found.label + '** — `' + found.detail + '`' },
+                            { value: found.doc }
+                        ]
+                    };
+                }
+            });
         }
     </script>
 </body>

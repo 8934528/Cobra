@@ -7,146 +7,115 @@
       xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
       xmlns:views="clr-namespace:Cobra.UI.Views"
       xmlns:local="clr-namespace:Cobra.Editor"
+      xmlns:assets="clr-namespace:Cobra.Core.Assets"
+      xmlns:plugins="clr-namespace:Cobra.Engine.Plugins"
       mc:Ignorable="d" 
-      d:DesignHeight="900" d:DesignWidth="1400"
+      d:DesignHeight="900" d:DesignWidth="1440"
       Background="#1e1e1e"
       Loaded="Page_Loaded">
 
     <Page.Resources>
-        <Storyboard x:Key="FadeInAnimation">
-            <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                           From="0" To="1" Duration="0:0:0.2"/>
-        </Storyboard>
-
-        <Storyboard x:Key="SlideInAnimation">
-            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
-                           From="50" To="0" Duration="0:0:0.25"/>
-            <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                           From="0" To="1" Duration="0:0:0.25"/>
-        </Storyboard>
-
         <ContextMenu x:Key="FileContextMenu">
-            <MenuItem Header="Open" Click="OnOpenFileClick">
-                <MenuItem.Icon>
-                    <iconPacks:PackIconMaterial Kind="FolderOpen" Width="14" Height="14"/>
-                </MenuItem.Icon>
+            <MenuItem Header="Open File" Click="OnOpenFileClick">
+                <MenuItem.Icon><iconPacks:PackIconMaterial Kind="FolderOpen" Width="13" Height="13"/></MenuItem.Icon>
             </MenuItem>
             <Separator/>
-            <MenuItem Header="New File" Click="OnNewFileClick">
-                <MenuItem.Icon>
-                    <iconPacks:PackIconMaterial Kind="FilePlus" Width="14" Height="14"/>
-                </MenuItem.Icon>
+            <MenuItem Header="New File..." Click="OnNewFileClick">
+                <MenuItem.Icon><iconPacks:PackIconMaterial Kind="FilePlus" Width="13" Height="13"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="New Folder" Click="OnNewFolderClick">
-                <MenuItem.Icon>
-                    <iconPacks:PackIconMaterial Kind="FolderPlus" Width="14" Height="14"/>
-                </MenuItem.Icon>
+            <MenuItem Header="New Folder..." Click="OnNewFolderClick">
+                <MenuItem.Icon><iconPacks:PackIconMaterial Kind="FolderPlus" Width="13" Height="13"/></MenuItem.Icon>
             </MenuItem>
             <Separator/>
-            <MenuItem Header="Rename" Click="OnRenameClick">
-                <MenuItem.Icon>
-                    <iconPacks:PackIconMaterial Kind="Pencil" Width="14" Height="14"/>
-                </MenuItem.Icon>
+            <MenuItem Header="Duplicate File" Click="OnDuplicateFileClick">
+                <MenuItem.Icon><iconPacks:PackIconMaterial Kind="ContentDuplicate" Width="13" Height="13"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="Delete" Click="OnDeleteClick">
-                <MenuItem.Icon>
-                    <iconPacks:PackIconMaterial Kind="Delete" Width="14" Height="14"/>
-                </MenuItem.Icon>
+            <MenuItem Header="Rename..." Click="OnRenameClick">
+                <MenuItem.Icon><iconPacks:PackIconMaterial Kind="Pencil" Width="13" Height="13"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Delete..." Click="OnDeleteClick">
+                <MenuItem.Icon><iconPacks:PackIconMaterial Kind="Delete" Width="13" Height="13"/></MenuItem.Icon>
             </MenuItem>
             <Separator/>
+            <MenuItem Header="Set as Startup Script" Click="OnSetStartupFileClick">
+                <MenuItem.Icon><iconPacks:PackIconMaterial Kind="RocketLaunch" Width="13" Height="13"/></MenuItem.Icon>
+            </MenuItem>
             <MenuItem Header="Copy Path" Click="OnCopyPathClick">
-                <MenuItem.Icon>
-                    <iconPacks:PackIconMaterial Kind="ContentCopy" Width="14" Height="14"/>
-                </MenuItem.Icon>
+                <MenuItem.Icon><iconPacks:PackIconMaterial Kind="ContentCopy" Width="13" Height="13"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="Reveal in Explorer" Click="OnRevealInExplorerClick">
-                <MenuItem.Icon>
-                    <iconPacks:PackIconMaterial Kind="FolderOpen" Width="14" Height="14"/>
-                </MenuItem.Icon>
+            <MenuItem Header="Reveal in File Explorer" Click="OnRevealInExplorerClick">
+                <MenuItem.Icon><iconPacks:PackIconMaterial Kind="FolderOpenOutline" Width="13" Height="13"/></MenuItem.Icon>
             </MenuItem>
         </ContextMenu>
 
         <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#aaaaaa"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#bbbbbb"/>
+            <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Margin" Value="10,10,10,5"/>
+            <Setter Property="Margin" Value="10,8,10,6"/>
         </Style>
 
         <Style x:Key="SceneToolButton" TargetType="Button">
-            <Setter Property="Background" Value="#3c3c3c"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#353538"/>
+            <Setter Property="Foreground" Value="#e8e8e8"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="8,4"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="FontSize" Value="11"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Margin" Value="2"/>
+            <Setter Property="Margin" Value="2,0"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Border" 
-                                Background="{TemplateBinding Background}" 
-                                CornerRadius="3">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#4c4c4c"/>
+                                <Setter TargetName="Border" Property="Background" Value="#48484c"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Border" Property="Opacity" Value="0.45"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
         <Style x:Key="NavButtonStyle" TargetType="Border">
-            <Setter Property="Margin" Value="10,2,10,2"/>
-            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="Margin" Value="6,2"/>
+            <Setter Property="Padding" Value="10,7"/>
             <Setter Property="CornerRadius" Value="3"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#3e3e42"/>
+                    <Setter Property="Background" Value="#343438"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
-        <Style TargetType="TabItem">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TabItem">
-                        <Border x:Name="Border" 
-                                Background="Transparent" 
-                                BorderThickness="0,0,0,2" 
-                                BorderBrush="Transparent"
-                                Padding="15,8">
-                            <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="Border" Property="BorderBrush" Value="#ff8c00"/>
-                                <Setter Property="Foreground" Value="White"/>
-                                <Setter TargetName="Border" Property="Background" Value="#2d2d30"/>
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Foreground" Value="White"/>
-                                <Setter TargetName="Border" Property="Background" Value="#2d2d30"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+        <Style x:Key="BottomTabButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="#aaaaaa"/>
+            <Setter Property="BorderThickness" Value="0,0,0,2"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
     </Page.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="50"/>
+            <RowDefinition Height="35"/>
+            <RowDefinition Height="38"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="24"/>
         </Grid.RowDefinitions>
 
-        <!-- Title Bar Control -->
+        <!-- ROW 0: Title Bar Control -->
         <views:TitleBarControl Grid.Row="0" 
                                NewProjectClicked="OnNewProjectClicked"
                                OpenProjectClicked="OnOpenProjectClicked"
@@ -167,425 +136,976 @@
                                AboutClicked="OnAboutClicked"
                                SettingsIconClicked="OnSettingsIconClicked"/>
 
-        <!-- MAIN CONTENT -->
-        <Grid Grid.Row="1">
+        <!-- ROW 1: Main IDE Toolbar -->
+        <Border Grid.Row="1" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1" Padding="10,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left Toolbar Actions -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Click="OnNewProjectClicked" Style="{StaticResource SceneToolButton}" ToolTip="New Project (Ctrl+N)">
+                        <iconPacks:PackIconMaterial Kind="FolderPlusOutline" Width="13" Height="13"/>
+                    </Button>
+                    <Button Click="OnOpenProjectClicked" Style="{StaticResource SceneToolButton}" ToolTip="Open Project (Ctrl+O)">
+                        <iconPacks:PackIconMaterial Kind="FolderOpenOutline" Width="13" Height="13"/>
+                    </Button>
+                    <Button x:Name="SaveButton" Click="OnSaveClicked" Style="{StaticResource SceneToolButton}" ToolTip="Save File (Ctrl+S)">
+                        <iconPacks:PackIconMaterial Kind="ContentSave" Width="13" Height="13"/>
+                    </Button>
+                    <Button Click="OnSaveAllClicked" Style="{StaticResource SceneToolButton}" ToolTip="Save All Modified Files (Ctrl+Shift+S)">
+                        <iconPacks:PackIconMaterial Kind="ContentSaveAll" Width="13" Height="13"/>
+                    </Button>
+
+                    <Border Width="1" Height="18" Background="#3c3c3c" Margin="6,0"/>
+
+                    <Button Click="OnUndoClicked" Style="{StaticResource SceneToolButton}" ToolTip="Undo (Ctrl+Z)">
+                        <iconPacks:PackIconMaterial Kind="Undo" Width="13" Height="13"/>
+                    </Button>
+                    <Button Click="OnRedoClicked" Style="{StaticResource SceneToolButton}" ToolTip="Redo (Ctrl+Y)">
+                        <iconPacks:PackIconMaterial Kind="Redo" Width="13" Height="13"/>
+                    </Button>
+                    <Button Click="OnFormatCodeClicked" Style="{StaticResource SceneToolButton}" ToolTip="Format Python Code (PEP-8 / Ruff)">
+                        <iconPacks:PackIconMaterial Kind="FormatIndentIncrease" Width="13" Height="13"/>
+                    </Button>
+
+                    <Border Width="1" Height="18" Background="#3c3c3c" Margin="6,0"/>
+
+                    <!-- Startup File Selector -->
+                    <TextBlock Text="Startup:" Foreground="#999999" FontSize="11" VerticalAlignment="Center" Margin="4,0,4,0"/>
+                    <ComboBox x:Name="StartupFileCombo" Width="130" Height="24" FontSize="11" VerticalContentAlignment="Center" SelectionChanged="StartupFileCombo_SelectionChanged" ToolTip="Select Python startup file"/>
+
+                    <Button x:Name="RunButton" Click="OnRunClicked" Style="{StaticResource SceneToolButton}" Background="#28a745" Margin="6,0,2,0" ToolTip="Run Game (F5)">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="Play" Width="12" Height="12" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Run" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="DebugButton" Click="OnDebugClicked" Style="{StaticResource SceneToolButton}" Background="#d97706" ToolTip="Debug Game with Breakpoints (F6)">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="Bug" Width="12" Height="12" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Debug" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="StopButton" Click="OnStopClicked" Style="{StaticResource SceneToolButton}" Background="#c42b1c" ToolTip="Stop Running Game">
+                        <iconPacks:PackIconMaterial Kind="Stop" Width="12" Height="12"/>
+                    </Button>
+                    <Button Click="OnRestartGameClicked" Style="{StaticResource SceneToolButton}" ToolTip="Restart Game">
+                        <iconPacks:PackIconMaterial Kind="Restart" Width="13" Height="13"/>
+                    </Button>
+
+                    <Border Width="1" Height="18" Background="#3c3c3c" Margin="6,0"/>
+
+                    <Button Click="OnBuildClicked" Style="{StaticResource SceneToolButton}" ToolTip="Build &amp; Package Game (F7)">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="PackageDown" Width="13" Height="13" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Build" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Click="OnProjectConfigModalClicked" Style="{StaticResource SceneToolButton}" ToolTip="Run &amp; Environment Configuration">
+                        <iconPacks:PackIconMaterial Kind="TuneVariant" Width="13" Height="13"/>
+                    </Button>
+                </StackPanel>
+
+                <!-- Right Toolbar Layout & Environment Controls -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Layout:" Foreground="#999999" FontSize="11" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <ComboBox x:Name="LayoutPresetCombo" Width="115" Height="24" FontSize="11" VerticalContentAlignment="Center" SelectionChanged="LayoutPresetCombo_SelectionChanged" ToolTip="Switch Workspace Layout">
+                        <ComboBoxItem Content="Default" IsSelected="True"/>
+                        <ComboBoxItem Content="Coding Focus"/>
+                        <ComboBoxItem Content="Scene Design"/>
+                        <ComboBoxItem Content="Debugging"/>
+                    </ComboBox>
+                    <Button Click="OnToggleBottomPanelClicked" Style="{StaticResource SceneToolButton}" Margin="6,0,2,0" ToolTip="Toggle Bottom Panel">
+                        <iconPacks:PackIconMaterial Kind="DockBottom" Width="13" Height="13"/>
+                    </Button>
+                    <Button Click="OnSettingsIconClicked" Style="{StaticResource SceneToolButton}" ToolTip="IDE Settings">
+                        <iconPacks:PackIconMaterial Kind="Cog" Width="13" Height="13"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ROW 2: Main Workspace Grid -->
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="200" MinWidth="150"/> <!-- Left Sidebar -->
-                <ColumnDefinition Width="5"/> <!-- Splitter -->
-                <ColumnDefinition Width="*"/> <!-- Center Area -->
-                <ColumnDefinition Width="5"/> <!-- Splitter -->
-                <ColumnDefinition Width="280" MinWidth="200"/> <!-- Right Sidebar -->
+                <ColumnDefinition x:Name="LeftSidebarCol" Width="195" MinWidth="150"/>
+                <ColumnDefinition Width="4"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="4"/>
+                <ColumnDefinition x:Name="RightSidebarCol" Width="285" MinWidth="200"/>
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
-                <RowDefinition Height="*"/> <!-- Top Area -->
-                <RowDefinition Height="5"/> <!-- Splitter -->
-                <RowDefinition Height="250" MinHeight="100"/> <!-- Bottom Panel -->
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="4"/>
+                <RowDefinition x:Name="BottomPanelRow" Height="230" MinHeight="80"/>
             </Grid.RowDefinitions>
 
-            <!-- LEFT SIDEBAR -->
+            <!-- ACTIVITY SIDEBAR (Left) -->
             <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="3" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="0,0,1,0">
-                <StackPanel Margin="0,15,0,0">
-                    <TextBlock Foreground="#aaaaaa" FontSize="12" FontWeight="Bold" Margin="15,0,0,15" VerticalAlignment="Center">
-                        EDITOR TOOLS
-                    </TextBlock>
-                    
-                    <Border x:Name="NavCodeEditor" Style="{StaticResource NavButtonStyle}" Background="#2d2d30" MouseLeftButtonDown="NavItem_Click" Tag="CodeEditor">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <iconPacks:PackIconMaterial Kind="CodeBraces" Width="14" Height="14" Foreground="White" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="Code" Foreground="White" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Border>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="0,8,0,8">
+                        <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="WORKSPACES"/>
 
-                    <Border x:Name="NavSceneEditor" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="SceneEditor">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <iconPacks:PackIconMaterial Kind="Palette" Width="14" Height="14" Foreground="#e0e0e0" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="Scene" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Border>
+                        <Border x:Name="NavCodeEditor" Style="{StaticResource NavButtonStyle}" Background="#2d2d30" MouseLeftButtonDown="NavItem_Click" Tag="CodeEditor" ToolTip="Python Code Editor (Monaco)">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="CodeBraces" Width="14" Height="14" Foreground="#ff8c00" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Code Editor" Foreground="White" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
 
-                    <Border x:Name="NavVisualScripting" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="VisualScripting">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <iconPacks:PackIconMaterial Kind="ShareVariant" Width="14" Height="14" Foreground="#e0e0e0" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="Scripting" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Border>
+                        <Border x:Name="NavSceneEditor" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="SceneEditor" ToolTip="2D &amp; 3D Game Scene Designer">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="Palette" Width="14" Height="14" Foreground="#4ec9b0" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Scene Editor" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
 
-                    <Border x:Name="NavAddVenv" 
-                            Style="{StaticResource NavButtonStyle}" 
-                            Background="Transparent" 
-                            MouseLeftButtonDown="OnAddVenvClicked" 
-                            Visibility="Collapsed">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <iconPacks:PackIconMaterial Kind="LanguagePython" Width="14" Height="14" Foreground="#ff8c00" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="Add Venv" Foreground="#ff8c00" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Border>
+                        <Border x:Name="NavVisualScripting" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="VisualScripting" ToolTip="Visual Scripting Node Graph">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="ShareVariant" Width="14" Height="14" Foreground="#e0e0e0" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Visual Scripting" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
 
-                    <Border x:Name="NavAddBackend" 
-                            Style="{StaticResource NavButtonStyle}" 
-                            Background="Transparent" 
-                            MouseLeftButtonDown="OnAddBackendClicked" 
-                            Visibility="Collapsed">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <iconPacks:PackIconMaterial Kind="Server" Width="14" Height="14" Foreground="#4ec9b0" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="Add Backend" Foreground="#4ec9b0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
+                        <Border x:Name="NavAssetBrowser" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="AssetBrowser" ToolTip="Game Asset Browser &amp; Importer">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="FolderMultipleImage" Width="14" Height="14" Foreground="#e0e0e0" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Asset Browser" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="NavAnimationTools" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="AnimationTools" ToolTip="2D Sprite Sheet &amp; 3D Animation Preview">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="MovieOpenPlay" Width="14" Height="14" Foreground="#e0e0e0" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Animation Tools" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="DEVELOPMENT" Margin="10,14,10,6"/>
+
+                        <Border x:Name="NavPythonEnv" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="PythonEnv" ToolTip="Python Interpreter, Venv &amp; Pip Package Manager">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="LanguagePython" Width="14" Height="14" Foreground="#ffd43b" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Python &amp; Packages" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="NavDebugger" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="Debugger" ToolTip="Python Debugger, Watch &amp; Call Stack">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="Bug" Width="14" Height="14" Foreground="#e0e0e0" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Debugger" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="NavProfiler" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="Profiler" ToolTip="Performance Profiler (CPU, Memory, FPS)">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="ChartAreaspline" Width="14" Height="14" Foreground="#e0e0e0" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Profiler" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="NavSourceControl" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="SourceControl" ToolTip="Git Version Control">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="SourceBranch" Width="14" Height="14" Foreground="#e0e0e0" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Source Control" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="NavBuildPackage" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="BuildPackage" ToolTip="Build &amp; Package Game (PyInstaller)">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="PackageVariantClosed" Width="14" Height="14" Foreground="#e0e0e0" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Build &amp; Package" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="NavExtensions" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="Extensions" ToolTip="Installed Extensions &amp; Plugins">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="PuzzleOutline" Width="14" Height="14" Foreground="#e0e0e0" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Extensions" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="NavAiAssistant" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="AiAssistant" ToolTip="Optional AI Game Dev Assistant">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="RobotOutline" Width="14" Height="14" Foreground="#4ec9b0" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="AI Assistant" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="NavAddVenv" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="OnAddVenvClicked" Visibility="Collapsed" ToolTip="Create Python Virtual Environment">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="PlusCircleOutline" Width="14" Height="14" Foreground="#ff8c00" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Create Venv" Foreground="#ff8c00" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
             </Border>
 
-            <!-- LEFT SPLITTER -->
-            <GridSplitter Grid.Column="1" Grid.RowSpan="3" Width="5" HorizontalAlignment="Stretch" Background="Transparent"/>
+            <GridSplitter Grid.Row="0" Grid.Column="1" Grid.RowSpan="3" Width="4" HorizontalAlignment="Stretch" Background="Transparent"/>
 
-            <!-- EDITOR AREA -->
+            <!-- CENTER WORKSPACE AREA -->
             <Grid Grid.Row="0" Grid.Column="2">
-                <!-- CODE EDITOR -->
-                <Border x:Name="CodeEditorContainer" Background="#1e1e1e" Visibility="Collapsed">
+
+                <!-- 1. CODE EDITOR WORKSPACE -->
+                <Border x:Name="CodeEditorContainer" Background="#1e1e1e" Visibility="Visible">
                     <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="30"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <Grid Grid.Row="0">
-                            <TextBlock Style="{StaticResource SectionHeaderStyle}" VerticalAlignment="Center">
-                                <TextBlock.Inlines>
-                                    <Run Text="EDITOR"/>
-                                </TextBlock.Inlines>
-                            </TextBlock>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,10,15,0">
-                                <Button x:Name="SaveButton" 
-                                        Click="OnSaveClicked" 
-                                        Style="{StaticResource SceneToolButton}" 
-                                        ToolTip="Save File (Ctrl+S)"
-                                        Width="32" Height="32">
-                                    <iconPacks:PackIconMaterial Kind="ContentSave" Width="14" Height="14" VerticalAlignment="Center"/>
-                                </Button>
-                                <Button x:Name="RunButton" 
-                                        Click="OnRunClicked" 
-                                        Style="{StaticResource SceneToolButton}" 
-                                        ToolTip="Run Script (F5)" 
-                                        Margin="8,0,0,0" 
-                                        Background="#28a745"
-                                        Width="32" Height="32">
-                                    <iconPacks:PackIconMaterial Kind="Play" Width="14" Height="14" VerticalAlignment="Center"/>
-                                </Button>
-                            </StackPanel>
-                        </Grid>
+                        <!-- Editor Tab Bar & Code Navigation Tools -->
+                        <Border Grid.Row="0" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
-                        <TabControl x:Name="FileTabs"
-                                    Grid.Row="1"
-                                    Background="#252526"
-                                    BorderThickness="0"
-                                    FontSize="12"
-                                    Padding="0"
-                                    SelectionChanged="OnTabSelectionChanged">
-                            <TabControl.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <iconPacks:PackIconMaterial Kind="{Binding Icon}" Width="12" Height="12" Margin="0,0,8,0" VerticalAlignment="Center" Opacity="0.8"/>
-                                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center" FontSize="11" FontWeight="SemiBold"/>
-                                        <Button Width="18" Height="18" Background="Transparent" BorderThickness="0" Foreground="#666" Cursor="Hand" Click="OnCloseTabClick" Tag="{Binding}" VerticalAlignment="Center" Margin="10,0,0,0">
-                                            <iconPacks:PackIconMaterial Kind="Close" Width="10" Height="10" VerticalAlignment="Center"/>
-                                            <Button.Style>
-                                                <Style TargetType="Button">
-                                                    <Style.Triggers>
-                                                        <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter Property="Foreground" Value="White"/>
-                                                            <Setter Property="Background" Value="#444"/>
-                                                        </Trigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Button.Style>
-                                        </Button>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </TabControl.ItemTemplate>
-                        </TabControl>
+                                <TabControl x:Name="FileTabs"
+                                            Grid.Column="0"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            FontSize="12"
+                                            Padding="0"
+                                            SelectionChanged="OnTabSelectionChanged">
+                                    <TabControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type views:OpenTabItem}">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <iconPacks:PackIconMaterial Kind="{Binding Icon}" Width="12" Height="12" Margin="0,0,6,0" VerticalAlignment="Center" Opacity="0.85"/>
+                                                <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" FontSize="11" FontWeight="SemiBold"/>
+                                                <Button Width="16" Height="16" Background="Transparent" BorderThickness="0" Foreground="#888" Cursor="Hand" Click="OnCloseTabClick" Tag="{Binding}" VerticalAlignment="Center" Margin="8,0,0,0" ToolTip="Close Tab">
+                                                    <iconPacks:PackIconMaterial Kind="Close" Width="9" Height="9"/>
+                                                </Button>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </TabControl.ItemTemplate>
+                                </TabControl>
 
-                        <Border Grid.Row="2" Background="#1e1e1e">
-                            <wv2:WebView2 x:Name="CodeWebView"/>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0,8,0">
+                                    <ComboBox x:Name="SymbolOutlineCombo" Width="155" Height="22" FontSize="11" Margin="0,0,6,0" SelectionChanged="SymbolOutlineCombo_SelectionChanged" ToolTip="Go to Symbol / Definition in File"/>
+                                    <Button Click="OnFindClicked" Style="{StaticResource SceneToolButton}" Height="22" ToolTip="Find in File (Ctrl+F)">
+                                        <iconPacks:PackIconMaterial Kind="Magnify" Width="11" Height="11"/>
+                                    </Button>
+                                    <Button Click="OnReplaceClicked" Style="{StaticResource SceneToolButton}" Height="22" ToolTip="Replace in File (Ctrl+H)">
+                                        <iconPacks:PackIconMaterial Kind="FindReplace" Width="11" Height="11"/>
+                                    </Button>
+                                    <Button Click="OnSplitEditorToggleClicked" Style="{StaticResource SceneToolButton}" Height="22" ToolTip="Toggle Split Reference View">
+                                        <iconPacks:PackIconMaterial Kind="DockRight" Width="11" Height="11"/>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
                         </Border>
+
+                        <!-- Editor Split Grid -->
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition x:Name="SplitEditorCol" Width="0"/>
+                            </Grid.ColumnDefinitions>
+
+                            <wv2:WebView2 x:Name="CodeWebView" Grid.Column="0"/>
+
+                            <Border x:Name="SplitEditorBorder" Grid.Column="1" Background="#1a1a1c" BorderBrush="#3c3c3c" BorderThickness="1,0,0,0" Visibility="Collapsed">
+                                <DockPanel>
+                                    <Border DockPanel.Dock="Top" Background="#252526" Padding="8,4">
+                                        <TextBlock Text="Split Reference Viewer (Read-Only)" Foreground="#aaaaaa" FontSize="11" FontWeight="SemiBold"/>
+                                    </Border>
+                                    <TextBox x:Name="SplitPreviewTextBox" Background="#18181a" Foreground="#d4d4d4" FontFamily="Consolas" FontSize="12" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" BorderThickness="0" Padding="10"/>
+                                </DockPanel>
+                            </Border>
+                        </Grid>
                     </Grid>
                 </Border>
 
-                <!-- SCENE EDITOR -->
+                <!-- 2. SCENE EDITOR WORKSPACE (2D Canvas & Optional 3D Three.js Viewport) -->
                 <Grid x:Name="SceneEditorContainer" Visibility="Collapsed">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="36"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- SCENE TOOLBAR -->
-                    <Border Grid.Row="0" Background="#2d2d30" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1" Padding="5">
-                        <WrapPanel VerticalAlignment="Center">
-                            <Button Style="{StaticResource SceneToolButton}" ToolTip="Undo" Margin="4,4,16,0">
-                                <iconPacks:PackIconMaterial Kind="Undo" Width="14" Height="14" VerticalAlignment="Center"/>
+                    <!-- Scene Toolbar -->
+                    <Border Grid.Row="0" Background="#2d2d30" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1" Padding="6,0">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Click="OnNewSceneClicked" Style="{StaticResource SceneToolButton}" ToolTip="New Scene">
+                                <iconPacks:PackIconMaterial Kind="FilePlusOutline" Width="12" Height="12"/>
                             </Button>
-                            <Button Style="{StaticResource SceneToolButton}" ToolTip="Redo" Margin="4,4,16,0">
-                                <iconPacks:PackIconMaterial Kind="Redo" Width="14" Height="14" VerticalAlignment="Center"/>
+                            <Button Click="OnLoadScene" Style="{StaticResource SceneToolButton}" ToolTip="Open Scene (.Cobra)">
+                                <iconPacks:PackIconMaterial Kind="FolderOpen" Width="12" Height="12"/>
                             </Button>
-
-                            
-                            <Separator Width="10" Visibility="Collapsed"/>
-                            <Button Click="OnSaveScene" Style="{StaticResource SceneToolButton}" ToolTip="Save Scene" Margin="4,4,16,0">
-                                <iconPacks:PackIconMaterial Kind="ContentSave" Width="14" Height="14" VerticalAlignment="Center"/>
+                            <Button Click="OnSaveScene" Style="{StaticResource SceneToolButton}" ToolTip="Save Scene &amp; Sync Python Scene Module">
+                                <iconPacks:PackIconMaterial Kind="ContentSave" Width="12" Height="12"/>
                             </Button>
-                            <Button Click="OnLoadScene" Style="{StaticResource SceneToolButton}" ToolTip="Load Scene" Margin="4,4,16,0">
-                                <iconPacks:PackIconMaterial Kind="FolderOpen" Width="14" Height="14" VerticalAlignment="Center"/>
+                            <Button Click="OnSceneUndoClicked" Style="{StaticResource SceneToolButton}" ToolTip="Undo Scene Action">
+                                <iconPacks:PackIconMaterial Kind="Undo" Width="12" Height="12"/>
                             </Button>
-                            <Separator Width="10" Visibility="Collapsed"/>
-                            <Button Click="OnAddGameObject" Style="{StaticResource SceneToolButton}" ToolTip="Add Object" Margin="4,4,16,0">
-                                <iconPacks:PackIconMaterial Kind="Plus" Width="14" Height="14" VerticalAlignment="Center"/>
-                            </Button>
-                            <Button Click="OnSavePrefab" Style="{StaticResource SceneToolButton}" ToolTip="Save Prefab" Margin="4,4,16,0">
-                                <iconPacks:PackIconMaterial Kind="ContentSaveOutline" Width="14" Height="14" VerticalAlignment="Center"/>
-                            </Button>
-                            <Button Click="OnLoadPrefab" Style="{StaticResource SceneToolButton}" ToolTip="Load Prefab" Margin="4,4,16,0">
-                                <iconPacks:PackIconMaterial Kind="FolderOpenOutline" Width="14" Height="14" VerticalAlignment="Center"/>
-                            </Button>
-                            <Button Style="{StaticResource SceneToolButton}" ToolTip="Duplicate" Margin="4,4,16,0">
-                                <iconPacks:PackIconMaterial Kind="ContentCopy" Width="14" Height="14" VerticalAlignment="Center"/>
-                            </Button>
-                            <Button Style="{StaticResource SceneToolButton}" ToolTip="Delete" Margin="4,4,16,0">
-                                <iconPacks:PackIconMaterial Kind="Delete" Width="14" Height="14" VerticalAlignment="Center"/>
+                            <Button Click="OnSceneRedoClicked" Style="{StaticResource SceneToolButton}" ToolTip="Redo Scene Action">
+                                <iconPacks:PackIconMaterial Kind="Redo" Width="12" Height="12"/>
                             </Button>
 
+                            <Border Width="1" Height="18" Background="#3c3c3c" Margin="6,0"/>
 
+                            <Button Click="OnAddGameObject" Style="{StaticResource SceneToolButton}" Background="#ff8c00" ToolTip="Add Game Object to Scene">
+                                <StackPanel Orientation="Horizontal">
+                                    <iconPacks:PackIconMaterial Kind="Plus" Width="12" Height="12" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Add Object" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Click="OnDuplicateSceneObject" Style="{StaticResource SceneToolButton}" ToolTip="Duplicate Selected Object">
+                                <iconPacks:PackIconMaterial Kind="ContentCopy" Width="12" Height="12"/>
+                            </Button>
+                            <Button Click="OnDeleteSceneObject" Style="{StaticResource SceneToolButton}" ToolTip="Delete Selected Object">
+                                <iconPacks:PackIconMaterial Kind="Delete" Width="12" Height="12"/>
+                            </Button>
+                            <Button Click="OnSavePrefab" Style="{StaticResource SceneToolButton}" ToolTip="Save Selected Object as Prefab">
+                                <iconPacks:PackIconMaterial Kind="PackageUp" Width="12" Height="12"/>
+                            </Button>
+                            <Button Click="OnLoadPrefab" Style="{StaticResource SceneToolButton}" ToolTip="Instantiate Prefab into Scene">
+                                <iconPacks:PackIconMaterial Kind="PackageDown" Width="12" Height="12"/>
+                            </Button>
 
+                            <Border Width="1" Height="18" Background="#3c3c3c" Margin="6,0"/>
 
-                            <Separator Width="10" Visibility="Collapsed"/>
-                            <Button Style="{StaticResource SceneToolButton}" ToolTip="Zoom In" Margin="4,4,16,0">
-                                <iconPacks:PackIconMaterial Kind="MagnifyPlus" Width="14" Height="14" VerticalAlignment="Center"/>
+                            <CheckBox x:Name="SnapToGridCheck" Content="Snap" Foreground="#cccccc" FontSize="11" IsChecked="True" VerticalAlignment="Center" Margin="4,0"/>
+                            <CheckBox x:Name="ShowCollidersCheck" Content="Colliders" Foreground="#4ec9b0" FontSize="11" IsChecked="True" VerticalAlignment="Center" Margin="6,0" Checked="OnSceneOverlayOptionChanged" Unchecked="OnSceneOverlayOptionChanged"/>
+
+                            <Button Click="OnSceneZoomInClicked" Style="{StaticResource SceneToolButton}" ToolTip="Zoom In">
+                                <iconPacks:PackIconMaterial Kind="MagnifyPlus" Width="12" Height="12"/>
                             </Button>
-                            <Button Style="{StaticResource SceneToolButton}" ToolTip="Zoom Out" Margin="4,4,16,0">
-                                <iconPacks:PackIconMaterial Kind="MagnifyMinus" Width="14" Height="14" VerticalAlignment="Center"/>
+                            <Button Click="OnSceneZoomOutClicked" Style="{StaticResource SceneToolButton}" ToolTip="Zoom Out">
+                                <iconPacks:PackIconMaterial Kind="MagnifyMinus" Width="12" Height="12"/>
                             </Button>
-                            <Button Style="{StaticResource SceneToolButton}" ToolTip="Reset View" Margin="4,4,16,0">
-                                <iconPacks:PackIconMaterial Kind="Refresh" Width="14" Height="14" VerticalAlignment="Center"/>
+                            <Button Click="OnSceneResetViewClicked" Style="{StaticResource SceneToolButton}" ToolTip="Reset Camera View">
+                                <iconPacks:PackIconMaterial Kind="ImageFilterCenterFocus" Width="12" Height="12"/>
                             </Button>
-                            <Separator Width="10" Visibility="Collapsed"/>
-                            <ToggleButton x:Name="PlayToggle"
-                                          Click="OnPlayToggle"
-                                          Margin="4,4,16,0"
-                                          Padding="10,5"
-                                          Background="#28a745"
-                                          Foreground="White"
-                                          BorderThickness="0"
-                                          ToolTip="Play/Stop Simulation"
-                                          Cursor="Hand">
-                                <ToggleButton.Template>
-                                    <ControlTemplate TargetType="ToggleButton">
-                                        <Border x:Name="Border" 
-                                                Background="{TemplateBinding Background}" 
-                                                CornerRadius="3">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Border" Property="Background" Value="#34ce57"/>
-                                            </Trigger>
-                                            <Trigger Property="IsChecked" Value="True">
-                                                <Setter TargetName="Border" Property="Background" Value="#dc3545"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </ToggleButton.Template>
-                                <iconPacks:PackIconMaterial Kind="Play" Width="14" Height="14" VerticalAlignment="Center"/>
+
+                            <Border Width="1" Height="18" Background="#3c3c3c" Margin="6,0"/>
+
+                            <Button x:Name="Toggle2D3DButton" Click="OnToggle2D3DViewportClicked" Style="{StaticResource SceneToolButton}" Background="#3b5998" ToolTip="Switch between 2D Canvas and 3D Three.js Viewport">
+                                <TextBlock x:Name="Toggle2D3DText" Text="Mode: 2D Canvas" FontWeight="SemiBold"/>
+                            </Button>
+
+                            <ToggleButton x:Name="PlayToggle" Click="OnPlayToggle" Margin="6,0,0,0" Padding="10,4" Height="26" Background="#28a745" Foreground="White" BorderThickness="0" ToolTip="Simulate Scene Physics &amp; Scripts" Cursor="Hand">
+                                <StackPanel Orientation="Horizontal">
+                                    <iconPacks:PackIconMaterial Kind="Play" Width="12" Height="12" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Simulate" FontSize="11" FontWeight="SemiBold"/>
+                                </StackPanel>
                             </ToggleButton>
-                            <Button Style="{StaticResource SceneToolButton}" ToolTip="Stop Simulation" Margin="4,4,16,0">
-                                <iconPacks:PackIconMaterial Kind="Stop" Width="14" Height="14" VerticalAlignment="Center"/>
-                            </Button>
-                        </WrapPanel>
+                        </StackPanel>
                     </Border>
 
+                    <!-- Scene Viewport & Inspector Split -->
                     <Grid Grid.Row="1">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="5"/>
-                            <ColumnDefinition Width="250" MinWidth="150"/>
+                            <ColumnDefinition Width="4"/>
+                            <ColumnDefinition Width="265" MinWidth="200"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- SCENE CANVAS -->
-                        <Canvas x:Name="SceneCanvas"
-                                Background="#1e1e1e"
-                                AllowDrop="True"
-                                Drop="OnAssetDropped"
-                                Grid.Column="0"
-                                ClipToBounds="True"
-                                MouseLeftButtonDown="SceneCanvas_MouseDown"
-                                MouseMove="SceneCanvas_MouseMove"
-                                MouseLeftButtonUp="SceneCanvas_MouseUp"
-                                MouseWheel="SceneCanvas_MouseWheel"/>
+                        <!-- 2D Canvas OR 3D WebView2 -->
+                        <Grid Grid.Column="0">
+                            <Canvas x:Name="SceneCanvas"
+                                    Background="#18181b"
+                                    AllowDrop="True"
+                                    Drop="OnAssetDropped"
+                                    ClipToBounds="True"
+                                    MouseLeftButtonDown="SceneCanvas_MouseDown"
+                                    MouseMove="SceneCanvas_MouseMove"
+                                    MouseLeftButtonUp="SceneCanvas_MouseUp"
+                                    MouseWheel="SceneCanvas_MouseWheel"/>
 
-                        <!-- CENTER SPLITTER -->
-                        <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="Transparent"/>
+                            <wv2:WebView2 x:Name="Viewport3DWebView" Visibility="Collapsed"/>
+                        </Grid>
 
-                        <!-- HIERARCHY & INSPECTOR PANEL -->
+                        <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch" Background="Transparent"/>
+
+                        <!-- Hierarchy & Contextual Property Inspector -->
                         <Border x:Name="InspectorContainer" Grid.Column="2" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1,0,0,0">
-                            <DockPanel>
-                                <!-- Hierarchy Section -->
-                                <Border DockPanel.Dock="Top" Background="#2d2d30" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1">
-                                    <StackPanel>
-                                        <TextBlock Foreground="#aaaaaa" FontSize="12" FontWeight="Bold" Margin="10,8,10,5" VerticalAlignment="Center">
-                                            HIERARCHY
-                                        </TextBlock>
-                                        <TextBox x:Name="SearchHierarchy" 
-                                                 Background="#1e1e1e" 
-                                                 Foreground="White" 
-                                                 BorderBrush="#3c3c3c"
-                                                 Margin="10,0,10,8"
-                                                 Padding="5"
-                                                 FontSize="12"
-                                                 VerticalAlignment="Center">
-                                            <TextBox.Tag>
-                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <iconPacks:PackIconMaterial Kind="Magnify" Width="14" Height="14" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                                    <TextBlock Text="Search objects..." VerticalAlignment="Center"/>
-                                                </StackPanel>
-                                            </TextBox.Tag>
-                                        </TextBox>
-                                    </StackPanel>
-                                </Border>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="210" MinHeight="120"/>
+                                    <RowDefinition Height="4"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
 
-                                <ListBox x:Name="SceneHierarchy"
-                                         Background="#1e1e1e"
-                                         Foreground="White"
-                                         BorderThickness="0"
-                                         DisplayMemberPath="Name"
-                                         FontSize="12"
-                                         Margin="0,0,0,5"
-                                         SelectionChanged="OnHierarchySelectionChanged"/>
+                                <!-- Scene Hierarchy Tree/List -->
+                                <DockPanel Grid.Row="0">
+                                    <Border DockPanel.Dock="Top" Background="#2d2d30" Padding="8,6" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1">
+                                        <Grid>
+                                            <TextBlock Text="SCENE HIERARCHY" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="ActiveSceneNameLabel" Text="MainScene" Foreground="#ff8c00" FontSize="11" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                    <TextBox x:Name="SearchHierarchy" DockPanel.Dock="Top" Background="#1e1e1e" Foreground="White" BorderBrush="#3c3c3c" Margin="6,6,6,4" Padding="5,3" FontSize="11" TextChanged="SearchHierarchy_TextChanged" ToolTip="Filter scene objects by name"/>
+                                    <ListBox x:Name="SceneHierarchy" Background="#1e1e1e" Foreground="White" BorderThickness="0" DisplayMemberPath="HierarchyDisplay" FontSize="11" Margin="6,0,6,6" SelectionChanged="OnHierarchySelectionChanged"/>
+                                </DockPanel>
 
-                                <!-- Inspector Section -->
-                                <Border DockPanel.Dock="Bottom" Background="#2d2d30" BorderBrush="#3c3c3c" BorderThickness="0,1,0,0" Margin="0,5,0,0">
-                                    <StackPanel>
-                                        <TextBlock Foreground="#aaaaaa" FontSize="12" FontWeight="Bold" Margin="10,8,10,5" VerticalAlignment="Center">
-                                            INSPECTOR
-                                        </TextBlock>
-                                        <Button Style="{StaticResource SceneToolButton}" Margin="10,0,10,8" Background="#ff8c00" VerticalAlignment="Center">
-                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <iconPacks:PackIconMaterial Kind="Plus" Width="14" Height="14" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                                <TextBlock Text="Add Component" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Button>
-                                    </StackPanel>
-                                </Border>
+                                <GridSplitter Grid.Row="1" Height="4" HorizontalAlignment="Stretch" Background="#3c3c3c"/>
 
-                                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                    <StackPanel x:Name="InspectorPanel" Margin="10">
-                                        <!-- inspector content -->
-                                    </StackPanel>
-                                </ScrollViewer>
-                            </DockPanel>
+                                <!-- Object Inspector -->
+                                <DockPanel Grid.Row="2">
+                                    <Border DockPanel.Dock="Top" Background="#2d2d30" Padding="8,6" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1">
+                                        <TextBlock Text="INSPECTOR" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold"/>
+                                    </Border>
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <StackPanel x:Name="InspectorPanel" Margin="10"/>
+                                    </ScrollViewer>
+                                </DockPanel>
+                            </Grid>
                         </Border>
                     </Grid>
                 </Grid>
 
-                <!-- VISUAL SCRIPTING -->
+                <!-- 3. VISUAL SCRIPTING WORKSPACE -->
                 <Border x:Name="VisualScriptingContainer" Background="#1e1e1e" Visibility="Collapsed">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="36"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Border Grid.Row="0" Background="#2d2d30" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1" Padding="8,0">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Node Library:" Foreground="#cccccc" FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <ComboBox x:Name="NodeTemplateCombo" Width="210" Height="24" FontSize="11" VerticalContentAlignment="Center"/>
+                                <Button Click="OnAddVisualNodeClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" Margin="6,0,2,0" ToolTip="Add Selected Node to Graph">
+                                    <StackPanel Orientation="Horizontal">
+                                        <iconPacks:PackIconMaterial Kind="Plus" Width="12" Height="12" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Add Node"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Click="OnDeleteVisualNodeClicked" Style="{StaticResource SceneToolButton}" ToolTip="Delete Selected Node">
+                                    <iconPacks:PackIconMaterial Kind="Delete" Width="12" Height="12"/>
+                                </Button>
+                                <Button Click="OnValidateNodeGraphClicked" Style="{StaticResource SceneToolButton}" ToolTip="Validate Node Graph">
+                                    <StackPanel Orientation="Horizontal">
+                                        <iconPacks:PackIconMaterial Kind="CheckDecagram" Width="12" Height="12" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Validate"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Click="OnGeneratePythonFromGraphClicked" Style="{StaticResource SceneToolButton}" Background="#28a745" ToolTip="Compile Node Graph to Python Script">
+                                    <StackPanel Orientation="Horizontal">
+                                        <iconPacks:PackIconMaterial Kind="LanguagePython" Width="12" Height="12" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Generate Python Script"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Click="OnSaveNodeGraphClicked" Style="{StaticResource SceneToolButton}" ToolTip="Save Graph JSON">
+                                    <iconPacks:PackIconMaterial Kind="ContentSave" Width="12" Height="12"/>
+                                </Button>
+                                <Button Click="OnLoadNodeGraphClicked" Style="{StaticResource SceneToolButton}" ToolTip="Load Graph JSON">
+                                    <iconPacks:PackIconMaterial Kind="FolderOpen" Width="12" Height="12"/>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="260"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Canvas x:Name="NodeCanvas" Grid.Column="0" Background="#18181b" ClipToBounds="True"/>
+
+                            <Border Grid.Column="1" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1,0,0,0" Padding="10">
+                                <StackPanel x:Name="NodePropertiesPanel">
+                                    <TextBlock Text="NODE PROPERTIES" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Click a node to inspect or click two nodes sequentially to connect them." Foreground="#888888" FontSize="11" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- 4. ASSET BROWSER WORKSPACE -->
+                <Border x:Name="AssetBrowserContainer" Background="#1e1e1e" Visibility="Collapsed">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="38"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Border Grid.Row="0" Background="#2d2d30" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1" Padding="8,0">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Click="OnImportAssetClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" ToolTip="Import Validated Game Asset">
+                                    <StackPanel Orientation="Horizontal">
+                                        <iconPacks:PackIconMaterial Kind="Import" Width="12" Height="12" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Import Asset"/>
+                                    </StackPanel>
+                                </Button>
+                                <TextBox x:Name="AssetSearchBox" Width="180" Height="24" Margin="8,0" Background="#1e1e1e" Foreground="White" BorderBrush="#444" Padding="6,2" FontSize="11" TextChanged="AssetSearchBox_TextChanged" ToolTip="Search assets by name"/>
+                                <ComboBox x:Name="AssetCategoryCombo" Width="120" Height="24" FontSize="11" SelectionChanged="AssetCategoryCombo_SelectionChanged">
+                                    <ComboBoxItem Content="All Assets" IsSelected="True"/>
+                                    <ComboBoxItem Content="Image"/>
+                                    <ComboBoxItem Content="Audio"/>
+                                    <ComboBoxItem Content="Model3D"/>
+                                    <ComboBoxItem Content="Font"/>
+                                    <ComboBoxItem Content="Scene"/>
+                                    <ComboBoxItem Content="Script"/>
+                                </ComboBox>
+                                <Button Click="OnCheckMissingAssetsClicked" Style="{StaticResource SceneToolButton}" Margin="8,0,2,0" ToolTip="Scan for Missing or Duplicate Assets">
+                                    <TextBlock Text="Audit Assets"/>
+                                </Button>
+                                <Button Click="OnRefreshAssetsClicked" Style="{StaticResource SceneToolButton}" ToolTip="Refresh Assets">
+                                    <iconPacks:PackIconMaterial Kind="Refresh" Width="12" Height="12"/>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="260"/>
+                            </Grid.ColumnDefinitions>
+
+                            <ListBox x:Name="AssetListBox" Grid.Column="0" Background="#1e1e1e" BorderThickness="0" SelectionChanged="AssetListBox_SelectionChanged">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type assets:AssetItem}">
+                                        <Grid Margin="6,4">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="26"/>
+                                                <ColumnDefinition Width="220"/>
+                                                <ColumnDefinition Width="90"/>
+                                                <ColumnDefinition Width="90"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <iconPacks:PackIconMaterial Grid.Column="0" Kind="{Binding IconKind}" Width="14" Height="14" Foreground="#ff8c00" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="White" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding FormattedSize}" Foreground="#aaaaaa" FontSize="11" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding DimensionsOrInfo}" Foreground="#4ec9b0" FontSize="11" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="4" Text="{Binding RelativePath}" Foreground="#777777" FontSize="11" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+
+                            <Border Grid.Column="1" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1,0,0,0" Padding="12">
+                                <StackPanel x:Name="AssetPreviewPanel">
+                                    <TextBlock Text="ASSET PREVIEW &amp; METADATA" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
+                                    <Image x:Name="AssetImagePreview" MaxHeight="160" Margin="0,0,0,10" Stretch="Uniform"/>
+                                    <TextBlock x:Name="AssetDetailsText" Text="Select an asset to inspect dimensions, usage count, or preview audio." Foreground="#aaaaaa" FontSize="11" TextWrapping="Wrap"/>
+                                    <StackPanel x:Name="AudioPreviewControls" Orientation="Horizontal" Margin="0,10,0,0" Visibility="Collapsed">
+                                        <Button Click="OnPlayAudioAssetClicked" Style="{StaticResource SceneToolButton}" Background="#28a745">
+                                            <TextBlock Text="Play Audio"/>
+                                        </Button>
+                                        <Button Click="OnStopAudioAssetClicked" Style="{StaticResource SceneToolButton}" Background="#c42b1c" Margin="6,0,0,0">
+                                            <TextBlock Text="Stop"/>
+                                        </Button>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- 5. ANIMATION TOOLS WORKSPACE -->
+                <Border x:Name="AnimationToolsContainer" Background="#1e1e1e" Visibility="Collapsed" Padding="16">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="320"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="14">
+                            <StackPanel>
+                                <TextBlock Text="2D SPRITE SHEET &amp; 3D ANIMATION CONFIG" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,12"/>
+                                <Button Click="OnSelectSpriteSheetClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" HorizontalAlignment="Stretch" Margin="0,0,0,10">
+                                    <TextBlock Text="Load Sprite Sheet Image..."/>
+                                </Button>
+                                <TextBlock Text="Horizontal Frame Count:" Foreground="#cccccc" FontSize="11" Margin="0,4,0,2"/>
+                                <TextBox x:Name="AnimFrameCountBox" Text="4" Background="#1e1e1e" Foreground="White" BorderBrush="#444" Padding="5,3" FontSize="12"/>
+                                <TextBlock Text="Frame Duration (ms):" Foreground="#cccccc" FontSize="11" Margin="0,8,0,2"/>
+                                <TextBox x:Name="AnimFrameDurationBox" Text="120" Background="#1e1e1e" Foreground="White" BorderBrush="#444" Padding="5,3" FontSize="12"/>
+                                <CheckBox x:Name="AnimLoopCheck" Content="Loop Animation Sequence" Foreground="White" IsChecked="True" Margin="0,10,0,10"/>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Click="OnStartAnimPreviewClicked" Style="{StaticResource SceneToolButton}" Background="#28a745">
+                                        <TextBlock Text="Play Preview"/>
+                                    </Button>
+                                    <Button Click="OnStopAnimPreviewClicked" Style="{StaticResource SceneToolButton}" Background="#c42b1c" Margin="6,0,0,0">
+                                        <TextBlock Text="Stop"/>
+                                    </Button>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="2" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="14">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Top" x:Name="AnimStatusLabel" Text="Animation Playback Preview" Foreground="White" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,10"/>
+                                <Border Background="#18181b" BorderBrush="#3c3c3c" BorderThickness="1">
+                                    <Image x:Name="AnimPreviewImage" Width="192" Height="192" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </DockPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- 6. PYTHON ENVIRONMENT & PIP PACKAGE MANAGER -->
+                <Border x:Name="PythonEnvContainer" Background="#1e1e1e" Visibility="Collapsed" Padding="16">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
-                            <RowDefinition Height="5"/>
-                            <RowDefinition Height="150" MinHeight="100"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Style="{StaticResource SectionHeaderStyle}" VerticalAlignment="Center">
-                            <TextBlock.Inlines>
-                                <Run Text="VISUAL SCRIPTING"/>
-                            </TextBlock.Inlines>
-                        </TextBlock>
-
-                        <Border Grid.Row="0" Background="#2d2d30" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1" Padding="5" Margin="0,10,0,0">
-                            <WrapPanel VerticalAlignment="Center">
-                                <Button Style="{StaticResource SceneToolButton}" ToolTip="Add Node" Margin="4,4,16,0">
-                                    <iconPacks:PackIconMaterial Kind="Plus" Width="14" Height="14" VerticalAlignment="Center"/>
-                                </Button>
-                                <Button Style="{StaticResource SceneToolButton}" ToolTip="Delete Node" Margin="4,4,16,0">
-                                    <iconPacks:PackIconMaterial Kind="Delete" Width="14" Height="14" VerticalAlignment="Center"/>
-                                </Button>
-                                <Button Style="{StaticResource SceneToolButton}" ToolTip="Connect" Margin="4,4,16,0">
-                                    <iconPacks:PackIconMaterial Kind="LinkVariant" Width="14" Height="14" VerticalAlignment="Center"/>
-                                </Button>
-                                <Button Style="{StaticResource SceneToolButton}" ToolTip="Save Graph" Margin="4,4,16,0">
-                                    <iconPacks:PackIconMaterial Kind="ContentSave" Width="14" Height="14" VerticalAlignment="Center"/>
-                                </Button>
-                                <Button Style="{StaticResource SceneToolButton}" ToolTip="Load Graph" Margin="4,4,16,0">
-                                    <iconPacks:PackIconMaterial Kind="FolderOpen" Width="14" Height="14" VerticalAlignment="Center"/>
-                                </Button>
-                            </WrapPanel>
+                        <Border Grid.Row="0" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="14" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="PROJECT PYTHON INTERPRETER &amp; VIRTUAL ENVIRONMENT" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <ComboBox x:Name="ProjectInterpreterCombo" Width="420" Height="28" FontSize="11" SelectionChanged="ProjectInterpreterCombo_SelectionChanged"/>
+                                        <Button Click="OnBrowseInterpreterClicked" Style="{StaticResource SceneToolButton}" Height="28" Margin="6,0,0,0" Content="Browse..."/>
+                                        <Button Click="OnCreateOrValidateVenvClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" Height="28" Margin="6,0,0,0" Content="Create / Validate Venv"/>
+                                    </StackPanel>
+                                    <TextBlock x:Name="EnvValidationStatusText" Text="Environment status: Ready" Foreground="#4ec9b0" FontSize="11" Margin="0,6,0,0"/>
+                                </StackPanel>
+                            </Grid>
                         </Border>
 
-                        <!-- Node Canvas -->
-                        <Canvas x:Name="NodeCanvas" 
-                                Grid.Row="1" 
-                                Background="#1e1e1e" 
-                                ClipToBounds="True"/>
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
 
-                        <!-- SCRIPTING SPLITTER -->
-                        <GridSplitter Grid.Row="2" Height="5" HorizontalAlignment="Stretch" Background="Transparent"/>
+                            <Border Grid.Column="0" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Top" Text="INSTALLED PACKAGES (pip list)" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                                        <Button Click="OnUpdateSelectedPackageClicked" Style="{StaticResource SceneToolButton}" Content="Update Selected"/>
+                                        <Button Click="OnUninstallSelectedPackageClicked" Style="{StaticResource SceneToolButton}" Background="#c42b1c" Margin="6,0,0,0" Content="Uninstall Selected"/>
+                                        <Button Click="OnRefreshPackagesClicked" Style="{StaticResource SceneToolButton}" Margin="6,0,0,0" Content="Refresh"/>
+                                    </StackPanel>
+                                    <ListBox x:Name="InstalledPackagesList" Background="#1e1e1e" Foreground="White" BorderBrush="#3c3c3c" FontSize="11"/>
+                                </DockPanel>
+                            </Border>
 
-                        <!-- Node Properties -->
-                        <Border Grid.Row="3" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="0,1,0,0">
-                            <StackPanel Margin="10">
-                                <TextBlock Foreground="#aaaaaa" FontSize="12" FontWeight="Bold" Margin="0,0,0,10" VerticalAlignment="Center">
-                                    NODE PROPERTIES
-                                </TextBlock>
-                                <TextBlock Text="Node Name:" Foreground="#888888" FontSize="12" VerticalAlignment="Center"/>
-                                <TextBox Text="New Node" Background="#1e1e1e" Foreground="White" BorderBrush="#3c3c3c" Margin="0,5,0,10" Padding="5" FontSize="12" VerticalAlignment="Center"/>
-                                <TextBlock Text="Node Type:" Foreground="#888888" FontSize="12" VerticalAlignment="Center"/>
-                                <ComboBox Background="#1e1e1e" Foreground="White" BorderBrush="#3c3c3c" Margin="0,5,0,0" FontSize="12" VerticalAlignment="Center">
-                                    <ComboBoxItem Background="#2d2d30" Foreground="White">Action</ComboBoxItem>
-                                    <ComboBoxItem Background="#2d2d30" Foreground="White">Condition</ComboBoxItem>
-                                    <ComboBoxItem Background="#2d2d30" Foreground="White">Event</ComboBoxItem>
-                                    <ComboBoxItem Background="#2d2d30" Foreground="White">Loop</ComboBoxItem>
-                                </ComboBox>
+                            <Border Grid.Column="2" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Top" Text="INSTALL PACKAGES &amp; GAME FRAMEWORKS" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBox x:Name="PackageInstallInput" Width="210" Height="26" Background="#1e1e1e" Foreground="White" BorderBrush="#444" Padding="6,3" FontSize="11" ToolTip="Enter package name (e.g. pygame-ce, pymunk, panda3d, ursina)"/>
+                                        <Button Click="OnInstallTypedPackageClicked" Style="{StaticResource SceneToolButton}" Background="#28a745" Margin="6,0,0,0" Content="Install Package"/>
+                                        <Button Click="OnInstallAllRequirementsClicked" Style="{StaticResource SceneToolButton}" Margin="6,0,0,0" Content="Sync requirements.txt"/>
+                                    </StackPanel>
+                                    <ListBox x:Name="CuratedPackagesList" Background="#1e1e1e" Foreground="#cccccc" BorderBrush="#3c3c3c" FontSize="11" MouseDoubleClick="OnCuratedPackageDoubleClick"/>
+                                </DockPanel>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- 7. DEBUGGER WORKSPACE -->
+                <Border x:Name="DebuggerContainer" Background="#1e1e1e" Visibility="Collapsed" Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="38"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Border Grid.Row="0" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="8,0" Margin="0,0,0,12">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Click="OnDebugContinueClicked" Style="{StaticResource SceneToolButton}" Background="#28a745" Content="Continue (F5)"/>
+                                <Button Click="OnDebugStepOverClicked" Style="{StaticResource SceneToolButton}" Content="Step Over (F10)"/>
+                                <Button Click="OnDebugStepIntoClicked" Style="{StaticResource SceneToolButton}" Content="Step Into (F11)"/>
+                                <Button Click="OnDebugStepOutClicked" Style="{StaticResource SceneToolButton}" Content="Step Out (Shift+F11)"/>
+                                <Button Click="OnStopClicked" Style="{StaticResource SceneToolButton}" Background="#c42b1c" Content="Stop Debugger"/>
+                                <TextBlock x:Name="DebuggerStatusLabel" Text="Status: Idle (Click line numbers in Monaco Editor to toggle breakpoints)" Foreground="#ff8c00" FontSize="11" VerticalAlignment="Center" Margin="14,0,0,0"/>
                             </StackPanel>
+                        </Border>
+
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Top" Text="CALL STACK &amp; ACTIVE BREAKPOINTS" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <ListBox x:Name="DebugCallStackList" Background="#1e1e1e" Foreground="White" BorderBrush="#3c3c3c" FontSize="11"/>
+                                </DockPanel>
+                            </Border>
+
+                            <Border Grid.Column="2" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Top" Text="LOCAL VARIABLES &amp; WATCH EVALUATOR" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                                        <TextBox x:Name="DebugWatchInput" Width="220" Height="26" Background="#1e1e1e" Foreground="White" BorderBrush="#444" Padding="5,3" FontSize="11" ToolTip="Evaluate Python expression in paused frame"/>
+                                        <Button Click="OnEvaluateWatchClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" Margin="6,0,0,0" Content="Evaluate Expression"/>
+                                    </StackPanel>
+                                    <ListBox x:Name="DebugLocalsList" Background="#1e1e1e" Foreground="#4ec9b0" BorderBrush="#3c3c3c" FontFamily="Consolas" FontSize="11"/>
+                                </DockPanel>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- 8. PERFORMANCE PROFILER WORKSPACE -->
+                <Border x:Name="ProfilerContainer" Background="#1e1e1e" Visibility="Collapsed" Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="90"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <UniformGrid Grid.Row="0" Columns="4" Margin="0,0,0,12">
+                            <Border Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,8,0">
+                                <StackPanel>
+                                    <TextBlock Text="IDE CPU USAGE" Foreground="#888888" FontSize="10" FontWeight="Bold"/>
+                                    <TextBlock x:Name="ProfCpuText" Text="0.0 %" Foreground="#ff8c00" FontSize="20" FontWeight="Bold" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12" Margin="4,0">
+                                <StackPanel>
+                                    <TextBlock Text="IDE WORKING MEMORY" Foreground="#888888" FontSize="10" FontWeight="Bold"/>
+                                    <TextBlock x:Name="ProfIdeMemText" Text="0.0 MB" Foreground="#4ec9b0" FontSize="20" FontWeight="Bold" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12" Margin="4,0">
+                                <StackPanel>
+                                    <TextBlock Text="GAME PROCESS MEMORY" Foreground="#888888" FontSize="10" FontWeight="Bold"/>
+                                    <TextBlock x:Name="ProfGameMemText" Text="Not Running" Foreground="White" FontSize="20" FontWeight="Bold" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12" Margin="8,0,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="SCENE FPS / FRAME TIME" Foreground="#888888" FontSize="10" FontWeight="Bold"/>
+                                    <TextBlock x:Name="ProfFpsText" Text="60 FPS (16.6 ms)" Foreground="#28a745" FontSize="18" FontWeight="Bold" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <Border Grid.Row="1" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Top" Text="REAL-TIME PERFORMANCE HISTORY GRAPH &amp; TELEMETRY" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
+                                <Canvas x:Name="ProfilerGraphCanvas" Background="#18181b" ClipToBounds="True" Height="220" DockPanel.Dock="Top" Margin="0,0,0,10"/>
+                                <ListBox x:Name="ProfilerHistoryLog" Background="#18181b" Foreground="#cccccc" BorderThickness="0" FontFamily="Consolas" FontSize="11"/>
+                            </DockPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- 9. GIT SOURCE CONTROL WORKSPACE -->
+                <Border x:Name="SourceControlContainer" Background="#1e1e1e" Visibility="Collapsed" Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="40"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Border Grid.Row="0" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="8,0" Margin="0,0,0,12">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Click="OnGitInitClicked" Style="{StaticResource SceneToolButton}" Content="Init Repo"/>
+                                <TextBlock x:Name="GitBranchLabel" Text="Branch: main" Foreground="#4ec9b0" FontWeight="Bold" FontSize="11" VerticalAlignment="Center" Margin="10,0"/>
+                                <Button Click="OnGitSwitchBranchClicked" Style="{StaticResource SceneToolButton}" Content="Switch / New Branch"/>
+                                <Button Click="OnGitStageAllClicked" Style="{StaticResource SceneToolButton}" Content="Stage All"/>
+                                <Button Click="OnGitPullClicked" Style="{StaticResource SceneToolButton}" Content="Pull"/>
+                                <Button Click="OnGitPushClicked" Style="{StaticResource SceneToolButton}" Content="Push"/>
+                                <Button Click="OnGitFetchClicked" Style="{StaticResource SceneToolButton}" Content="Fetch"/>
+                                <Button Click="OnGitRefreshClicked" Style="{StaticResource SceneToolButton}" Content="Refresh"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Top" Text="WORKING TREE CHANGES &amp; COMMIT" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
+                                        <TextBox x:Name="GitCommitMessageBox" Height="28" Background="#1e1e1e" Foreground="White" BorderBrush="#444" Padding="6,4" FontSize="11" Margin="0,0,0,6" ToolTip="Enter commit message"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button Click="OnGitCommitClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" Content="Commit Staged Changes"/>
+                                            <Button Click="OnGitStageSelectedClicked" Style="{StaticResource SceneToolButton}" Margin="6,0,0,0" Content="Stage Selected"/>
+                                            <Button Click="OnGitUnstageSelectedClicked" Style="{StaticResource SceneToolButton}" Margin="6,0,0,0" Content="Unstage Selected"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <ListBox x:Name="GitStatusList" Background="#1e1e1e" Foreground="White" BorderBrush="#3c3c3c" FontSize="11" SelectionChanged="GitStatusList_SelectionChanged"/>
+                                </DockPanel>
+                            </Border>
+
+                            <Border Grid.Column="2" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Top" Text="DIFF VIEWER &amp; COMMIT HISTORY" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <ListBox x:Name="GitHistoryList" DockPanel.Dock="Bottom" Height="120" Background="#1e1e1e" Foreground="#aaaaaa" BorderBrush="#3c3c3c" FontFamily="Consolas" FontSize="11" Margin="0,8,0,0"/>
+                                    <TextBox x:Name="GitDiffTextBox" Background="#18181b" Foreground="#d4d4d4" FontFamily="Consolas" FontSize="11" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" BorderThickness="0" Padding="8"/>
+                                </DockPanel>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- 10. BUILD & PACKAGING WORKSPACE -->
+                <Border x:Name="BuildPackageContainer" Background="#1e1e1e" Visibility="Collapsed" Padding="16">
+                    <Border Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="18">
+                        <StackPanel MaxWidth="680" HorizontalAlignment="Left">
+                            <TextBlock Text="GAME PACKAGING &amp; DISTRIBUTION (PyInstaller)" Foreground="#bbbbbb" FontSize="12" FontWeight="Bold" Margin="0,0,0,6"/>
+                            <TextBlock Text="Target Platform: Windows x64 (.exe) — Packages your Python game, virtual environment dependencies, assets/, and scenes/." Foreground="#4ec9b0" FontSize="11" Margin="0,0,0,16"/>
+
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition Width="320"/></Grid.ColumnDefinitions>
+                                <TextBlock Text="Executable Name:" Foreground="White" VerticalAlignment="Center"/>
+                                <TextBox x:Name="BuildAppNameBox" Grid.Column="1" Text="MyCobraGame" Background="#1e1e1e" Foreground="White" BorderBrush="#444" Padding="6,4"/>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition Width="320"/></Grid.ColumnDefinitions>
+                                <TextBlock Text="Version:" Foreground="White" VerticalAlignment="Center"/>
+                                <TextBox x:Name="BuildVersionBox" Grid.Column="1" Text="1.0.0" Background="#1e1e1e" Foreground="White" BorderBrush="#444" Padding="6,4"/>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition Width="320"/></Grid.ColumnDefinitions>
+                                <TextBlock Text="Output Directory:" Foreground="White" VerticalAlignment="Center"/>
+                                <TextBox x:Name="BuildOutputDirBox" Grid.Column="1" Text="dist" Background="#1e1e1e" Foreground="White" BorderBrush="#444" Padding="6,4"/>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition Width="320"/></Grid.ColumnDefinitions>
+                                <TextBlock Text="Build Configuration:" Foreground="White" VerticalAlignment="Center"/>
+                                <ComboBox x:Name="BuildModeCombo" Grid.Column="1" Height="28">
+                                    <ComboBoxItem Content="Release Build (Windowed, Single-File Executable)" IsSelected="True"/>
+                                    <ComboBoxItem Content="Development Build (With Console Diagnostics)"/>
+                                </ComboBox>
+                            </Grid>
+
+                            <CheckBox x:Name="BuildCleanCheck" Content="Clean previous build/ and dist/ artifacts before packaging" Foreground="White" IsChecked="True" Margin="0,0,0,16"/>
+
+                            <StackPanel Orientation="Horizontal">
+                                <Button Click="OnStartBuildPackageClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" Height="32" Padding="14,0" Content="Package Game Now"/>
+                                <Button Click="OnTestPackagedGameClicked" Style="{StaticResource SceneToolButton}" Background="#28a745" Height="32" Padding="14,0" Margin="8,0,0,0" Content="Test Packaged Game"/>
+                                <Button Click="OnCleanBuildClicked" Style="{StaticResource SceneToolButton}" Height="32" Padding="14,0" Margin="8,0,0,0" Content="Clean Build Folder"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Border>
+
+                <!-- 11. EXTENSIONS WORKSPACE -->
+                <Border x:Name="ExtensionsWorkspaceContainer" Background="#1e1e1e" Visibility="Collapsed" Padding="16">
+                    <Border Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="14">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top" Text="CONTROLLED EXTENSION &amp; PLUGIN REGISTRY" Foreground="#bbbbbb" FontSize="12" FontWeight="Bold" Margin="0,0,0,6"/>
+                            <TextBlock DockPanel.Dock="Top" Text="Third-party DLL extensions require a validated .plugin.json manifest and run with isolated error handling." Foreground="#888888" FontSize="11" Margin="0,0,0,12"/>
+                            <ListBox x:Name="ExtensionsRegistryList" Background="#1e1e1e" BorderBrush="#3c3c3c" Foreground="White">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type plugins:PluginMetadata}">
+                                        <Grid Margin="8,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="220"/>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="150"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="150"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{Binding Name}" Foreground="White" FontWeight="SemiBold"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Version}" Foreground="#4ec9b0"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding Category}" Foreground="#ff8c00"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding Description}" Foreground="#aaaaaa" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Grid.Column="4" Text="{Binding StatusMessage}" Foreground="#cccccc" HorizontalAlignment="Right"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </DockPanel>
+                    </Border>
+                </Border>
+
+                <!-- 12. AI ASSISTANT WORKSPACE -->
+                <Border x:Name="AiAssistantContainer" Background="#1e1e1e" Visibility="Collapsed" Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Border Grid.Row="0" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="OPTIONAL AI PYTHON GAME DEVELOPMENT ASSISTANT" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                                <CheckBox x:Name="AiConsentCheckBox" Content="I consent to sending the selected code/prompt to my configured AI API provider (When unchecked, runs 100% locally offline)" Foreground="#cccccc" FontSize="11" Margin="0,0,0,8"/>
+                                <WrapPanel>
+                                    <Button Click="OnAiActionClicked" Tag="ExplainCode" Style="{StaticResource SceneToolButton}" Content="Explain Active Code"/>
+                                    <Button Click="OnAiActionClicked" Tag="ExplainError" Style="{StaticResource SceneToolButton}" Content="Explain Last Error"/>
+                                    <Button Click="OnAiActionClicked" Tag="SuggestImprovements" Style="{StaticResource SceneToolButton}" Content="Suggest Improvements"/>
+                                    <Button Click="OnAiActionClicked" Tag="GenerateGameScript" Style="{StaticResource SceneToolButton}" Background="#ff8c00" Content="Generate Game Object Script"/>
+                                    <Button Click="OnAiActionClicked" Tag="ExplainGameMechanics" Style="{StaticResource SceneToolButton}" Content="Game Mechanics Guide"/>
+                                    <Button Click="OnAiActionClicked" Tag="GenerateUnitTests" Style="{StaticResource SceneToolButton}" Content="Generate Unit Tests"/>
+                                    <Button Click="OnAiActionClicked" Tag="PerformanceTips" Style="{StaticResource SceneToolButton}" Content="Performance Tips"/>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Row="1" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12">
+                            <TextBox x:Name="AiOutputTextBox" Background="#18181b" Foreground="#e0e0e0" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Padding="10"/>
                         </Border>
                     </Grid>
                 </Border>
             </Grid>
 
-            <!-- RIGHT SPLITTER -->
-            <GridSplitter Grid.Column="3" Grid.RowSpan="3" Width="5" HorizontalAlignment="Stretch" Background="Transparent"/>
+            <GridSplitter Grid.Row="0" Grid.Column="3" Grid.RowSpan="3" Width="4" HorizontalAlignment="Stretch" Background="Transparent"/>
 
-            <!-- RIGHT PANEL (EXPLORER) -->
+            <!-- PROJECT EXPLORER (Right Sidebar) -->
             <Grid Grid.Row="0" Grid.Column="4" Grid.RowSpan="3">
-                <Border x:Name="ExplorerContainer" 
-                        Background="#252526"
-                        BorderBrush="#3c3c3c"
-                        BorderThickness="1,0,0,0"
-                        Visibility="Visible">
+                <Border x:Name="ExplorerContainer" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1,0,0,0" Visibility="Visible">
                     <DockPanel>
-                        <Border DockPanel.Dock="Top" Background="#2d2d30" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1">
-                            <TextBlock Foreground="#aaaaaa" FontSize="12" FontWeight="Bold" Margin="10,10,10,10" VerticalAlignment="Center">
-                                EXPLORER
-                            </TextBlock>
+                        <Border DockPanel.Dock="Top" Background="#2d2d30" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1" Padding="10,7">
+                            <Grid>
+                                <TextBlock Text="PROJECT EXPLORER" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <Button Click="OnNewFileToolbarClick" Style="{StaticResource SceneToolButton}" Height="22" Padding="5,2" ToolTip="New File">
+                                        <iconPacks:PackIconMaterial Kind="FilePlus" Width="11" Height="11"/>
+                                    </Button>
+                                    <Button Click="OnNewFolderToolbarClick" Style="{StaticResource SceneToolButton}" Height="22" Padding="5,2" ToolTip="New Folder">
+                                        <iconPacks:PackIconMaterial Kind="FolderPlus" Width="11" Height="11"/>
+                                    </Button>
+                                    <Button Click="OnRefreshClicked" Style="{StaticResource SceneToolButton}" Height="22" Padding="5,2" ToolTip="Refresh Project Tree">
+                                        <iconPacks:PackIconMaterial Kind="Refresh" Width="11" Height="11"/>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
                         </Border>
 
-                        <Border DockPanel.Dock="Top" Background="#252526" Padding="5">
-                            <WrapPanel VerticalAlignment="Center">
-                                <Button Click="OnNewFileToolbarClick" Style="{StaticResource SceneToolButton}" Margin="4,4,16,0" ToolTip="New File">
-                                    <iconPacks:PackIconMaterial Kind="FilePlus" Width="14" Height="14" VerticalAlignment="Center"/>
-                                </Button>
-                                <Button Click="OnNewFolderToolbarClick" Style="{StaticResource SceneToolButton}" Margin="4,4,16,0" ToolTip="New Folder">
-                                    <iconPacks:PackIconMaterial Kind="FolderPlus" Width="14" Height="14" VerticalAlignment="Center"/>
-                                </Button>
-                                <Button Click="OnRefreshClicked" Style="{StaticResource SceneToolButton}" Margin="4,4,16,0" ToolTip="Refresh">
-                                    <iconPacks:PackIconMaterial Kind="Refresh" Width="14" Height="14" VerticalAlignment="Center"/>
-                                </Button>
-                            </WrapPanel>
+                        <!-- Search & Filter Bar -->
+                        <Border DockPanel.Dock="Top" Background="#252526" Padding="6,6,6,4">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="72"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="ExplorerSearchBox" Grid.Column="0" Height="24" Background="#1e1e1e" Foreground="White" BorderBrush="#3c3c3c" Padding="5,2" FontSize="11" TextChanged="ExplorerSearchBox_TextChanged" ToolTip="Search project files"/>
+                                <ComboBox x:Name="ExplorerFilterCombo" Grid.Column="1" Height="24" Margin="4,0,0,0" FontSize="10" SelectionChanged="ExplorerFilterCombo_SelectionChanged" ToolTip="Filter by file extension">
+                                    <ComboBoxItem Content="All" IsSelected="True"/>
+                                    <ComboBoxItem Content=".py"/>
+                                    <ComboBoxItem Content=".Cobra"/>
+                                    <ComboBoxItem Content=".json"/>
+                                    <ComboBoxItem Content=".png"/>
+                                </ComboBox>
+                            </Grid>
                         </Border>
 
                         <TreeView x:Name="FileTree"
+                                  ContextMenu="{StaticResource FileContextMenu}"
                                   Background="#252526"
                                   Foreground="White"
                                   BorderThickness="0"
                                   FontSize="12"
-                                  Margin="4,4,0,0"
+                                  Margin="4,2,0,0"
                                   AllowDrop="True"
                                   DragEnter="OnTreeViewDragEnter"
                                   Drop="OnTreeViewDrop"
@@ -601,8 +1121,8 @@
                             </TreeView.ItemContainerStyle>
                             <TreeView.ItemTemplate>
                                 <HierarchicalDataTemplate DataType="{x:Type local:FileNode}" ItemsSource="{Binding Children}">
-                                    <StackPanel Orientation="Horizontal" Tag="{Binding}" VerticalAlignment="Center">
-                                        <iconPacks:PackIconMaterial x:Name="NodeIcon" Kind="{Binding IconKind}" Width="14" Height="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <StackPanel Orientation="Horizontal" Tag="{Binding}" VerticalAlignment="Center" Margin="0,1">
+                                        <iconPacks:PackIconMaterial x:Name="NodeIcon" Kind="{Binding IconKind}" Width="13" Height="13" Margin="0,0,7,0" VerticalAlignment="Center" Foreground="#cccccc"/>
                                         <TextBlock Text="{Binding Name}" VerticalAlignment="Center" FontSize="12"/>
                                     </StackPanel>
                                     <HierarchicalDataTemplate.Triggers>
@@ -621,141 +1141,103 @@
             </Grid>
 
             <!-- BOTTOM SPLITTER -->
-            <GridSplitter Grid.Row="1" Grid.Column="2" Height="5" HorizontalAlignment="Stretch" Background="Transparent"/>
+            <GridSplitter Grid.Row="1" Grid.Column="2" Height="4" HorizontalAlignment="Stretch" Background="Transparent"/>
 
-            <!-- BOTTOM PANEL (OUTPUT & TERMINAL) -->
-            <Border Grid.Row="2" Grid.Column="2" 
-                    Background="#1e1e1e"
-                    BorderBrush="#3c3c3c"
-                    BorderThickness="0,1,0,0">
+            <!-- BOTTOM PANEL (7 Organized Tabs: Output, Terminal, Debug Console, Problems, Test Results, Build Output, Game Logs) -->
+            <Border x:Name="BottomPanelBorder" Grid.Row="2" Grid.Column="2" Background="#1e1e1e" BorderBrush="#3c3c3c" BorderThickness="0,1,0,0">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="30"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- TAB HEADERS & TOOLBAR -->
-                    <Border Grid.Row="0" Background="#2d2d30" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1">
+                    <Border Grid.Row="0" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1">
                         <Grid>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <Button x:Name="TabOutputBtn" Click="OnTabOutputClick" Background="#2d2d30" Foreground="White" BorderThickness="0,0,0,2" BorderBrush="#ff8c00" Padding="15,8" FontSize="12" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center">
-                                    OUTPUT
-                                </Button>
-                                <Button x:Name="TabTerminalBtn" Click="OnTabTerminalClick" Background="Transparent" Foreground="#aaaaaa" BorderThickness="0" Padding="15,8" FontSize="12" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center">
-                                    TERMINAL
-                                </Button>
+                                <Button x:Name="TabOutputBtn" Click="OnBottomTabClicked" Tag="Output" Style="{StaticResource BottomTabButtonStyle}" Foreground="White" BorderBrush="#ff8c00" Content="OUTPUT"/>
+                                <Button x:Name="TabTerminalBtn" Click="OnBottomTabClicked" Tag="Terminal" Style="{StaticResource BottomTabButtonStyle}" Content="TERMINAL"/>
+                                <Button x:Name="TabDebugBtn" Click="OnBottomTabClicked" Tag="DebugConsole" Style="{StaticResource BottomTabButtonStyle}" Content="DEBUG CONSOLE"/>
+                                <Button x:Name="TabProblemsBtn" Click="OnBottomTabClicked" Tag="Problems" Style="{StaticResource BottomTabButtonStyle}" Content="PROBLEMS"/>
+                                <Button x:Name="TabTestsBtn" Click="OnBottomTabClicked" Tag="TestResults" Style="{StaticResource BottomTabButtonStyle}" Content="TEST RESULTS"/>
+                                <Button x:Name="TabBuildBtn" Click="OnBottomTabClicked" Tag="BuildOutput" Style="{StaticResource BottomTabButtonStyle}" Content="BUILD OUTPUT"/>
+                                <Button x:Name="TabGameLogsBtn" Click="OnBottomTabClicked" Tag="GameLogs" Style="{StaticResource BottomTabButtonStyle}" Content="GAME LOGS"/>
                             </StackPanel>
 
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,10,0" VerticalAlignment="Center">
-                                <Button x:Name="InstallReqButton" 
-                                        Click="OnInstallRequirementsClicked" 
-                                        Background="#ff8c00" 
-                                        Foreground="White" 
-                                        BorderThickness="0" 
-                                        FontSize="11" 
-                                        Padding="8,4" 
-                                        Margin="0,0,10,0" 
-                                        Visibility="Collapsed"
-                                        Cursor="Hand"
-                                        VerticalAlignment="Center">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <iconPacks:PackIconMaterial Kind="Download" Width="12" Height="12" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Install requirements.txt" VerticalAlignment="Center"/>
-                                    </StackPanel>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Center">
+                                <Button x:Name="InstallReqButton" Click="OnInstallRequirementsClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" Height="22" Visibility="Collapsed" Margin="0,0,6,0">
+                                    <TextBlock Text="Install requirements.txt" FontSize="10"/>
                                 </Button>
-
-                                <Button x:Name="InstallNpmButton" 
-                                        Click="OnInstallNpmClicked" 
-                                        Background="#ff8c00" 
-                                        Foreground="White" 
-                                        BorderThickness="0" 
-                                        FontSize="11" 
-                                        Padding="8,4" 
-                                        Margin="0,0,10,0" 
-                                        Visibility="Collapsed"
-                                        Cursor="Hand"
-                                        VerticalAlignment="Center">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <iconPacks:PackIconMaterial Kind="Npm" Width="14" Height="14" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Install Dependencies" VerticalAlignment="Center"/>
-                                    </StackPanel>
+                                <Button Click="OnRunTestsClicked" Style="{StaticResource SceneToolButton}" Height="22" Margin="0,0,6,0" ToolTip="Run Python Unit Tests">
+                                    <TextBlock Text="Run Tests" FontSize="10"/>
                                 </Button>
-
-                                <Button Click="OnClearConsoleClicked" Background="Transparent" Foreground="#aaaaaa" BorderThickness="0" FontSize="12" Cursor="Hand" Margin="5,0" VerticalAlignment="Center" ToolTip="Clear Console">
-                                    <iconPacks:PackIconMaterial Kind="Eraser" Width="12" Height="12" VerticalAlignment="Center"/>
+                                <Button Click="OnClearConsoleClicked" Style="{StaticResource SceneToolButton}" Height="22" ToolTip="Clear Active Console">
+                                    <iconPacks:PackIconMaterial Kind="Eraser" Width="11" Height="11"/>
                                 </Button>
                             </StackPanel>
                         </Grid>
                     </Border>
 
-                    <!-- TAB CONTENT -->
                     <Grid Grid.Row="1">
-                        <!-- OUTPUT TAB CONTENT -->
-                        <TextBox x:Name="OutputConsole"
-                                 Visibility="Visible"
-                                 Background="#1e1e1e"
-                                 Foreground="#4ec9b0"
-                                 FontFamily="Consolas"
-                                 FontSize="12"
-                                 IsReadOnly="True"
-                                 TextWrapping="Wrap"
-                                 AcceptsReturn="True"
-                                 VerticalScrollBarVisibility="Auto"
-                                 BorderThickness="0"
-                                 Margin="10,5,10,10"/>
+                        <!-- Output -->
+                        <TextBox x:Name="OutputConsole" Visibility="Visible" Background="#1e1e1e" Foreground="#4ec9b0" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Padding="8"/>
 
-                        <!-- TERMINAL TAB CONTENT -->
+                        <!-- Terminal -->
                         <Grid x:Name="TerminalContainer" Visibility="Collapsed">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="*"/>
-                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="26"/>
                             </Grid.RowDefinitions>
-                            
-                            <TextBox x:Name="TerminalConsole"
-                                     Grid.Row="0"
-                                     Background="#1e1e1e"
-                                     Foreground="#cccccc"
-                                     FontFamily="Consolas"
-                                     FontSize="12"
-                                     IsReadOnly="True"
-                                     TextWrapping="Wrap"
-                                     AcceptsReturn="True"
-                                     VerticalScrollBarVisibility="Auto"
-                                     BorderThickness="0"
-                                     Margin="10,5,10,5"/>
-
-                            <Grid Grid.Row="1" Margin="10,0,10,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="$ " Foreground="#ff8c00" VerticalAlignment="Center" FontFamily="Consolas" FontSize="12"/>
-                                <TextBox x:Name="TerminalInput"
-                                         Grid.Column="1"
-                                         Background="Transparent"
-                                         Foreground="White"
-                                         BorderThickness="0"
-                                         CaretBrush="White"
-                                         FontFamily="Consolas"
-                                         FontSize="12"
-                                         VerticalAlignment="Center"
-                                         KeyDown="TerminalInput_KeyDown"/>
-                            </Grid>
+                            <TextBox x:Name="TerminalConsole" Grid.Row="0" Background="#1e1e1e" Foreground="#cccccc" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Padding="8,6"/>
+                            <Border Grid.Row="1" Background="#252526" Padding="8,0">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="PS / Python &gt; " Foreground="#ff8c00" VerticalAlignment="Center" FontFamily="Consolas" FontSize="11"/>
+                                    <TextBox x:Name="TerminalInput" Grid.Column="1" Background="Transparent" Foreground="White" BorderThickness="0" CaretBrush="White" FontFamily="Consolas" FontSize="12" VerticalAlignment="Center" KeyDown="TerminalInput_KeyDown"/>
+                                </Grid>
+                            </Border>
                         </Grid>
+
+                        <!-- Debug Console -->
+                        <TextBox x:Name="DebugConsoleBox" Visibility="Collapsed" Background="#1e1e1e" Foreground="#dcdcaa" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Padding="8"/>
+
+                        <!-- Problems List -->
+                        <ListBox x:Name="ProblemsListBox" Visibility="Collapsed" Background="#1e1e1e" Foreground="#f48771" BorderThickness="0" FontFamily="Consolas" FontSize="11" MouseDoubleClick="ProblemsListBox_MouseDoubleClick"/>
+
+                        <!-- Test Results -->
+                        <TextBox x:Name="TestResultsBox" Visibility="Collapsed" Background="#1e1e1e" Foreground="#4ec9b0" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Padding="8"/>
+
+                        <!-- Build Output -->
+                        <TextBox x:Name="BuildOutputBox" Visibility="Collapsed" Background="#1e1e1e" Foreground="#d4d4d4" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Padding="8"/>
+
+                        <!-- Game Logs -->
+                        <TextBox x:Name="GameLogsBox" Visibility="Collapsed" Background="#1e1e1e" Foreground="#9cdcfe" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Padding="8"/>
                     </Grid>
                 </Grid>
             </Border>
         </Grid>
 
-        <!-- Notification Toast -->
-        <Grid x:Name="ToastOverlay" Grid.RowSpan="2" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,50" Visibility="Collapsed">
-            <Border Background="#333333" CornerRadius="3" Padding="20,12" BorderBrush="#ff8c00" BorderThickness="1" SnapsToDevicePixels="True">
-                <Border.Effect>
-                    <DropShadowEffect BlurRadius="15" Opacity="0.5" Direction="270" ShadowDepth="2"/>
-                </Border.Effect>
+        <!-- ROW 3: Status Bar -->
+        <Border Grid.Row="3" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="0,1,0,0" Padding="12,0">
+            <Grid>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <iconPacks:PackIconMaterial x:Name="ToastIcon" Kind="CheckCircle" Width="18" Height="18" Foreground="#4ec9b0" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="ToastMessage" Text="Action completed successfully!" Foreground="White" FontSize="12" VerticalAlignment="Center"/>
+                    <iconPacks:PackIconMaterial Kind="LanguagePython" Width="12" Height="12" Foreground="#4ec9b0" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBlock x:Name="StatusInterpreterText" Text="Python: Detecting..." Foreground="#cccccc" FontSize="11" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                    <TextBlock x:Name="StatusFrameworkText" Text="Framework: Pygame" Foreground="#ff8c00" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                    <TextBlock x:Name="StatusGitText" Text="Git: --" Foreground="#aaaaaa" FontSize="11" VerticalAlignment="Center"/>
+                </StackPanel>
+                <TextBlock x:Name="StatusRightText" Text="Ready" Foreground="#aaaaaa" FontSize="11" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <!-- Notification Toast -->
+        <Grid x:Name="ToastOverlay" Grid.Row="0" Grid.RowSpan="4" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,36" Visibility="Collapsed">
+            <Border Background="#2d2d30" CornerRadius="4" Padding="16,10" BorderBrush="#ff8c00" BorderThickness="1" SnapsToDevicePixels="True">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <iconPacks:PackIconMaterial x:Name="ToastIcon" Kind="CheckCircle" Width="14" Height="14" Foreground="#4ec9b0" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="ToastMessage" Text="Action completed" Foreground="White" FontSize="12" VerticalAlignment="Center"/>
                 </StackPanel>
             </Border>
             <Grid.RenderTransform>

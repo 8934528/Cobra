@@ -1,29 +1,24 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Cobra.Editor
 {
     public class FileNode : System.ComponentModel.INotifyPropertyChanged
     {
-        private string name = string.Empty;
-        private string iconKind = "File";
-        private bool isExpanded;
-        private bool isSelected;
+        private string _name = string.Empty;
+        private string _iconKind = "File";
+        private bool _isExpanded;
+        private bool _isSelected;
 
         public string Name 
         { 
-            get => name; 
-            set { name = value; OnPropertyChanged(); } 
+            get => _name; 
+            set { _name = value; OnPropertyChanged(); } 
         }
 
         public string IconKind 
         { 
-            get => iconKind; 
-            set { iconKind = value; OnPropertyChanged(); } 
+            get => _iconKind; 
+            set { _iconKind = value; OnPropertyChanged(); } 
         }
 
         public string FullPath { get; set; } = string.Empty;
@@ -32,14 +27,14 @@ namespace Cobra.Editor
 
         public bool IsExpanded 
         { 
-            get => isExpanded; 
-            set { isExpanded = value; OnPropertyChanged(); } 
+            get => _isExpanded; 
+            set { _isExpanded = value; OnPropertyChanged(); } 
         }
 
         public bool IsSelected 
         { 
-            get => isSelected; 
-            set { isSelected = value; OnPropertyChanged(); } 
+            get => _isSelected; 
+            set { _isSelected = value; OnPropertyChanged(); } 
         }
 
         public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;

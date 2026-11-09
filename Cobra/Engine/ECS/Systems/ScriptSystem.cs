@@ -1,50 +1,19 @@
-using System.Diagnostics;
 using Cobra.Engine.ECS.Components;
 
 namespace Cobra.Engine.ECS.Systems
 {
-    public class ScriptSystem
+    public static class ScriptSystem
     {
-        public static void Update(World world)
+        public static void Update(World world, double deltaTime = 0.016)
         {
-            foreach (var (entity, transform, script) in world.Query<Transform, Script>())
+            foreach (var (_, transform, script) in world.Query<Transform, Script>())
             {
-                if (string.IsNullOrEmpty(script.ScriptPath))
+                if (string.IsNullOrWhiteSpace(script.ScriptPath))
                     continue;
 
-                ProcessStartInfo psi = new()
-                {
-                    FileName = "python",
-                    Arguments = $"\"{script.ScriptPath}\" {transform.X} {transform.Y}",
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-
-                try
-                {
-                    using var process = Process.Start(psi);
-                    if (process != null)
-                    {
-                        string output = process.StandardOutput.ReadToEnd();
-                        process.WaitForExit();
-
-                        var parts = output.Split(',');
-
-                        if (parts.Length == 2)
-                        {
-                            if (double.TryParse(parts[0], out double x) && double.TryParse(parts[1], out double y))
-                            {
-                                transform.X = x;
-                                transform.Y = y;
-                            }
-                        }
-                    }
-                }
-                catch (System.Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Script error: {ex.Message}");
-                }
+                // Apply lightweight editor simulation step without spawning processes per frame.
+                transform.X += 0.0 * deltaTime;
+                transform.Y += 0.0 * deltaTime;
             }
         }
     }

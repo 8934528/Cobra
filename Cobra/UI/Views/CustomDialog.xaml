@@ -4,7 +4,6 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
-        xmlns:local="clr-namespace:Cobra.UI.Views"
         mc:Ignorable="d"
         WindowStartupLocation="CenterOwner"
         WindowStyle="None"
@@ -13,26 +12,6 @@
         SizeToContent="WidthAndHeight"
         MinWidth="400"
         MaxWidth="600">
-
-    <Window.Resources>
-        <Storyboard x:Key="ShowDialogAnimation">
-            <DoubleAnimation Storyboard.TargetProperty="(UIElement.Opacity)"
-                           From="0" To="1" Duration="0:0:0.2"/>
-            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                           From="0.9" To="1" Duration="0:0:0.2"/>
-            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                           From="0.9" To="1" Duration="0:0:0.2"/>
-        </Storyboard>
-
-        <Storyboard x:Key="HideDialogAnimation">
-            <DoubleAnimation Storyboard.TargetProperty="(UIElement.Opacity)"
-                           From="1" To="0" Duration="0:0:0.15"/>
-            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                           From="1" To="0.95" Duration="0:0:0.15"/>
-            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                           From="1" To="0.95" Duration="0:0:0.15"/>
-        </Storyboard>
-    </Window.Resources>
 
     <Window.RenderTransform>
         <ScaleTransform ScaleX="1" ScaleY="1"/>

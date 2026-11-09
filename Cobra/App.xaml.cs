@@ -1,8 +1,9 @@
 using System.Windows;
+using Cobra.UI.Views;
 
 namespace Cobra
 {
-    public partial class App : System.Windows.Application
+    public partial class App
     {
         protected override void OnStartup(StartupEventArgs e)
         {

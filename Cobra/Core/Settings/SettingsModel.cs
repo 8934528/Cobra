@@ -1,7 +1,7 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
+using Cobra.Core.Security;
 
 namespace Cobra.Core.Settings
 {
@@ -14,7 +14,6 @@ namespace Cobra.Core.Settings
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        // --- General Settings ---
         private string _language = "English (US)";
         public string Language
         {
@@ -50,14 +49,13 @@ namespace Cobra.Core.Settings
             set { if (_checkForUpdates != value) { _checkForUpdates = value; OnPropertyChanged(); } }
         }
 
-        private bool _telemetry = false;
+        private bool _telemetry;
         public bool Telemetry
         {
             get => _telemetry;
             set { if (_telemetry != value) { _telemetry = value; OnPropertyChanged(); } }
         }
 
-        // --- Theme & Editor Settings ---
         private string _theme = "Dark (Default)";
         public string Theme
         {
@@ -83,14 +81,21 @@ namespace Cobra.Core.Settings
         public double FontSize
         {
             get => _fontSize;
-            set { if (_fontSize != value) { _fontSize = value; OnPropertyChanged(); } }
+            set { double clamped = Math.Clamp(value, 10, 32); if (Math.Abs(_fontSize - clamped) > 0.01) { _fontSize = clamped; OnPropertyChanged(); } }
         }
 
         private double _lineSpacing = 1.4;
         public double LineSpacing
         {
             get => _lineSpacing;
-            set { if (_lineSpacing != value) { _lineSpacing = value; OnPropertyChanged(); } }
+            set { double clamped = Math.Clamp(value, 1.0, 2.5); if (Math.Abs(_lineSpacing - clamped) > 0.01) { _lineSpacing = clamped; OnPropertyChanged(); } }
+        }
+
+        private int _tabSize = 4;
+        public int TabSize
+        {
+            get => _tabSize;
+            set { int clamped = Math.Clamp(value, 2, 8); if (_tabSize != clamped) { _tabSize = clamped; OnPropertyChanged(); } }
         }
 
         private bool _showMinimap = true;
@@ -100,7 +105,7 @@ namespace Cobra.Core.Settings
             set { if (_showMinimap != value) { _showMinimap = value; OnPropertyChanged(); } }
         }
 
-        private bool _wordWrap = false;
+        private bool _wordWrap;
         public bool WordWrap
         {
             get => _wordWrap;
@@ -114,8 +119,14 @@ namespace Cobra.Core.Settings
             set { if (_showLineNumbers != value) { _showLineNumbers = value; OnPropertyChanged(); } }
         }
 
-        // --- Python Settings ---
-        private string _pythonInterpreter = "C:\\Python39\\python.exe";
+        private bool _formatOnSave = true;
+        public bool FormatOnSave
+        {
+            get => _formatOnSave;
+            set { if (_formatOnSave != value) { _formatOnSave = value; OnPropertyChanged(); } }
+        }
+
+        private string _pythonInterpreter = "python";
         public string PythonInterpreter
         {
             get => _pythonInterpreter;
@@ -136,14 +147,13 @@ namespace Cobra.Core.Settings
             set { if (_pipIndexUrl != value) { _pipIndexUrl = value; OnPropertyChanged(); } }
         }
 
-        private string _defaultPackages = "pygame-ce, arcade, numpy";
+        private string _defaultPackages = "pygame-ce, pymunk, numpy";
         public string DefaultPackages
         {
             get => _defaultPackages;
             set { if (_defaultPackages != value) { _defaultPackages = value; OnPropertyChanged(); } }
         }
 
-        // --- Editor Features ---
         private bool _autoCompletion = true;
         public bool AutoCompletion
         {
@@ -158,7 +168,13 @@ namespace Cobra.Core.Settings
             set { if (_linting != value) { _linting = value; OnPropertyChanged(); } }
         }
 
-        // --- Game Engine Settings ---
+        private string _defaultFramework = "Pygame";
+        public string DefaultFramework
+        {
+            get => _defaultFramework;
+            set { if (_defaultFramework != value) { _defaultFramework = value; OnPropertyChanged(); } }
+        }
+
         private string _defaultResolution = "800x600";
         public string DefaultResolution
         {
@@ -166,7 +182,7 @@ namespace Cobra.Core.Settings
             set { if (_defaultResolution != value) { _defaultResolution = value; OnPropertyChanged(); } }
         }
 
-        private bool _fullscreenDefault = false;
+        private bool _fullscreenDefault;
         public bool FullscreenDefault
         {
             get => _fullscreenDefault;
@@ -184,7 +200,7 @@ namespace Cobra.Core.Settings
         public double FrameRateLimit
         {
             get => _frameRateLimit;
-            set { if (_frameRateLimit != value) { _frameRateLimit = value; OnPropertyChanged(); } }
+            set { double clamped = Math.Clamp(value, 0, 240); if (Math.Abs(_frameRateLimit - clamped) > 0.01) { _frameRateLimit = clamped; OnPropertyChanged(); } }
         }
 
         private string _physicsEngine = "Pymunk";
@@ -194,7 +210,27 @@ namespace Cobra.Core.Settings
             set { if (_physicsEngine != value) { _physicsEngine = value; OnPropertyChanged(); } }
         }
 
-        // --- Tools Settings ---
+        private bool _showCollisionGizmos = true;
+        public bool ShowCollisionGizmos
+        {
+            get => _showCollisionGizmos;
+            set { if (_showCollisionGizmos != value) { _showCollisionGizmos = value; OnPropertyChanged(); } }
+        }
+
+        private bool _enableGridSnap = true;
+        public bool EnableGridSnap
+        {
+            get => _enableGridSnap;
+            set { if (_enableGridSnap != value) { _enableGridSnap = value; OnPropertyChanged(); } }
+        }
+
+        private int _gridSnapSize = 20;
+        public int GridSnapSize
+        {
+            get => _gridSnapSize;
+            set { int clamped = Math.Clamp(value, 4, 128); if (_gridSnapSize != clamped) { _gridSnapSize = clamped; OnPropertyChanged(); } }
+        }
+
         private string _terminalPath = "cmd.exe";
         public string TerminalPath
         {
@@ -216,7 +252,6 @@ namespace Cobra.Core.Settings
             set { if (_buildTool != value) { _buildTool = value; OnPropertyChanged(); } }
         }
 
-        // --- Keymap Settings ---
         private string _keymapPreset = "Cobra Default";
         public string KeymapPreset
         {
@@ -224,11 +259,31 @@ namespace Cobra.Core.Settings
             set { if (_keymapPreset != value) { _keymapPreset = value; OnPropertyChanged(); } }
         }
 
-        private string _translationApiKey = string.Empty;
+        private string _workspaceLayout = "Default";
+        public string WorkspaceLayout
+        {
+            get => _workspaceLayout;
+            set { if (_workspaceLayout != value) { _workspaceLayout = value; OnPropertyChanged(); } }
+        }
+
+        private bool _aiConsentGranted;
+        public bool AiConsentGranted
+        {
+            get => _aiConsentGranted;
+            set { if (_aiConsentGranted != value) { _aiConsentGranted = value; OnPropertyChanged(); } }
+        }
+
+        public string EncryptedApiKey { get; set; } = string.Empty;
+
+        [JsonIgnore]
         public string TranslationApiKey
         {
-            get => _translationApiKey;
-            set { if (_translationApiKey != value) { _translationApiKey = value; OnPropertyChanged(); } }
+            get => SecurityValidator.UnprotectSecret(EncryptedApiKey);
+            set
+            {
+                EncryptedApiKey = SecurityValidator.ProtectSecret(value);
+                OnPropertyChanged();
+            }
         }
     }
 }

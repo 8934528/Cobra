@@ -1,7 +1,7 @@
 namespace Cobra.Engine.ECS
 {
-    public struct Entity(int id)
+    public readonly struct Entity(int id)
     {
-        public int Id = id;
+        public readonly int Id = id;
     }
 }

@@ -1,13 +1,16 @@
-using System;
-using System.Diagnostics;
 using System.IO;
+using Cobra.Core.Environment;
+using Cobra.Core.Security;
 
 namespace Cobra.Core.ProjectSystem
 {
-    public class ProjectCreator
+    public static class ProjectCreator
     {
-        public static string CreateProject(string projectName)
+        public static string CreateProject(string projectName, string templateId = "pygame-2d-starter")
         {
+            if (!SecurityValidator.IsValidProjectName(projectName, out string error))
+                return $"Error: {error}";
+
             try
             {
                 string basePath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
@@ -17,11 +20,10 @@ namespace Cobra.Core.ProjectSystem
                     Directory.CreateDirectory(projectsPath);
 
                 string projectPath = Path.Combine(projectsPath, projectName);
-
                 if (Directory.Exists(projectPath))
-                    return "Project already exists!";
+                    return "Error: Project already exists!";
 
-                return CreateProjectAtPath(projectPath);
+                return CreateProjectAtPath(projectPath, templateId);
             }
             catch (Exception ex)
             {
@@ -29,19 +31,35 @@ namespace Cobra.Core.ProjectSystem
             }
         }
 
-        public static string CreateProjectAtPath(string projectPath)
+        public static string CreateProjectAtPath(string projectPath, string templateId = "pygame-2d-starter")
         {
             try
             {
-                Directory.CreateDirectory(projectPath);
+                string fullPath = SecurityValidator.NormalizePath(projectPath);
+                string projectName = Path.GetFileName(fullPath);
 
-                Directory.CreateDirectory(Path.Combine(projectPath, "assets"));
-                Directory.CreateDirectory(Path.Combine(projectPath, "scenes"));
-                Directory.CreateDirectory(Path.Combine(projectPath, "scripts"));
+                if (!SecurityValidator.IsValidProjectName(projectName, out string error))
+                    return $"Error: {error}";
 
-                ProjectTemplate.ApplyPygameTemplate(projectPath);
+                Directory.CreateDirectory(fullPath);
+                Directory.CreateDirectory(Path.Combine(fullPath, "assets"));
+                Directory.CreateDirectory(Path.Combine(fullPath, "scenes"));
+                Directory.CreateDirectory(Path.Combine(fullPath, "scripts"));
 
-                return $"Project created successfully!\nLocation: {projectPath}";
+                ProjectTemplate.ApplyTemplate(fullPath, templateId);
+
+                var template = ProjectTemplate.GetAvailableTemplates().FirstOrDefault(t => t.Id.Equals(templateId, StringComparison.OrdinalIgnoreCase));
+                var model = new ProjectModel
+                {
+                    Name = projectName,
+                    Path = fullPath,
+                    Framework = template?.Framework ?? "Pygame",
+                    TemplateId = templateId,
+                    StartupFile = "main.py"
+                };
+                model.SaveManifest();
+
+                return $"Project created successfully!\nLocation: {fullPath}";
             }
             catch (Exception ex)
             {
@@ -49,8 +67,11 @@ namespace Cobra.Core.ProjectSystem
             }
         }
 
-        public static async System.Threading.Tasks.Task<string> CreateProjectWithVenvAsync(string projectName, IProgress<string> progress)
+        public static async Task<string> CreateProjectWithVenvAsync(string projectName, IProgress<string>? progress, string templateId = "pygame-2d-starter")
         {
+            if (!SecurityValidator.IsValidProjectName(projectName, out string error))
+                return $"Error: {error}";
+
             try
             {
                 string basePath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
@@ -60,11 +81,10 @@ namespace Cobra.Core.ProjectSystem
                     Directory.CreateDirectory(projectsPath);
 
                 string projectPath = Path.Combine(projectsPath, projectName);
-
                 if (Directory.Exists(projectPath))
-                    return "Project already exists!";
+                    return "Error: Project already exists!";
 
-                return await CreateProjectWithVenvAtPathAsync(projectPath, progress);
+                return await CreateProjectWithVenvAtPathAsync(projectPath, progress, templateId);
             }
             catch (Exception ex)
             {
@@ -72,111 +92,22 @@ namespace Cobra.Core.ProjectSystem
             }
         }
 
-        public static async System.Threading.Tasks.Task<string> CreateProjectWithVenvAtPathAsync(string projectPath, IProgress<string> progress)
+        public static async Task<string> CreateProjectWithVenvAtPathAsync(string projectPath, IProgress<string>? progress, string templateId = "pygame-2d-starter")
         {
             try
             {
-                Directory.CreateDirectory(projectPath);
+                string createResult = CreateProjectAtPath(projectPath, templateId);
+                if (createResult.StartsWith("Error", StringComparison.OrdinalIgnoreCase))
+                    return createResult;
 
-                Directory.CreateDirectory(Path.Combine(projectPath, "assets"));
-                Directory.CreateDirectory(Path.Combine(projectPath, "scenes"));
-                Directory.CreateDirectory(Path.Combine(projectPath, "scripts"));
+                await VenvService.CopyVenvToProjectAsync(projectPath, progress);
 
-                ProjectTemplate.ApplyPygameTemplate(projectPath);
+                progress?.Report("Installing project dependencies...");
+                await InstallRequirementsAsync(projectPath, progress);
 
-                await Cobra.Core.Environment.VenvService.CopyVenvToProjectAsync(projectPath, progress);
-
-                progress?.Report("Installing dependencies...");
-                await InstallRequirementsAsync(projectPath);
-
-                progress?.Report("Project ready!");
-
-                return $"Project created successfully!\nLocation: {projectPath}";
-            }
-            catch (Exception ex)
-            {
-                return $"Error: {ex.Message}";
-            }
-        }
-
-        private static async System.Threading.Tasks.Task CreateVirtualEnvironmentAsync(string projectPath)
-        {
-            await System.Threading.Tasks.Task.Run(() =>
-            {
-                try
-                {
-                    ProcessStartInfo psi = new()
-                    {
-                        FileName = "python",
-                        Arguments = "-m venv venv",
-                        WorkingDirectory = projectPath,
-                        UseShellExecute = false,
-                        CreateNoWindow = true,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true
-                    };
-
-                    using Process? process = Process.Start(psi);
-                    process?.WaitForExit(60000);
-                }
-                catch { }
-            });
-        }
-
-        private static async System.Threading.Tasks.Task InstallRequirementsAsync(string projectPath)
-        {
-            await System.Threading.Tasks.Task.Run(() =>
-            {
-                try
-                {
-                    string? python = GetPythonPath(projectPath);
-                    if (python == null) return;
-
-                    ProcessStartInfo psi = new()
-                    {
-                        FileName = python,
-                        Arguments = "-m pip install -r requirements.txt",
-                        WorkingDirectory = projectPath,
-                        UseShellExecute = false,
-                        CreateNoWindow = true,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true
-                    };
-
-                    using Process? process = Process.Start(psi);
-                    process?.WaitForExit(120000);
-                }
-                catch { }
-            });
-        }
-
-        private static string? GetPythonPath(string projectPath)
-        {
-            string win = Path.Combine(projectPath, "venv", "Scripts", "python.exe");
-            string unix = Path.Combine(projectPath, "venv", "bin", "python");
-
-            if (File.Exists(win)) return win;
-            if (File.Exists(unix)) return unix;
-
-            return null;
-        }
-        public static async System.Threading.Tasks.Task<string> CreateJsProjectWithViteAsync(string projectPath, IProgress<string> progress)
-        {
-            try
-            {
-                progress?.Report("Initializing JS project structure...");
-                Directory.CreateDirectory(projectPath);
-
-                string projectName = Path.GetFileName(projectPath);
-                ProjectTemplate.ApplyJsPhaserTemplate(projectPath, projectName);
-
-                progress?.Report("Installing dependencies (npm install)...");
-                bool success = await RunNpmInstallAsync(projectPath);
-
-                if (!success)
-                {
-                    return "Error: Failed to install npm dependencies. Make sure Node.js and NPM are installed.";
-                }
+                var model = ProjectModel.LoadFromDirectory(projectPath);
+                model.PythonInterpreter = VenvService.GetVenvPythonPath(projectPath) ?? string.Empty;
+                model.SaveManifest();
 
                 progress?.Report("Project ready!");
                 return $"Project created successfully!\nLocation: {projectPath}";
@@ -187,59 +118,31 @@ namespace Cobra.Core.ProjectSystem
             }
         }
 
-        private static async System.Threading.Tasks.Task<bool> RunNpmInstallAsync(string projectPath)
+        private static async Task InstallRequirementsAsync(string projectPath, IProgress<string>? progress = null)
         {
-            return await System.Threading.Tasks.Task.Run(() =>
+            string? python = VenvService.GetVenvPythonPath(projectPath);
+            if (string.IsNullOrEmpty(python)) return;
+
+            string reqFile = Path.Combine(projectPath, "requirements.txt");
+            if (File.Exists(reqFile))
             {
-                try
-                {
-                    ProcessStartInfo psi = new()
-                    {
-                        FileName = "cmd.exe",
-                        Arguments = "/c npm install",
-                        WorkingDirectory = projectPath,
-                        UseShellExecute = false,
-                        CreateNoWindow = true,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true
-                    };
-
-                    using Process? process = Process.Start(psi);
-                    if (process == null) return false;
-
-                    process.WaitForExit(180000); // 3 minutes timeout for npm install
-                    return process.ExitCode == 0;
-                }
-                catch
-                {
-                    return false;
-                }
-            });
+                await PipPackageService.InstallRequirementsFileAsync(python, reqFile, progress);
+            }
         }
-        public static async System.Threading.Tasks.Task<string> AddBackendToProjectAsync(string projectPath, string backendType, IProgress<string> progress)
+
+        public static async Task<string> AddBackendToProjectAsync(string projectPath, string backendType, IProgress<string>? progress)
         {
             try
             {
-                string backendDirName = backendType == "C#" ? "server" : "backend";
-                string backendPath = Path.Combine(projectPath, backendDirName);
-
+                string backendPath = SecurityValidator.ResolveSafeProjectPath(projectPath, "backend");
                 if (Directory.Exists(backendPath))
-                {
-                    return $"Error: {backendDirName} folder already exists!";
-                }
+                    return "Error: backend folder already exists!";
 
-                progress?.Report($"Initializing {backendType} backend...");
+                progress?.Report("Initializing Python backend...");
                 ProjectTemplate.ApplyBackendTemplate(backendPath, backendType);
-
-                if (backendType == "Node.js")
-                {
-                    progress?.Report("Installing node backend dependencies...");
-                    // We could run npm install here too, but for now we'll just create the files
-                }
-
-                progress?.Report($"{backendType} backend added successfully!");
-                await System.Threading.Tasks.Task.CompletedTask;
-                return $"{backendType} backend added successfully!";
+                progress?.Report("Python backend added successfully!");
+                await Task.CompletedTask;
+                return "Python backend added successfully!";
             }
             catch (Exception ex)
             {

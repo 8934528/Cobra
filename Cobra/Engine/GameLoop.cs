@@ -1,4 +1,3 @@
-using System;
 using System.Diagnostics;
 using System.Windows.Threading;
 
@@ -6,34 +5,34 @@ namespace Cobra.Engine
 {
     public class GameLoop
     {
-        private readonly Stopwatch stopwatch = new();
-        private DispatcherTimer? timer;
+        private readonly Stopwatch _stopwatch = new();
+        private DispatcherTimer? _timer;
 
         public Action<float>? OnUpdate;
 
         public void Start()
         {
-            stopwatch.Start();
+            _stopwatch.Start();
 
-            timer = new DispatcherTimer
+            _timer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromMilliseconds(16) // ~60 FPS
             };
-            timer.Tick += Loop;
-            timer.Start();
+            _timer.Tick += Loop;
+            _timer.Start();
         }
 
         private void Loop(object? sender, EventArgs e)
         {
-            float deltaTime = (float)stopwatch.Elapsed.TotalSeconds;
-            stopwatch.Restart();
+            float deltaTime = (float)_stopwatch.Elapsed.TotalSeconds;
+            _stopwatch.Restart();
 
             OnUpdate?.Invoke(deltaTime);
         }
 
         public void Stop()
         {
-            timer?.Stop();
+            _timer?.Stop();
         }
     }
 }

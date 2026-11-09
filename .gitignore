@@ -1,13 +1,21 @@
-# User-specific files
+# Environment & Secrets (Keep .env.example tracked)
+.env
+.env.*
+!.env.example
+*.env.local
+*.secret
+*.key
+*.pem
+
+# Visual Studio / MSBuild / .NET Build Outputs
+.vs/
+*.vs/
 *.rsuser
 *.suo
 *.user
 *.userosscache
 *.sln.docstates
-*.vs/
-.vs/
-
-# Build results
+*.userprefs
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
@@ -23,8 +31,32 @@ bld/
 [Oo]ut/
 [Ll]og/
 [Ll]ogs/
+[Pp]ublish/
+bin-debug/
+bin-release/
+obj-debug/
+obj-release/
+*_wpftmp.csproj
+*.tmp_proj
+*_tmp/
+temp/
+tmp/
 
-# Visual Studio specific files
+# Visual Studio & Rider Diagnostics / Cache
+.idea/
+*.sln.iml
+.vscode/
+*.code-workspace
+_ReSharper*/
+*.ReSharper*
+*.DotSettings.user
+*.DotSettings.user.*
+*.DotSettings.Development
+*.DotSettings.Production
+.cr/
+cr_cache/
+.sonarlint/
+.history/
 *.opendb
 *.psess
 *.vsp
@@ -36,342 +68,154 @@ bld/
 *.cachefile
 *.VC.db
 *.VC.VC.opendb
+*.binlog
+*.buildlog
+*.diagsession
+*.ncrunch*
 
-# Visual Studio Code files
-.vscode/
-*.code-workspace
+# NuGet & Packaging Artifacts
+*.nupkg
+*.snupkg
+packages/
+!packages/repositories.config
+*.nuget.props
+*.nuget.targets
+project.assets.json
+project.fragment.lock.json
+*.pubxml
+*.pubxml.user
+*.pubxml.user.*
+*.pubxml.recipe
+*.pubxml.recipe.*
+*.appx
+*.appxbundle
+*.appxupload
+*.msix
+*.msixbundle
+*.cab
+*.msi
+*.msm
+*.msp
 
-# JetBrains Rider
-.idea/
-*.sln.iml
+# Compiled Binaries & Native Libraries
+*.dll
+*.exe
+*.so
+*.dylib
+*.xbf
 
-# MonoDevelop / Xamarin Studio
-*.userprefs
+# Test & Coverage Outputs
+TestResults/
+BenchmarkDotNet.Artifacts/
+*.trx
+*.testlog
+*.coverage
+*.coverage.xml
+*.coveragexml
+*.visualcoverage
+*.visualcoverage.xml
+*.tracecoverage
+*.received.*
 
-# Backup files
-*~
-*.bak
-*.tmp
-*.temp
+# WebView2 Runtime Cache Directories
+WebView2/
+EBWebView/
+*.exe.WebView2/
 
-# Compiled Python files (from embedded Python projects)
+# Cobra IDE Local Workspace & User Project Data
+.Cobra/
+Cobra-settings.json
+.cobra_dbg_harness.py
+CobraProjects/
+CondaProjects/
+Projects/*/
+!Projects/.gitkeep
+Core/Settings/*.json
+
+# Python Bytecode, Virtual Environments & Packaging (Pygame / Panda3D / Ursina / PyInstaller)
 __pycache__/
 *.py[cod]
 *$py.class
 *.pyc
 *.pyo
 *.pyd
-
-# Python virtual environments (user projects - not the IDE's internal venv)
 venv/
 env/
-.env
 ENV/
 env.bak/
 venv.bak/
 .virtualenv/
 .venv/
-
-# Python package management
+.venv_ide/
+venv_ide/
 pip-log.txt
 pip-delete-this-directory.txt
 .pytest_cache/
-.coverage
-.tox/
+.ruff_cache/
 .mypy_cache/
 .dmypy.json
 dmypy.json
 .pyre/
 .pytype/
-
-# Python runtime files
+.tox/
 *.egg-info/
 *.egg
 dist/
 build/
 *.whl
+*.spec
 
-# Node.js (for any potential web tools)
+# Node.js / Web Tooling
 node_modules/
-npm-debug.log
-yarn-debug.log
-yarn-error.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 package-lock.json
 yarn.lock
 
-# Web files
-*.log
-*.lck
-*.tmp
-*.swp
-*.swo
-*.swn
-
-# WebView2 cache
-WebView2/
-EBWebView/
-
-# User project files (these are created by your IDE when creating user projects)
-# But keep the Templates folder
-Projects/*
-!Projects/.gitkeep
-!Core/Templates/
-
-# Logs
+# Local Databases, Crash Dumps & Logs
+*.db
+*.sqlite
+*.sqlite3
+*.mdf
+*.ldf
+*.sdf
 *.log
 *.logs
 *.err
-
-# Crash reports
 *.wer
-*.tmp
 *.rpt
 *.hdmp
 *.mdmp
+*.bak
+*.tmp
+*.temp
+*.lck
+*.swp
+*.swo
+*.swn
+*~
 
-# OS generated files
+# Signing Keys & Certificates
+*.snk
+*.snk.user
+*.pfx
+*.pfx.user
+
+# Operating System Files
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
-ehthumbs.db
-Thumbs.db
-*.Trash
-*.dll
-*.exe
-*.so
-*.dylib
-
-# NuGet packages
-*.nupkg
-*.snupkg
-packages/
-!packages/repositories.config
-
-# Paket dependency manager
-.paket/
-paket-files/
-
-# FAKE - F# Make
-.fake/
-
-# Code coverage
-*.coverage
-*.coverage.xml
-*.visualcoverage
-*.visualcoverage.xml
-*.tracecoverage
-
-# Test results
-TestResults/
-*.trx
-*.testlog
-
-# Publish artifacts
-*.pubxml.user
-*.pubxml.user.*
-*.pubxml.recipe
-*.pubxml.recipe.*
-[Pp]ublish/
-
-# Benchmark results
-BenchmarkDotNet.Artifacts/
-
-# Pre-compiled Azure Functions
-bin-debug/
-bin-release/
-obj-debug/
-obj-release/
-
-# Fody generated files
-FodyWeavers.xsd
-_fody/
-
-# VS Code coverage files
-*.coverage
-*.coveragexml
-
-# Approval tests
-*.received.*
-*.approved.*
-!*.approved.*
-
-# Local configuration files
-*.local
-*.local.*
-appsettings.Development.json
-appsettings.Local.json
-
-# Documentation
-*.xml
-*.chm
-
-# SQLite databases
-*.db
-*.sqlite
-*.sqlite3
-
-# Virtual Environment for IDE itself (if you create one)
-.venv_ide/
-venv_ide/
-
-# Windows Installer files
-*.cab
-*.msi
-*.msm
-*.msp
-*.exe
-
-# ClickOnce
-*.appx
-*.appxbundle
-*.appxupload
-*.msix
-*.msixbundle
-
-# Publish profiles
-*.pubxml
-*.pubxml.user
-
-# Temporary files
-*.tmp_proj
-*_tmp/
-temp/
-tmp/
-
-# User-specific project properties
-*.csproj.user
-*.vbproj.user
-*.fsproj.user
-*.dbproj.user
-
-# Mono auto generated files
-mono_crash.*
-
-# Xamarin
-*.binlog
-*.xbf
-
-# Visual Studio 2017/2019/2022 auto generated files
-*.csproj.user
-*.vbproj.user
-*.fsproj.user
-*.dbproj.user
-*.vcxproj.user
-*.vcxproj.filters
-*.vcxproj.FileListAbsolute.txt
-
-# Visual Studio 2022
-.vs/
-
-# Generated files
-Generated_Code/
-*.generated.cs
-*.designer.cs
-
-# Resource files
-*.resources
-!*.resx
-
-# StyleCop / Roslyn
-*.StyleCop.xml
-*.StyleCop
-*.roslyn
-
-# CodeRush
-.cr/
-cr_cache/
-
-# ReSharper
-_ReSharper*/
-*.ReSharper*
-*.DotSettings.user
-*.DotSettings.user.*
-*.DotSettings.Development
-*.DotSettings.Production
-
-# Visual Studio debugging
-*.ncrunchsolution
-*.ncrunchproject
-*.ncrunch*
-*.snk
-*.pfx
-*.pfx.user
-*.snk.user
-
-# Database files
-*.mdf
-*.ldf
-*.sdf
-*.sqlite
-
-# Diagnostics
-*.diagsession
-
-# Local History
-.history/
-
-# SonarLint
-.sonarlint/
-
-# Project specific - Conda IDE
-# Ignore user-created projects (these go in the Projects folder but should not be in git)
-CondaProjects/
-Projects/*/
-!Projects/.gitkeep
-
-# Ignore generated monaco.html if modified locally
-Assets/monaco.html
-
-# Ignore WebView2 cache directories
-*WebView2*
-
-# Ignore any local configuration
-Core/Settings/*.json
-!Core/Settings/.gitkeep
-
-# Ignore logs directory contents
-Logs/*.log
-Logs/*.txt
-!Logs/.gitkeep
-
-# Keep the directory structure but ignore content
-Config/*.json
-!Config/.gitkeep
-Utils/*.dll
-!Utils/.gitkeep
-
-# Ignore any .exe or .dll that might be copied during build
-bin/
-obj/
-*.dll
-*.exe
-*.pdb
-
-# NuGet restore artifacts
-*.nuget.props
-*.nuget.targets
-
-# Visual Studio build artifacts
-*.binlog
-*.buildlog
-
-# Windows
-desktop.ini
-$RECYCLE.BIN/
-
-# Linux
-.directory
-
-# macOS
 .AppleDouble
 .LSOverride
 .fseventsd
-.Spotlight-V100
 .TemporaryItems
-.Trashes
 .VolumeIcon.icns
 .com.apple.timemachine.supported
-
-ProjectStructure.md
+ehthumbs.db
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+.directory

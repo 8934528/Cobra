@@ -3,40 +3,18 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-      xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
       xmlns:local="clr-namespace:Cobra.UI.Views"
+      xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
       mc:Ignorable="d" 
       d:DesignHeight="900" d:DesignWidth="1400">
 
     <Page.Resources>
-        <Storyboard x:Key="FadeInAnimation">
-            <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                           From="0" To="1" Duration="0:0:0.2"/>
-            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                           From="0.95" To="1" Duration="0:0:0.2"/>
-            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                           From="0.95" To="1" Duration="0:0:0.2"/>
-        </Storyboard>
-
-        <Storyboard x:Key="FadeOutAnimation">
-            <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                           From="1" To="0" Duration="0:0:0.15"/>
-        </Storyboard>
-
         <!-- Section Header Style -->
         <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
             <Setter Property="Foreground" Value="#4ec9b0"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Margin" Value="0,20,0,15"/>
-        </Style>
-
-        <!-- Subsection Header Style -->
-        <Style x:Key="SubsectionHeaderStyle" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#cccccc"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Margin" Value="0,15,0,10"/>
         </Style>
 
         <!-- Card Style -->
@@ -876,7 +854,7 @@
                                         <TextBlock Text="Auto-install for new projects" Style="{StaticResource SettingDescriptionStyle}"/>
                                     </StackPanel>
                                     <TextBox Grid.Column="1" Text="{Binding DefaultPackages, Mode=TwoWay}" Style="{StaticResource ModernTextBoxStyle}" Margin="0,0,10,0"/>
-                                    <Button Grid.Column="2" Content="Manage" Style="{StaticResource SeCobraryButtonStyle}" Width="90"/>
+                                    <Button Grid.Column="2" Content="Manage" Style="{StaticResource SeCobraryButtonStyle}" Width="90" Click="ManageDefaultPackagesButton_Click"/>
                                 </Grid>
                             </StackPanel>
                         </Border>
@@ -925,12 +903,12 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal">
-                                            <iconPacks:PackIconMaterial Kind="FormatColorFill" Width="14" Height="14" Foreground="#888888" Margin="0,0,5,0"/>
-                                            <TextBlock Text="Syntax Highlighting" Style="{StaticResource SettingLabelStyle}"/>
+                                            <iconPacks:PackIconMaterial Kind="FormatIndentIncrease" Width="14" Height="14" Foreground="#888888" Margin="0,0,5,0"/>
+                                            <TextBlock Text="Format on Save" Style="{StaticResource SettingLabelStyle}"/>
                                         </StackPanel>
-                                        <TextBlock Text="Enable syntax highlighting" Style="{StaticResource SettingDescriptionStyle}"/>
+                                        <TextBlock Text="Format Python files automatically on save" Style="{StaticResource SettingDescriptionStyle}"/>
                                     </StackPanel>
-                                    <ToggleButton Grid.Column="1" Style="{StaticResource ToggleSwitchStyle}" IsChecked="True"/>
+                                    <ToggleButton Grid.Column="1" Style="{StaticResource ToggleSwitchStyle}" IsChecked="{Binding FormatOnSave, Mode=TwoWay}"/>
                                 </Grid>
 
                                 <Grid Style="{StaticResource SettingRowStyle}">
@@ -945,9 +923,9 @@
                                         </StackPanel>
                                         <TextBlock Text="Number of spaces per tab" Style="{StaticResource SettingDescriptionStyle}"/>
                                     </StackPanel>
-                                    <ComboBox Grid.Column="1" x:Name="TabSizeCombo" Style="{StaticResource ModernComboBoxStyle}" SelectionChanged="GenericSetting_Changed">
-                                        <ComboBoxItem Content="2" IsSelected="True"/>
-                                        <ComboBoxItem Content="4"/>
+                                    <ComboBox Grid.Column="1" x:Name="TabSizeCombo" Style="{StaticResource ModernComboBoxStyle}" SelectedValue="{Binding TabSize, Mode=TwoWay}" SelectedValuePath="Content" SelectionChanged="GenericSetting_Changed">
+                                        <ComboBoxItem Content="2"/>
+                                        <ComboBoxItem Content="4" IsSelected="True"/>
                                         <ComboBoxItem Content="6"/>
                                         <ComboBoxItem Content="8"/>
                                     </ComboBox>
@@ -1142,7 +1120,7 @@
                                         </StackPanel>
                                         <TextBlock Text="Browse and install extensions" Style="{StaticResource SettingDescriptionStyle}"/>
                                     </StackPanel>
-                                    <Button Grid.Column="1" Content="Open Extension Manager" Style="{StaticResource PrimaryButtonStyle}" Width="160"/>
+                                    <Button Grid.Column="1" Content="Open Extension Manager" Style="{StaticResource PrimaryButtonStyle}" Width="160" Click="OpenExtensionManagerButton_Click"/>
                                 </Grid>
 
                                 <!-- Installed Extensions List -->
@@ -1213,7 +1191,7 @@
                                         </StackPanel>
                                         <TextBlock Text="Edit custom shortcuts" Style="{StaticResource SettingDescriptionStyle}"/>
                                     </StackPanel>
-                                    <Button Grid.Column="1" Content="Edit Keybindings" Style="{StaticResource SeCobraryButtonStyle}" Width="120"/>
+                                    <Button Grid.Column="1" Content="Edit Keybindings" Style="{StaticResource SeCobraryButtonStyle}" Width="120" Click="EditKeybindingsButton_Click"/>
                                 </Grid>
                             </StackPanel>
                         </Border>
@@ -1235,7 +1213,7 @@
                                         <iconPacks:PackIconMaterial Kind="InformationOutline" Width="14" Height="14" Foreground="#888888" Margin="0,0,5,0"/>
                                         <TextBlock Text="Version" Style="{StaticResource SettingLabelStyle}"/>
                                     </StackPanel>
-                                    <TextBlock Grid.Column="1" Text="1.0.0" Foreground="#4ec9b0" FontSize="12" FontWeight="SemiBold"/>
+                                    <TextBlock Grid.Column="1" Text="2.0.0" Foreground="#4ec9b0" FontSize="12" FontWeight="SemiBold"/>
                                 </Grid>
 
                                 <Grid Style="{StaticResource SettingRowStyle}">
@@ -1252,9 +1230,9 @@
 
                                 <!-- Action Buttons -->
                                 <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
-                                    <Button Content="Check for Updates" Style="{StaticResource PrimaryButtonStyle}" Width="140" Margin="0,0,10,0"/>
-                                    <Button Content="View License" Style="{StaticResource SeCobraryButtonStyle}" Width="120" Margin="0,0,10,0"/>
-                                    <Button Content="Report Issue" Style="{StaticResource SeCobraryButtonStyle}" Width="120"/>
+                                    <Button Content="Check for Updates" Style="{StaticResource PrimaryButtonStyle}" Width="140" Margin="0,0,10,0" Click="CheckNowButton_Click"/>
+                                    <Button Content="View License" Style="{StaticResource SeCobraryButtonStyle}" Width="120" Margin="0,0,10,0" Click="ViewLicenseButton_Click"/>
+                                    <Button Content="Report Issue" Style="{StaticResource SeCobraryButtonStyle}" Width="120" Click="ReportIssueButton_Click"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>

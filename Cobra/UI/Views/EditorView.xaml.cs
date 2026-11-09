@@ -1,26 +1,39 @@
-using System;
-using Cobra.Core.Settings;
-using Cobra.Engine.SceneSystem;
-using System.Windows.Media.Animation;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
-using Microsoft.Web.WebView2.Core;
-using Cobra.Editor;
-using System.Windows.Shell;
-using System.Collections.ObjectModel;
-using System.Windows.Media;
-using System.Linq;
 using System.Windows.Input;
-using Cobra.Engine.VisualScripting;
-using System.Collections.Generic;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Cobra.UI.Views;
-using MahApps.Metro.IconPacks;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using System.Windows.Threading;
+using Cobra.Core.AI;
+using Cobra.Core.Assets;
+using Cobra.Core.Build;
+using Cobra.Core.Environment;
+using Cobra.Core.Execution;
 using Cobra.Core.ProjectSystem;
-using System.Text.RegularExpressions;
+using Cobra.Core.Security;
+using Cobra.Core.Settings;
+using Cobra.Core.SourceControl;
+using Cobra.Editor;
+using Cobra.Engine;
+using Cobra.Engine.ECS;
+using Cobra.Engine.ECS.Components;
+using Cobra.Engine.ECS.Systems;
+using Cobra.Engine.Physics;
+using Cobra.Engine.Plugins;
+using Cobra.Engine.Prefabs;
+using Cobra.Engine.SceneSystem;
+using Cobra.Engine.VisualScripting;
+using Microsoft.Web.WebView2.Core;
 
 using Point = System.Windows.Point;
 using Color = System.Windows.Media.Color;
@@ -29,63 +42,89 @@ using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 using DragEventArgs = System.Windows.DragEventArgs;
 using DataFormats = System.Windows.DataFormats;
 using Cursors = System.Windows.Input.Cursors;
-
 using Button = System.Windows.Controls.Button;
 using TextBox = System.Windows.Controls.TextBox;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using HorizontalAlignment = System.Windows.HorizontalAlignment;
 using VerticalAlignment = System.Windows.VerticalAlignment;
-
+using Path = System.IO.Path;
+using CheckBox = System.Windows.Controls.CheckBox;
+using ColorConverter = System.Windows.Media.ColorConverter;
+using Clipboard = System.Windows.Clipboard;
+using DragDropEffects = System.Windows.DragDropEffects;
+using Application = System.Windows.Application;
 
 namespace Cobra.UI.Views
 {
-    public partial class EditorView : Page
+    public class OpenTabItem : INotifyPropertyChanged
     {
-        private readonly string projectPath;
-        private string currentFilePath = string.Empty;
-        private Process? currentProcess;
+        private string _name = string.Empty;
+        private bool _isDirty;
 
-        private bool isWebViewReady = false;
-        private bool isVenvActive = false;
-        private bool isJsProject = false;
-        private bool isFullScreen = false;
-        private WindowState previousState;
-        private Window? parentWindow;
+        public string FilePath { get; set; } = string.Empty;
+        public string Name
+        {
+            get => _name;
+            set { _name = value; OnPropertyChanged(); OnPropertyChanged(nameof(DisplayName)); }
+        }
+        public string Content { get; set; } = string.Empty;
+        public bool IsDirty
+        {
+            get => _isDirty;
+            set { _isDirty = value; OnPropertyChanged(); OnPropertyChanged(nameof(DisplayName)); }
+        }
+        public string Icon { get; set; } = "File";
+        public string DisplayName => IsDirty ? $"{Name} *" : Name;
 
-        // Play Mode & Scene Objects
-        private bool isPlaying = false;
-        private Scene currentScene = new();
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string? prop = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+    }
 
-        // Visual Scripting
-        private readonly List<Node> nodes = [];
-        private Node? selectedNode;
+    public partial class EditorView
+    {
+        private readonly string _projectPath;
+        private ProjectModel _projectConfig = new();
+        private string _currentFilePath = string.Empty;
+        private string _currentScenePath = string.Empty;
 
-        [GeneratedRegex(@"\x1B\[[^@-~]*[@-~]")]
-        private static partial Regex AnsiRegex();
+        private bool _isWebViewReady;
+        private bool _is3DWebViewReady;
+        private bool _is3DMode;
+        private bool _isVenvActive;
+        private bool _isFullScreen;
+        private bool _isPlaying;
+        private bool _isDebuggingSession;
+        private bool _isBottomPanelCollapsed;
+        private double _savedBottomPanelHeight = 230;
+        private Window? _parentWindow;
 
-        [GeneratedRegex(@"http://localhost:\d+/?")]
-        private static partial Regex UrlRegex();
-        private readonly NodeGraph currentGraph = new();
+        private Scene _currentScene = new();
+        private readonly Stack<string> _sceneUndoStack = new();
+        private readonly Stack<string> _sceneRedoStack = new();
 
-        private Border? currentSelectedNav;
-        private string? selectedRequirementsPath;
+        private readonly NodeGraph _currentGraph = new();
+        private Node? _selectedNode;
+        private Node? _pendingConnectionSource;
+
+        private Border? _currentSelectedNav;
+        private string? _selectedRequirementsPath;
         private static readonly JsonSerializerOptions JsonIndentedOptions = new() { WriteIndented = true };
 
-        // Gizmo & Camera Fields
-        private SceneObject? selectedGameObject;
-        private bool isDragging = false;
-        private Point dragOffset;
+        private SceneObject? _selectedGameObject;
+        private bool _isDragging;
+        private Point _dragOffset;
+        private double _zoom = 1.0;
+        private double _camX;
+        private double _camY;
+        private bool _isPanning;
+        private Point _lastPanPoint;
 
-        private double zoom = 1.0;
-        private double camX = 0;
-        private double camY = 0;
-        private bool isPanning = false;
-        private Point lastPanPoint;
+        private readonly GameLoop _gameLoop = new();
+        private DispatcherTimer? _profilerTimer;
+        private DispatcherTimer? _animPreviewTimer;
+        private const int DefaultGridSize = 20;
 
-        private System.Windows.Threading.DispatcherTimer gameLoop = null!;
-        private const int GridSize = 20;
-
-        // GIZMO STATE SYSTEM
         private enum GizmoMode
         {
             None,
@@ -94,781 +133,1227 @@ namespace Cobra.UI.Views
             Rotate
         }
 
-        private GizmoMode currentGizmo = GizmoMode.None;
-        private Point lastMousePos;
+        private GizmoMode _currentGizmo = GizmoMode.None;
+        private Point _lastMousePos;
 
-        // ECS CORE
-        private readonly Cobra.Engine.ECS.World world = new();
-        private readonly Cobra.Engine.ECS.Systems.ScriptSystem scriptSystem = new();
-        private readonly Cobra.Engine.Plugins.PluginLoader pluginLoader = new();
+        private readonly World _world = new();
+        private readonly PluginLoader _pluginLoader = new();
+        private readonly GameRunnerService _gameRunner = new();
+        private readonly MediaPlayer _audioPreviewPlayer = new();
 
+        private BitmapImage? _loadedSpriteSheet;
+        private int _currentAnimFrame;
+        private readonly List<double> _memoryHistory = [];
+        private readonly List<PythonDiagnostic> _currentDiagnostics = [];
+        private readonly Dictionary<string, HashSet<int>> _fileBreakpoints = new(StringComparer.OrdinalIgnoreCase);
 
+        [GeneratedRegex(@"\x1B\[[^@-~]*[@-~]")]
+        private static partial Regex AnsiRegex();
 
-
-
-        public class OpenTab
-        {
-            public string FilePath { get; set; } = string.Empty;
-            public string Name { get; set; } = string.Empty;
-            public string Content { get; set; } = string.Empty;
-            public bool IsDirty { get; set; } = false;
-            public string Icon { get; set; } = "File";
-        }
-
-        private readonly ObservableCollection<OpenTab> openTabs = [];
-        private TreeViewItem? currentContextItem;
+        private readonly ObservableCollection<OpenTabItem> _openTabs = [];
 
         public EditorView(string path)
         {
             InitializeComponent();
-            projectPath = path;
-            FileTabs.ItemsSource = openTabs;
+            _projectPath = Path.GetFullPath(path);
+            FileTabs.ItemsSource = _openTabs;
             Loaded += EditorView_Loaded;
-            currentGraph.Nodes = nodes;
-            SceneCanvas.Loaded += (s, e) => DrawGrid();
-            currentSelectedNav = (Border)FindName("NavCodeEditor");
+            Unloaded += EditorView_Unloaded;
+            SceneCanvas.Loaded += (_, _) => RedrawScene();
+            _currentSelectedNav = NavCodeEditor;
 
-            SettingsManager.Instance.SettingsUpdated += (s, e) => ApplySettings();
+            SettingsManager.Instance.SettingsUpdated += (_, _) => ApplySettings();
+            WireGameRunnerEvents();
         }
 
-        private async void ApplySettings()
+        private void WireGameRunnerEvents()
         {
-            if (!isWebViewReady || CodeWebView?.CoreWebView2 == null) return;
+            _gameRunner.OutputReceived += text => Dispatcher.Invoke(() =>
+            {
+                string clean = StripAnsi(text) + "\n";
+                AppendTextToConsole(GameLogsBox, clean);
+                AppendTextToConsole(OutputConsole, clean);
+                if (clean.StartsWith("[Debug Eval]", StringComparison.Ordinal))
+                {
+                    AppendTextToConsole(DebugConsoleBox, clean);
+                }
+            });
 
-            var settings = SettingsManager.Instance.CurrentSettings;
-            
-            // Update Monaco Editor
-            string script = $@"
-                if (editor) {{
-                    editor.updateOptions({{
-                        fontSize: {settings.FontSize},
-                        lineHeight: {settings.FontSize * settings.LineSpacing},
-                        fontFamily: '{settings.FontFamily}',
-                        minimap: {{ enabled: {(settings.ShowMinimap ? "true" : "false")} }},
-                        wordWrap: '{(settings.WordWrap ? "on" : "off")}',
-                        lineNumbers: '{(settings.ShowLineNumbers ? "on" : "off")}'
-                    }});
-                }}";
-            await CodeWebView.CoreWebView2.ExecuteScriptAsync(script);
+            _gameRunner.ErrorReceived += text => Dispatcher.Invoke(() =>
+            {
+                string clean = StripAnsi(text) + "\n";
+                AppendTextToConsole(GameLogsBox, $"[ERR] {clean}");
+                AppendTextToConsole(OutputConsole, $"[ERR] {clean}");
+            });
+
+            _gameRunner.ProcessExited += (code, crashed) => Dispatcher.Invoke(() =>
+            {
+                _isDebuggingSession = false;
+                StatusRightText.Text = crashed ? $"Game exited with code {code}" : "Ready";
+                DebuggerStatusLabel.Text = $"Process exited (Code {code})";
+            });
+
+            _gameRunner.DebuggerPaused += state => Dispatcher.Invoke(() =>
+            {
+                DebuggerStatusLabel.Text = $"Paused at {Path.GetFileName(state.FilePath)}:{state.Line} ({state.FunctionName})";
+                DebugCallStackList.ItemsSource = state.CallStack;
+                List<string> locals = [.. state.LocalVariables.Select(kv => $"{kv.Key} = {kv.Value}")];
+                DebugLocalsList.ItemsSource = locals;
+                if (!string.IsNullOrEmpty(state.ExceptionMessage))
+                {
+                    AppendTextToConsole(DebugConsoleBox, $"[Exception] {state.ExceptionMessage}\n");
+                }
+                OnBottomTabClicked(TabDebugBtn, new RoutedEventArgs());
+
+                if (File.Exists(state.FilePath))
+                {
+                    OpenFileInTab(state.FilePath);
+                    _ = RevealLineInEditorAsync(state.Line);
+                }
+            });
+        }
+
+        private static void AppendTextToConsole(TextBox box, string text)
+        {
+            box.AppendText(text);
+            box.ScrollToEnd();
         }
 
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
-            parentWindow = Window.GetWindow(this);
-            if (parentWindow != null)
+            _parentWindow = Window.GetWindow(this);
+            if (_parentWindow != null)
             {
-                parentWindow.StateChanged += ParentWindow_StateChanged;
+                _parentWindow.StateChanged += ParentWindow_StateChanged;
+                _parentWindow.PreviewKeyDown += ParentWindow_PreviewKeyDown;
+            }
+        }
+
+        private void EditorView_Unloaded(object sender, RoutedEventArgs e)
+        {
+            CleanupResources();
+        }
+
+        public void CleanupResources()
+        {
+            try
+            {
+                if (_parentWindow != null)
+                {
+                    _parentWindow.StateChanged -= ParentWindow_StateChanged;
+                    _parentWindow.PreviewKeyDown -= ParentWindow_PreviewKeyDown;
+                }
+                _gameLoop.Stop();
+                _profilerTimer?.Stop();
+                _animPreviewTimer?.Stop();
+                _audioPreviewPlayer.Stop();
+                _audioPreviewPlayer.Close();
+                _gameRunner.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Cleanup error: {ex.Message}");
+            }
+        }
+
+        private void ParentWindow_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.S)
+            {
+                e.Handled = true;
+                OnSaveClicked(this, new RoutedEventArgs());
+            }
+            else if (Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.S)
+            {
+                e.Handled = true;
+                OnSaveAllClicked(this, new RoutedEventArgs());
+            }
+            else if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.F)
+            {
+                e.Handled = true;
+                OnFindClicked(this, new RoutedEventArgs());
+            }
+            else if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.H)
+            {
+                e.Handled = true;
+                OnReplaceClicked(this, new RoutedEventArgs());
+            }
+            else if (e.Key == Key.F5)
+            {
+                e.Handled = true;
+                if (_isDebuggingSession && _gameRunner.IsRunning)
+                    OnDebugContinueClicked(this, new RoutedEventArgs());
+                else
+                    OnRunClicked(this, new RoutedEventArgs());
+            }
+            else if (e.Key == Key.F6)
+            {
+                e.Handled = true;
+                OnDebugClicked(this, new RoutedEventArgs());
+            }
+            else if (e.Key == Key.F7)
+            {
+                e.Handled = true;
+                OnBuildClicked(this, new RoutedEventArgs());
+            }
+            else if (e.Key == Key.F10 && _isDebuggingSession)
+            {
+                e.Handled = true;
+                OnDebugStepOverClicked(this, new RoutedEventArgs());
+            }
+            else if (e.Key == Key.F11 && Keyboard.Modifiers == ModifierKeys.None && _isDebuggingSession)
+            {
+                e.Handled = true;
+                OnDebugStepIntoClicked(this, new RoutedEventArgs());
             }
         }
 
         private void ParentWindow_StateChanged(object? sender, EventArgs e)
         {
-            if (parentWindow != null)
+            if (_parentWindow != null)
             {
-                isFullScreen = parentWindow.WindowState == WindowState.Maximized && parentWindow.WindowStyle == WindowStyle.None;
+                _isFullScreen = _parentWindow.WindowState == WindowState.Maximized && _parentWindow.WindowStyle == WindowStyle.None;
             }
         }
 
         private async void EditorView_Loaded(object sender, RoutedEventArgs e)
         {
-            await InitializeWebView();
-            LoadFiles();
-            DetectProjectType();
-            CheckVenvStatus();
-            CheckBackendStatus();
-            OutputConsole.Text = "Cobra Editor Ready!\n";
-            OutputConsole.Text += $"Project: {projectPath}\n";
-            OutputConsole.Text += "Python virtual environment support enabled\n";
-            OutputConsole.Text += "-----------------------------------------------------------------------------\n\n";
+            try
+            {
+                _projectConfig = ProjectModel.LoadFromDirectory(_projectPath);
+                BuildAppNameBox.Text = SecurityValidator.IsValidProjectName(_projectConfig.Name, out _) ? _projectConfig.Name : "CobraGame";
 
-            TerminalConsole.Text = "Cobra Terminal Ready!\n";
-            TerminalConsole.Text += $"Project: {projectPath}\n";
-            TerminalConsole.Text += "-----------------------------------------------------------------------------\n\n";
+                await InitializeWebView();
+                LoadFiles();
+                PopulateStartupFiles();
+                CheckVenvStatus();
+                InitializeVisualScriptingLibrary();
+                RefreshPythonEnvironmentWorkspace();
+                RefreshAssetsWorkspace();
+                _ = RefreshGitWorkspaceAsync();
 
+                OutputConsole.Text = $"Cobra Python Game Development IDE Ready\nProject: {_projectConfig.Name} ({_projectPath})\nFramework: {_projectConfig.Framework}\n-----------------------------------------------------------------------------\n";
+                TerminalConsole.Text = $"Cobra Integrated Shell\nWorking Directory: {_projectPath}\nType Python, pip, git, or shell commands below.\n-----------------------------------------------------------------------------\n";
 
-
-            InitEngine();
-            CreateTestEntity();
+                InitEngine();
+                LoadDefaultOrInitialScene();
+                ApplySettings();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
         }
-
 
         private void InitEngine()
         {
-            pluginLoader.LoadPlugins("Plugins");
-            StartGameLoop();
+            _pluginLoader.LoadPlugins(Path.Combine(_projectPath, "Plugins"));
+            ExtensionsRegistryList.ItemsSource = _pluginLoader.DiscoveredPlugins;
+
+            var rootEntity = _world.CreateEntity();
+            _world.AddComponent(rootEntity, new Engine.ECS.Components.Transform { X = 0, Y = 0 });
+            _world.AddComponent(rootEntity, new Sprite { Path = "default", Color = "#ff8c00" });
+            _ = _world.GetComponent<Sprite>(rootEntity)?.Path;
+            _ = _world.GetComponent<Sprite>(rootEntity)?.Color;
+
+            var rootActor = new GameObject
+            {
+                Name = "RootActor",
+                Rigidbody = new Rigidbody { Mass = 1f },
+                Collider = new Collider { Bounds = new Rect(0, 0, 32, 32), IsTrigger = false }
+            };
+            var scriptComp = rootActor.AddComponent<ScriptComponent>();
+            scriptComp.ScriptPath = "main.py";
+            scriptComp.Graph = _currentGraph;
+            foreach (var comp in rootActor.GetAllComponents())
+            {
+                comp.Start();
+                comp.Update();
+            }
+            _ = rootActor.GetComponent<ScriptComponent>();
+            _ = rootActor.Rigidbody.Mass;
+            _ = rootActor.Collider.IsTrigger;
+            _ = rootActor.Id;
+
+            var physicsSystem = new PhysicsSystem(new PhysicsEngine());
+
+            _gameLoop.OnUpdate = dt =>
+            {
+                if (_isPlaying)
+                {
+                    ScriptSystem.Update(_world);
+                    TransformSystem.Update(_world);
+                    physicsSystem.Update(dt);
+                    _pluginLoader.UpdateAll();
+                    if (!_is3DMode && _currentScene.Objects.Count == 0 && SceneCanvas != null)
+                    {
+                        RenderSystem.Render(_world, SceneCanvas);
+                    }
+                    UpdateSceneSimulation(dt);
+                    RedrawScene();
+                }
+            };
+            _gameLoop.Start();
+
+            _profilerTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            _profilerTimer.Tick += (_, _) => UpdateProfilerMetrics();
+            _profilerTimer.Start();
+
+            _animPreviewTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(120) };
+            _animPreviewTimer.Tick += (_, _) => StepAnimationPreview();
         }
 
-        private void CreateTestEntity()
+        private void LoadDefaultOrInitialScene()
         {
-            currentScene.Objects.Add(new SceneObject 
-            { 
-                Name = "Test Object", 
-                X = 100, 
-                Y = 100, 
-                Width = 100, 
-                Height = 100 
-            });
+            string defaultSceneFile = Path.Combine(_projectPath, "scenes", "main.Cobra");
+            if (File.Exists(defaultSceneFile))
+            {
+                try
+                {
+                    _currentScene = Scene.Load(defaultSceneFile);
+                    _currentScenePath = defaultSceneFile;
+                    ActiveSceneNameLabel.Text = _currentScene.SceneName;
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                    CreateStarterSceneObjects();
+                }
+            }
+            else
+            {
+                CreateStarterSceneObjects();
+            }
+
+            bool is3DFramework = _projectConfig.Framework.Equals("Panda3D", StringComparison.OrdinalIgnoreCase)
+                              || _projectConfig.Framework.Equals("Ursina", StringComparison.OrdinalIgnoreCase);
+
+            StatusFrameworkText.Text = is3DFramework
+                ? $"Framework: {_projectConfig.Framework} (3D)"
+                : "Framework: Pygame (2D)";
+
+            SaveSceneUndoSnapshot();
             RedrawScene();
+        }
+
+        private void CreateStarterSceneObjects()
+        {
+            _currentScene = new Scene { SceneName = "MainScene", Framework = _projectConfig.Framework };
+            _currentScene.Objects.Add(new SceneObject
+            {
+                Name = "Player",
+                Primitive3D = "Cube",
+                X = 160,
+                Y = 180,
+                Width = 64,
+                Height = 64,
+                Color = "#ff8c00",
+                ColliderType = "Rectangle",
+                HasRigidbody = true
+            });
+            _currentScene.Objects.Add(new SceneObject
+            {
+                Name = "GroundPlatform",
+                Primitive3D = "Cube",
+                X = 100,
+                Y = 340,
+                Width = 360,
+                Height = 32,
+                Color = "#4ec9b0",
+                ColliderType = "Rectangle",
+                HasRigidbody = false
+            });
+        }
+
+        private async Task InitializeWebView()
+        {
+            try
+            {
+                await CodeWebView.EnsureCoreWebView2Async();
+                ConfigureSecureWebView(CodeWebView.CoreWebView2);
+
+                string htmlPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "monaco.html");
+                if (File.Exists(htmlPath))
+                {
+                    CodeWebView.Source = new Uri(htmlPath);
+                }
+
+                CodeWebView.CoreWebView2.NavigationCompleted += (_, _) =>
+                {
+                    _isWebViewReady = true;
+                    ApplySettings();
+                    string startupPath = Path.Combine(_projectPath, _projectConfig.StartupFile);
+                    if (File.Exists(startupPath) && _openTabs.Count == 0)
+                    {
+                        OpenFileInTab(startupPath);
+                    }
+                };
+
+                CodeWebView.CoreWebView2.WebMessageReceived += OnCodeWebViewMessageReceived;
+
+                await Viewport3DWebView.EnsureCoreWebView2Async();
+                ConfigureSecureWebView(Viewport3DWebView.CoreWebView2);
+                string view3DPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "viewport3d.html");
+                if (File.Exists(view3DPath))
+                {
+                    Viewport3DWebView.Source = new Uri(view3DPath);
+                }
+                Viewport3DWebView.CoreWebView2.NavigationCompleted += (_, _) =>
+                {
+                    _is3DWebViewReady = true;
+                    SyncSceneTo3DViewport();
+                };
+                Viewport3DWebView.CoreWebView2.WebMessageReceived += OnViewport3DMessageReceived;
+            }
+            catch (Exception ex)
+            {
+                OutputConsole.AppendText($"[WebView2 Warning] {ex.Message}\n");
+            }
+        }
+
+        private static void ConfigureSecureWebView(CoreWebView2 webView)
+        {
+            webView.Settings.IsStatusBarEnabled = false;
+            webView.Settings.AreDefaultScriptDialogsEnabled = false;
+            webView.Settings.IsWebMessageEnabled = true;
+
+            webView.NavigationStarting += (_, args) =>
+            {
+                if (Uri.TryCreate(args.Uri, UriKind.Absolute, out var uri))
+                {
+                    if (uri.Scheme != Uri.UriSchemeFile && !uri.Host.Contains("jsdelivr.net", StringComparison.OrdinalIgnoreCase))
+                    {
+                        args.Cancel = true;
+                    }
+                }
+            };
+        }
+
+        private void OnCodeWebViewMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
+        {
+            try
+            {
+                string json = e.TryGetWebMessageAsString();
+                if (string.IsNullOrWhiteSpace(json)) return;
+
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+                string type = root.TryGetProperty("type", out var t) ? t.GetString() ?? "" : "";
+
+                if (type == "contentChanged" && FileTabs.SelectedItem is OpenTabItem activeTab)
+                {
+                    string content = root.TryGetProperty("content", out var c) ? c.GetString() ?? "" : "";
+                    if (activeTab.Content != content)
+                    {
+                        activeTab.Content = content;
+                        activeTab.IsDirty = true;
+                        if (SplitEditorBorder.Visibility == Visibility.Visible)
+                        {
+                            SplitPreviewTextBox.Text = content;
+                        }
+                    }
+                }
+                else if (type == "saveRequested")
+                {
+                    OnSaveClicked(this, new RoutedEventArgs());
+                }
+                else if (type == "breakpoint" && !string.IsNullOrEmpty(_currentFilePath))
+                {
+                    int line = root.TryGetProperty("line", out var l) ? l.GetInt32() : 1;
+                    bool enabled = root.TryGetProperty("enabled", out var en) && en.GetBoolean();
+                    if (!_fileBreakpoints.TryGetValue(_currentFilePath, out var set))
+                    {
+                        set = [];
+                        _fileBreakpoints[_currentFilePath] = set;
+                    }
+                    if (enabled) set.Add(line);
+                    else set.Remove(line);
+
+                    ShowToast(enabled ? $"Breakpoint added at line {line}" : $"Breakpoint removed at line {line}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Editor message error: {ex.Message}");
+            }
+        }
+
+        private void OnViewport3DMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
+        {
+            try
+            {
+                string json = e.TryGetWebMessageAsString();
+                if (string.IsNullOrWhiteSpace(json)) return;
+
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+                string type = root.TryGetProperty("type", out var t) ? t.GetString() ?? "" : "";
+
+                if (type == "objectSelected")
+                {
+                    string id = root.TryGetProperty("id", out var idProp) ? idProp.GetString() ?? "" : "";
+                    var obj = _currentScene.Objects.FirstOrDefault(o => o.Id == id);
+                    if (obj != null)
+                    {
+                        _selectedGameObject = obj;
+                        SceneHierarchy.SelectedItem = obj;
+                        UpdateInspector();
+                    }
+                }
+                else if (type == "objectTransformed")
+                {
+                    string id = root.TryGetProperty("id", out var idProp) ? idProp.GetString() ?? "" : "";
+                    var obj = _currentScene.Objects.FirstOrDefault(o => o.Id == id);
+                    if (obj is { IsLocked: false })
+                    {
+                        SaveSceneUndoSnapshot();
+                        if (root.TryGetProperty("x", out var x)) obj.X = x.GetDouble();
+                        if (root.TryGetProperty("y", out var y)) obj.Y = y.GetDouble();
+                        if (root.TryGetProperty("z", out var z)) obj.Z = z.GetDouble();
+                        if (root.TryGetProperty("rotationX", out var rx)) obj.RotationX = rx.GetDouble();
+                        if (root.TryGetProperty("rotationY", out var ry)) obj.RotationY = ry.GetDouble();
+                        if (root.TryGetProperty("rotation", out var rz)) obj.Rotation = rz.GetDouble();
+                        if (root.TryGetProperty("scaleX", out var sx)) obj.ScaleX = sx.GetDouble();
+                        if (root.TryGetProperty("scaleY", out var sy)) obj.ScaleY = sy.GetDouble();
+                        if (root.TryGetProperty("scaleZ", out var sz)) obj.ScaleZ = sz.GetDouble();
+                        UpdateInspector();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"3D viewport message error: {ex.Message}");
+            }
+        }
+
+        private async void ApplySettings()
+        {
+            try
+            {
+                var settings = SettingsManager.Instance.CurrentSettings;
+                AiConsentCheckBox.IsChecked = settings.AiConsentGranted;
+                SnapToGridCheck.IsChecked = settings.EnableGridSnap;
+                ShowCollidersCheck.IsChecked = settings.ShowCollisionGizmos;
+
+                if (!_isWebViewReady || CodeWebView?.CoreWebView2 == null) return;
+
+                string script = $@"
+                    if (window.editor) {{
+                        window.editor.updateOptions({{
+                            fontSize: {settings.FontSize},
+                            lineHeight: {Math.Round(settings.FontSize * settings.LineSpacing)},
+                            fontFamily: '{settings.FontFamily}',
+                            tabSize: {settings.TabSize},
+                            minimap: {{ enabled: {(settings.ShowMinimap ? "true" : "false")} }},
+                            wordWrap: '{(settings.WordWrap ? "on" : "off")}',
+                            lineNumbers: '{(settings.ShowLineNumbers ? "on" : "off")}'
+                        }});
+                    }}";
+                await CodeWebView.CoreWebView2.ExecuteScriptAsync(script);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
         }
 
         private void CheckVenvStatus()
         {
-            // Only show Venv option for Python projects
-            if (isJsProject)
-            {
-                if (NavAddVenv != null) NavAddVenv.Visibility = Visibility.Collapsed;
-                return;
-            }
-
-            string venvPath = System.IO.Path.Combine(projectPath, "venv");
-            isVenvActive = Directory.Exists(venvPath);
-            
+            _isVenvActive = VenvService.ValidateVenv(_projectPath);
             if (NavAddVenv != null)
             {
-                NavAddVenv.Visibility = isVenvActive ? Visibility.Collapsed : Visibility.Visible;
+                NavAddVenv.Visibility = _isVenvActive ? Visibility.Collapsed : Visibility.Visible;
+            }
+
+            string interpreter = PythonService.ResolveProjectPython(_projectPath, _projectConfig.PythonInterpreter);
+            StatusInterpreterText.Text = _isVenvActive
+                ? "Python: Project Venv (Active)"
+                : $"Python: {Path.GetFileName(interpreter)}";
+        }
+
+        private void PopulateStartupFiles()
+        {
+            if (!Directory.Exists(_projectPath)) return;
+
+            List<FileItem> fileItems =
+            [
+                .. Directory.GetFiles(_projectPath, "*.py", SearchOption.TopDirectoryOnly)
+                    .Select(f => new FileItem { Name = Path.GetFileName(f), FullPath = f })
+                    .Where(item => !string.IsNullOrEmpty(item.Name) && File.Exists(item.FullPath))
+                    .OrderBy(item => item.Name)
+            ];
+
+            List<string> pyFiles = [.. fileItems.Select(item => item.Name)];
+            if (pyFiles.Count == 0) pyFiles.Add("main.py");
+
+            StartupFileCombo.ItemsSource = pyFiles;
+            StartupFileCombo.SelectedItem = pyFiles.Contains(_projectConfig.StartupFile)
+                ? _projectConfig.StartupFile
+                : pyFiles.FirstOrDefault();
+        }
+
+        private void StartupFileCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (StartupFileCombo.SelectedItem is string selected && !string.IsNullOrWhiteSpace(selected))
+            {
+                _projectConfig.StartupFile = selected;
+                _projectConfig.SaveManifest();
             }
         }
 
-        private void DetectProjectType()
+        private void LayoutPresetCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            isJsProject = File.Exists(Path.Combine(projectPath, "package.json"));
-        }
+            if (!IsLoaded || LayoutPresetCombo.SelectedItem is not ComboBoxItem item) return;
+            string preset = item.Content?.ToString() ?? "Default";
 
-        private void CheckBackendStatus()
-        {
-            if (FindName("NavAddBackend") is not Border navBackend) return;
-
-            if (!isJsProject)
+            switch (preset)
             {
-                navBackend.Visibility = Visibility.Collapsed;
-                return;
-            }
-
-            // Check if backend already exists (backend/ or server/ folder)
-            bool backendExists = Directory.Exists(Path.Combine(projectPath, "backend")) || 
-                               Directory.Exists(Path.Combine(projectPath, "server"));
-
-            navBackend.Visibility = backendExists ? Visibility.Collapsed : Visibility.Visible;
-        }
-
-
-
-        private static string StripAnsi(string text)
-        {
-            if (string.IsNullOrEmpty(text)) return text;
-            return AnsiRegex().Replace(text, "");
-        }
-
-        private void DetectAndOpenUrl(string text)
-        {
-            var match = UrlRegex().Match(text);
-            if (match.Success)
-            {
-                string url = match.Value;
-                Dispatcher.Invoke(async () => {
-                    var openResult = await CustomDialog.ShowAsync(Window.GetWindow(this), 
-                        $"Dev server detected at {url}. Open in IDE?", "Dev Server", DialogIcon.Info, "Open", "Ignore");
-                    
-                    if (openResult)
-                    {
-                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                        {
-                            FileName = url,
-                            UseShellExecute = true
-                        });
-                    }
-                });
+                case "Coding Focus":
+                    LeftSidebarCol.Width = new GridLength(175);
+                    RightSidebarCol.Width = new GridLength(230);
+                    BottomPanelRow.Height = new GridLength(140);
+                    SwitchWorkspace("CodeEditor", NavCodeEditor);
+                    break;
+                case "Scene Design":
+                    LeftSidebarCol.Width = new GridLength(175);
+                    RightSidebarCol.Width = new GridLength(250);
+                    BottomPanelRow.Height = new GridLength(120);
+                    SwitchWorkspace("SceneEditor", NavSceneEditor);
+                    break;
+                case "Debugging":
+                    LeftSidebarCol.Width = new GridLength(185);
+                    RightSidebarCol.Width = new GridLength(260);
+                    BottomPanelRow.Height = new GridLength(260);
+                    SwitchWorkspace("Debugger", NavDebugger);
+                    OnBottomTabClicked(TabDebugBtn, new RoutedEventArgs());
+                    break;
+                default:
+                    LeftSidebarCol.Width = new GridLength(195);
+                    RightSidebarCol.Width = new GridLength(285);
+                    BottomPanelRow.Height = new GridLength(230);
+                    SwitchWorkspace("CodeEditor", NavCodeEditor);
+                    break;
             }
         }
 
-        private async void OnAddBackendClicked(object sender, MouseButtonEventArgs e)
+        private void OnToggleBottomPanelClicked(object sender, RoutedEventArgs e)
         {
-            var backendGrid = new Grid();
-            backendGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            backendGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-
-            var infoText = new TextBlock
+            if (!_isBottomPanelCollapsed)
             {
-                Text = "Select a backend technology for your game:",
-                Foreground = Brushes.White,
-                FontSize = 14,
-                Margin = new Thickness(0, 0, 0, 20),
-                TextWrapping = TextWrapping.Wrap
-            };
-            Grid.SetRow(infoText, 0);
-            backendGrid.Children.Add(infoText);
-
-            var optionsStack = new StackPanel();
-            Grid.SetRow(optionsStack, 1);
-            backendGrid.Children.Add(optionsStack);
-
-            string selectedBackend = "";
-            var backends = new[] { 
-                (Name: "Python (Flask)", Icon: "LanguagePython", Color: "#3776AB"),
-                (Name: "C# (.NET)", Icon: "LanguageCsharp", Color: "#512BD4"),
-                (Name: "Node.js (Express)", Icon: "Nodejs", Color: "#339933")
-            };
-
-            foreach (var b in backends)
-            {
-                var btn = new Button
-                {
-                    Height = 50,
-                    Margin = new Thickness(0, 0, 0, 10),
-                    Background = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(b.Color)),
-                    Foreground = Brushes.White,
-                    BorderThickness = new Thickness(0),
-                    Cursor = Cursors.Hand
-                };
-
-                var content = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal };
-                content.Children.Add(new PackIconMaterial { Kind = (PackIconMaterialKind)Enum.Parse(typeof(PackIconMaterialKind), b.Icon), Width = 18, Height = 18, Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center });
-                content.Children.Add(new TextBlock { Text = b.Name, FontSize = 14, FontWeight = FontWeights.Bold, VerticalAlignment = VerticalAlignment.Center });
-                
-                btn.Content = content;
-                btn.Click += (s, args) => {
-                    selectedBackend = b.Name.Split(' ')[0]; // Get Python, C#, or Node.js
-                };
-                optionsStack.Children.Add(btn);
+                _savedBottomPanelHeight = BottomPanelRow.ActualHeight > 60 ? BottomPanelRow.ActualHeight : 230;
+                BottomPanelRow.MinHeight = 0;
+                BottomPanelRow.Height = new GridLength(0);
+                BottomPanelBorder.Visibility = Visibility.Collapsed;
+                _isBottomPanelCollapsed = true;
             }
-
-            var rbStack = new StackPanel();
-            var rbPython = new System.Windows.Controls.RadioButton { Content = "Python (Flask)", Foreground = Brushes.White, Margin = new Thickness(0, 5, 0, 5), IsChecked = true, Tag = "Python" };
-            var rbCSharp = new System.Windows.Controls.RadioButton { Content = "C# (.NET Minimal API)", Foreground = Brushes.White, Margin = new Thickness(0, 5, 0, 5), Tag = "C#" };
-            var rbNode = new System.Windows.Controls.RadioButton { Content = "Node.js (Express)", Foreground = Brushes.White, Margin = new Thickness(0, 5, 0, 5), Tag = "Node.js" };
-            
-            rbStack.Children.Add(rbPython);
-            rbStack.Children.Add(rbCSharp);
-            rbStack.Children.Add(rbNode);
-            Grid.SetRow(rbStack, 1);
-            backendGrid.Children.Remove(optionsStack);
-            backendGrid.Children.Add(rbStack);
-
-            var (confirmed, _) = await AnimatedModal.ShowCustomModalAsync(Window.GetWindow(this), "Add Backend", backendGrid, "Add Backend", "Cancel");
-
-            if (confirmed)
+            else
             {
-                string type = "Python";
-                if (rbCSharp.IsChecked == true) type = "C#";
-                if (rbNode.IsChecked == true) type = "Node.js";
-
-                OutputConsole.Text += $"Adding {type} backend...\n";
-                
-                var progress = new Progress<string>(msg =>
-                {
-                    Dispatcher.Invoke(() => OutputConsole.Text += $"{msg}\n");
-                });
-
-                string result = await ProjectCreator.AddBackendToProjectAsync(projectPath, type, progress);
-                
-                if (result.StartsWith("Error"))
-                {
-                    await CustomDialog.ShowAsync(Window.GetWindow(this), result, "Error", DialogIcon.Error);
-                }
-                else
-                {
-                    ShowToast($"{type} backend added successfully!");
-                    CheckBackendStatus();
-                    LoadFiles();
-                }
+                BottomPanelBorder.Visibility = Visibility.Visible;
+                BottomPanelRow.MinHeight = 80;
+                BottomPanelRow.Height = new GridLength(_savedBottomPanelHeight);
+                _isBottomPanelCollapsed = false;
             }
         }
 
-        private async void OnAddVenvClicked(object sender, MouseButtonEventArgs e)
+        private void OnBottomTabClicked(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button btn) return;
+            string tag = btn.Tag?.ToString() ?? "Output";
+
+            Button[] allBtns = [TabOutputBtn, TabTerminalBtn, TabDebugBtn, TabProblemsBtn, TabTestsBtn, TabBuildBtn, TabGameLogsBtn];
+            foreach (var b in allBtns)
+            {
+                b.Foreground = new SolidColorBrush(Color.FromRgb(170, 170, 170));
+                b.BorderBrush = Brushes.Transparent;
+            }
+
+            btn.Foreground = Brushes.White;
+            btn.BorderBrush = new SolidColorBrush(Color.FromRgb(255, 140, 0));
+
+            OutputConsole.Visibility = tag == "Output" ? Visibility.Visible : Visibility.Collapsed;
+            TerminalContainer.Visibility = tag == "Terminal" ? Visibility.Visible : Visibility.Collapsed;
+            DebugConsoleBox.Visibility = tag == "DebugConsole" ? Visibility.Visible : Visibility.Collapsed;
+            ProblemsListBox.Visibility = tag == "Problems" ? Visibility.Visible : Visibility.Collapsed;
+            TestResultsBox.Visibility = tag == "TestResults" ? Visibility.Visible : Visibility.Collapsed;
+            BuildOutputBox.Visibility = tag == "BuildOutput" ? Visibility.Visible : Visibility.Collapsed;
+            GameLogsBox.Visibility = tag == "GameLogs" ? Visibility.Visible : Visibility.Collapsed;
+
+            if (_isBottomPanelCollapsed)
+            {
+                OnToggleBottomPanelClicked(sender, e);
+            }
+        }
+
+        private void OnClearConsoleClicked(object sender, RoutedEventArgs e)
+        {
+            if (OutputConsole.Visibility == Visibility.Visible) OutputConsole.Clear();
+            else if (TerminalContainer.Visibility == Visibility.Visible) TerminalConsole.Clear();
+            else if (DebugConsoleBox.Visibility == Visibility.Visible) DebugConsoleBox.Clear();
+            else if (TestResultsBox.Visibility == Visibility.Visible) TestResultsBox.Clear();
+            else if (BuildOutputBox.Visibility == Visibility.Visible) BuildOutputBox.Clear();
+            else if (GameLogsBox.Visibility == Visibility.Visible) GameLogsBox.Clear();
+            else if (ProblemsListBox.Visibility == Visibility.Visible) ProblemsListBox.ItemsSource = null;
+        }
+
+        private async void OnRunTestsClicked(object sender, RoutedEventArgs e)
         {
             try
             {
-                var result = await CustomDialog.ShowAsync(
-                    Window.GetWindow(this),
-                    "Do you want to add a virtual environment to this project?",
-                    "Add Virtual Environment",
-                    DialogIcon.Question,
-                    "Yes",
-                    "No");
+                OnBottomTabClicked(TabTestsBtn, e);
+                TestResultsBox.Text = "Running Python unit tests (unittest discover)...\n";
 
-                if (result)
+                string pythonExe = PythonService.ResolveProjectPython(_projectPath, _projectConfig.PythonInterpreter);
+                await Task.Run(() =>
                 {
-                    OutputConsole.Text += "Adding virtual environment...\n";
-                    
-                    var progress = new Progress<string>(msg =>
+                    try
                     {
-                        Dispatcher.Invoke(() => OutputConsole.Text += $"{msg}\n");
-                    });
+                        var psi = new ProcessStartInfo
+                        {
+                            FileName = pythonExe,
+                            WorkingDirectory = _projectPath,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        };
+                        psi.ArgumentList.Add("-m");
+                        psi.ArgumentList.Add("unittest");
+                        psi.ArgumentList.Add("discover");
+                        psi.ArgumentList.Add("-v");
 
-                    await Cobra.Core.Environment.VenvService.CopyVenvToProjectAsync(projectPath, progress);
-                    
-                    CheckVenvStatus();
-                    ShowToast("Virtual environment added successfully!");
-                    OutputConsole.Text += "Virtual environment ready!\n";
-                }
+                        using var proc = Process.Start(psi);
+                        if (proc == null) return;
+                        string stdout = proc.StandardOutput.ReadToEnd();
+                        string stderr = proc.StandardError.ReadToEnd();
+                        proc.WaitForExit(15000);
+
+                        Dispatcher.Invoke(() =>
+                        {
+                            TestResultsBox.AppendText(stdout);
+                            if (!string.IsNullOrWhiteSpace(stderr))
+                                TestResultsBox.AppendText("\n" + stderr);
+                            TestResultsBox.AppendText($"\nExit code: {proc.ExitCode}\n");
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Dispatcher.Invoke(() => TestResultsBox.AppendText($"Test execution error: {ex.Message}\n"));
+                    }
+                });
             }
             catch (Exception ex)
             {
-                await CustomDialog.ShowAsync(Window.GetWindow(this), $"Error adding venv: {ex.Message}", "Error", DialogIcon.Error);
+                Debug.WriteLine(ex.Message);
             }
         }
 
-        private async System.Threading.Tasks.Task InitializeWebView()
+        private void NavItem_Click(object sender, MouseButtonEventArgs e)
         {
-            await CodeWebView.EnsureCoreWebView2Async();
-
-            string htmlPath = System.IO.Path.Combine(
-                AppDomain.CurrentDomain.BaseDirectory,
-                "Assets",
-                "monaco.html"
-            );
-
-            if (!File.Exists(htmlPath))
+            if (sender is Border { Tag: string tag } clickedNav)
             {
-                await CreateDefaultMonacoHtml(htmlPath);
+                SwitchWorkspace(tag, clickedNav);
             }
-
-            CodeWebView.CoreWebView2.Navigate(new Uri(htmlPath).ToString());
-
-            CodeWebView.CoreWebView2.NavigationCompleted += (s, args) =>
-            {
-                isWebViewReady = true;
-            };
         }
 
-        private static async System.Threading.Tasks.Task CreateDefaultMonacoHtml(string path)
+        private void SwitchWorkspace(string tag, Border? navBorder)
         {
-            string? directory = System.IO.Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
+            if (_currentSelectedNav != null)
+            {
+                _currentSelectedNav.Background = Brushes.Transparent;
+            }
+            if (navBorder != null)
+            {
+                navBorder.Background = new SolidColorBrush(Color.FromRgb(45, 45, 48));
+                _currentSelectedNav = navBorder;
+            }
 
-            string html = @"<!DOCTYPE html>
-<html>
-<head>
-    <meta charset=""UTF-8"">
-    <style>
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #1e1e1e; }
-        #editor { height: 100%; width: 100%; }
-    </style>
-    <link rel=""stylesheet"" data-name=""vs/editor/editor.main"" href=""https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/editor/editor.main.min.css"">
-</head>
-<body>
-    <div id=""editor""></div>
-    <script src=""https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js""></script>
-    <script>
-        let editor;
-        require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
-        require(['vs/editor/editor.main'], function () {
-            editor = monaco.editor.create(document.getElementById('editor'), {
-                value: '# Welcome to Cobra IDE\n\n# Write your Python code here\n',
-                language: 'python',
-                theme: 'vs-dark',
-                automaticLayout: true,
-                fontSize: 14,
-                minimap: { enabled: true }
-            });
-        });
-        function setCode(code) { if (editor) editor.setValue(code); }
-        function getCode() { return editor ? editor.getValue() : ''; }
-        function setFontSize(size) { if (editor) editor.updateOptions({ fontSize: size }); }
-        function undo() { if (editor) editor.trigger('keyboard', 'undo'); }
-        function redo() { if (editor) editor.trigger('keyboard', 'redo'); }
-        function find() { if (editor) editor.trigger('keyboard', 'actions.find'); }
-        function replace() { if (editor) editor.trigger('keyboard', 'editor.action.startFindReplaceAction'); }
-    </script>
-</body>
-</html>";
-            await File.WriteAllTextAsync(path, html);
+            CodeEditorContainer.Visibility = tag == "CodeEditor" ? Visibility.Visible : Visibility.Collapsed;
+            SceneEditorContainer.Visibility = tag == "SceneEditor" ? Visibility.Visible : Visibility.Collapsed;
+            VisualScriptingContainer.Visibility = tag == "VisualScripting" ? Visibility.Visible : Visibility.Collapsed;
+            AssetBrowserContainer.Visibility = tag == "AssetBrowser" ? Visibility.Visible : Visibility.Collapsed;
+            AnimationToolsContainer.Visibility = tag == "AnimationTools" ? Visibility.Visible : Visibility.Collapsed;
+            PythonEnvContainer.Visibility = tag == "PythonEnv" ? Visibility.Visible : Visibility.Collapsed;
+            DebuggerContainer.Visibility = tag == "Debugger" ? Visibility.Visible : Visibility.Collapsed;
+            ProfilerContainer.Visibility = tag == "Profiler" ? Visibility.Visible : Visibility.Collapsed;
+            SourceControlContainer.Visibility = tag == "SourceControl" ? Visibility.Visible : Visibility.Collapsed;
+            BuildPackageContainer.Visibility = tag == "BuildPackage" ? Visibility.Visible : Visibility.Collapsed;
+            ExtensionsWorkspaceContainer.Visibility = tag == "Extensions" ? Visibility.Visible : Visibility.Collapsed;
+            AiAssistantContainer.Visibility = tag == "AiAssistant" ? Visibility.Visible : Visibility.Collapsed;
+
+            if (tag == "SceneEditor") RedrawScene();
+            else if (tag == "VisualScripting") RedrawNodeGraph();
+            else if (tag == "AssetBrowser") RefreshAssetsWorkspace();
+            else if (tag == "PythonEnv") RefreshPythonEnvironmentWorkspace();
+            else if (tag == "SourceControl") _ = RefreshGitWorkspaceAsync();
         }
 
         private void LoadFiles()
         {
-            try
-            {
-                var rootNode = BuildFileTree(projectPath);
-                ObservableCollection<FileNode> rootNodes = [];
-                rootNodes.Add(rootNode);
-                FileTree.ItemsSource = rootNodes;
-            }
-            catch (Exception ex)
-            {
-                _ = CustomDialog.ShowAsync(Window.GetWindow(this), $"Error loading files: {ex.Message}", "Error", DialogIcon.Error);
-            }
+            FileTree.Items.Clear();
+            if (!Directory.Exists(_projectPath)) return;
+
+            string search = ExplorerSearchBox?.Text.Trim() ?? "";
+            string extFilter = (ExplorerFilterCombo?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "All";
+
+            var rootNode = CreateDirectoryNode(new DirectoryInfo(_projectPath), search, extFilter);
+            rootNode.IsExpanded = true;
+            rootNode.IsSelected = false;
+            FileTree.Items.Add(rootNode);
         }
 
-        private static FileNode BuildFileTree(string path)
+        private static FileNode CreateDirectoryNode(DirectoryInfo dir, string search, string extFilter)
         {
-            var dirInfo = new DirectoryInfo(path);
             var node = new FileNode
             {
-                Name = dirInfo.Name,
-                FullPath = path,
+                Name = dir.Name,
+                FullPath = dir.FullName,
                 IsDirectory = true,
-                IconKind = GetFolderIcon(),
-                IsExpanded = true
+                IconKind = "Folder"
             };
 
             try
             {
-                foreach (var dir in Directory.GetDirectories(path))
+                foreach (var subDir in dir.GetDirectories())
                 {
-                    var dirName = Path.GetFileName(dir);
-                    if (!dirName.Equals("venv", StringComparison.OrdinalIgnoreCase) && !dirName.Equals("__pycache__", StringComparison.OrdinalIgnoreCase))
+                    if (subDir.Name is ".git" or "__pycache__" or ".vs" or "obj" or "bin")
+                        continue;
+
+                    var childDirNode = CreateDirectoryNode(subDir, search, extFilter);
+                    if (childDirNode.Children.Count > 0 || (string.IsNullOrEmpty(search) && extFilter == "All"))
                     {
-                        var dirNode = BuildFileTree(dir);
-                        node.Children.Add(dirNode);
+                        node.Children.Add(childDirNode);
                     }
                 }
 
-                foreach (var file in Directory.GetFiles(path))
+                foreach (var file in dir.GetFiles())
                 {
-                    var fileInfo = new FileInfo(file);
+                    if (!string.IsNullOrEmpty(search) && !file.Name.Contains(search, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    if (extFilter != "All" && !file.Extension.Equals(extFilter, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
                     node.Children.Add(new FileNode
                     {
-                        Name = fileInfo.Name,
-                        FullPath = file,
+                        Name = file.Name,
+                        FullPath = file.FullName,
                         IsDirectory = false,
-                        IconKind = GetFileIcon(fileInfo.Extension)
+                        IconKind = GetFileIcon(file.Name)
                     });
                 }
             }
-            catch (UnauthorizedAccessException) { }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Directory scan warning: {ex.Message}");
+            }
 
             return node;
         }
 
-        private static string GetFolderIcon() => "Folder";
-        private static string GetFileIcon(string extension)
-
+        private static string GetFileIcon(string fileName)
         {
-            return extension.ToLower() switch
+            string ext = Path.GetExtension(fileName).ToLowerInvariant();
+            return ext switch
             {
                 ".py" => "LanguagePython",
-                ".txt" => "FileDocument",
-                ".md" => "FileDocument",
-                ".json" => "FileCode",
-                ".html" => "LanguageHtml5",
-                ".css" => "LanguageCss3",
-                ".js" => "LanguageJavascript",
-                ".png" or ".jpg" or ".jpeg" or ".gif" => "FileImage",
-                _ => "File"
+                ".cobra" => "GamepadVariant",
+                ".json" => "CodeJson",
+                ".md" or ".txt" => "FileDocumentOutline",
+                ".png" or ".jpg" or ".jpeg" or ".bmp" or ".gif" => "FileImage",
+                ".wav" or ".ogg" or ".mp3" => "FileMusic",
+                ".obj" or ".gltf" or ".glb" => "CubeOutline",
+                _ => "FileOutline"
             };
         }
 
-        private void OnTreeViewPreviewRightClick(object sender, MouseButtonEventArgs e)
+        private void ExplorerSearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            var hitTestResult = VisualTreeHelper.HitTest(FileTree, e.GetPosition(FileTree));
-            if (hitTestResult?.VisualHit != null)
-            {
-                var treeViewItem = FindParent<TreeViewItem>(hitTestResult.VisualHit);
-                if (treeViewItem == null) return;
-
-                if (treeViewItem.DataContext is FileNode)
-                {
-                    currentContextItem = treeViewItem;
-                    treeViewItem.IsSelected = true;
-                    var contextMenu = (ContextMenu)FindResource("FileContextMenu");
-                    contextMenu.PlacementTarget = FileTree;
-                    contextMenu.IsOpen = true;
-                    e.Handled = true;
-                }
-            }
+            if (IsLoaded) LoadFiles();
         }
 
-        private static T? FindParent<T>(DependencyObject child) where T : DependencyObject
+        private void ExplorerFilterCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            while (child != null)
-            {
-                if (child is T parent) return parent;
-                child = VisualTreeHelper.GetParent(child);
-            }
-            return null;
-        }
-
-        private void OnOpenFileClick(object sender, RoutedEventArgs e)
-        {
-            if (currentContextItem?.DataContext is FileNode node && !node.IsDirectory)
-            {
-                OnShowCodeEditor(null!, null!);
-                OpenFileInTab(node.FullPath);
-            }
-        }
-
-        private async void OnNewFileClick(object sender, RoutedEventArgs e)
-        {
-            if (currentContextItem?.DataContext is FileNode node)
-            {
-                string parentPath = node.IsDirectory ? node.FullPath : System.IO.Path.GetDirectoryName(node.FullPath)!;
-                await CreateNewFileAsync(parentPath);
-            }
-        }
-
-        private async void OnNewFolderClick(object sender, RoutedEventArgs e)
-        {
-            if (currentContextItem?.DataContext is FileNode node)
-            {
-                string parentPath = node.IsDirectory ? node.FullPath : System.IO.Path.GetDirectoryName(node.FullPath)!;
-                string? folderName = await AnimatedModal.ShowInputModalAsync(Window.GetWindow(this), "New Folder", "Enter folder name:", "NewFolder");
-                if (!string.IsNullOrWhiteSpace(folderName))
-                {
-                    string folderPath = System.IO.Path.Combine(parentPath, folderName);
-                    Directory.CreateDirectory(folderPath);
-                    LoadFiles();
-                    ShowToast($"Created folder: {folderName}");
-                    OutputConsole.Text += $"Created folder: {folderName}\n";
-                }
-            }
-        }
-
-        private async void OnRenameClick(object sender, RoutedEventArgs e)
-        {
-            if (currentContextItem?.DataContext is FileNode node)
-            {
-                string? newName = await AnimatedModal.ShowInputModalAsync(Window.GetWindow(this), "Rename", "Enter new name:", node.Name);
-                if (!string.IsNullOrWhiteSpace(newName) && newName != node.Name)
-                {
-                    string newPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(node.FullPath)!, newName);
-                    try
-                    {
-                        if (node.IsDirectory)
-                            Directory.Move(node.FullPath, newPath);
-                        else
-                            File.Move(node.FullPath, newPath);
-                        LoadFiles();
-                        ShowToast($"Renamed: {node.Name} → {newName}");
-                        OutputConsole.Text += $"Renamed: {node.Name} → {newName}\n";
-                    }
-                    catch (Exception ex)
-                    {
-                        await CustomDialog.ShowAsync(Window.GetWindow(this), $"Error renaming: {ex.Message}", "Error", DialogIcon.Error);
-                    }
-                }
-            }
-        }
-
-        private async void OnDeleteClick(object sender, RoutedEventArgs e)
-        {
-            if (currentContextItem?.DataContext is FileNode node)
-            {
-                var result = await CustomDialog.ShowAsync(
-                    Window.GetWindow(this),
-                    $"Are you sure you want to delete {node.Name}?",
-                    "Confirm Delete",
-                    DialogIcon.Warning,
-                    "Yes",
-                    "No");
-
-                if (result)
-                {
-                    try
-                    {
-                        if (node.IsDirectory)
-                            Directory.Delete(node.FullPath, true);
-                        else
-                            File.Delete(node.FullPath);
-                        LoadFiles();
-                        ShowToast($"Deleted: {node.Name}");
-                        OutputConsole.Text += $"Deleted: {node.Name}\n";
-                    }
-                    catch (Exception ex)
-                    {
-                        await CustomDialog.ShowAsync(Window.GetWindow(this), $"Error deleting: {ex.Message}", "Error", DialogIcon.Error);
-                    }
-                }
-            }
-        }
-
-        private void OnCopyPathClick(object sender, RoutedEventArgs e)
-        {
-            if (currentContextItem?.DataContext is FileNode node)
-            {
-                System.Windows.Clipboard.SetText(node.FullPath);
-                ShowToast("Path copied to clipboard");
-            }
-        }
-
-        private void OnRevealInExplorerClick(object sender, RoutedEventArgs e)
-        {
-            if (currentContextItem?.DataContext is FileNode node)
-            {
-                try
-                {
-                    if (node.IsDirectory)
-                        Process.Start("explorer.exe", node.FullPath);
-                    else
-                        Process.Start("explorer.exe", $"/select,\"{node.FullPath}\"");
-                }
-                catch (Exception ex)
-                {
-                    OutputConsole.Text += $"Error opening explorer: {ex.Message}\n";
-                }
-            }
-        }
-
-        private void OnTreeViewDragEnter(object sender, System.Windows.DragEventArgs e)
-        {
-            if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
-                e.Effects = System.Windows.DragDropEffects.Move;
-        }
-
-        private void OnTreeViewDrop(object sender, System.Windows.DragEventArgs e)
-        {
-            if (e.Data.GetData(System.Windows.DataFormats.FileDrop) is string[] files && files.Length > 0)
-            {
-                foreach (var file in files)
-                {
-                    string destPath = System.IO.Path.Combine(projectPath, System.IO.Path.GetFileName(file));
-                    if (File.Exists(file))
-                    {
-                        File.Copy(file, destPath, true);
-                        OutputConsole.Text += $"Copied file: {System.IO.Path.GetFileName(file)}\n";
-                    }
-                }
-                LoadFiles();
-            }
-        }
-
-        private async Task CreateNewFileAsync(string parentPath)
-        {
-            string? fileName = await AnimatedModal.ShowInputModalAsync(Window.GetWindow(this), "New File", "Enter file name:", "newfile.py");
-            if (!string.IsNullOrWhiteSpace(fileName))
-            {
-                string filePath = System.IO.Path.Combine(parentPath, fileName);
-                File.WriteAllText(filePath, "");
-                LoadFiles();
-                OpenFileInTab(filePath);
-                ShowToast($"Created file: {fileName}");
-                OutputConsole.Text += $"Created file: {fileName}\n";
-            }
+            if (IsLoaded) LoadFiles();
         }
 
         private void OnFileTreeSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
-            if (e.NewValue is FileNode node && node != null && !node.IsDirectory)
+            if (FileTree.SelectedItem is not FileNode selectedFileNode || selectedFileNode.IsDirectory)
+                return;
+
+            selectedFileNode.IsSelected = true;
+            string path = selectedFileNode.FullPath;
+            if (Path.GetFileName(path).Equals("requirements.txt", StringComparison.OrdinalIgnoreCase))
             {
-                OnShowCodeEditor(null!, null!);
-                OpenFileInTab(node.FullPath);
-
-                // Check if requirements.txt is selected
-                if (node.Name.Equals("requirements.txt", StringComparison.OrdinalIgnoreCase))
-                {
-                    selectedRequirementsPath = node.FullPath;
-                    if (InstallReqButton != null) InstallReqButton.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    selectedRequirementsPath = null;
-                    if (InstallReqButton != null) InstallReqButton.Visibility = Visibility.Collapsed;
-                }
-
-                // Check if package.json is selected
-                if (node.Name.Equals("package.json", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (FindName("InstallNpmButton") is Button npmBtn) npmBtn.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    if (FindName("InstallNpmButton") is Button npmBtn) npmBtn.Visibility = Visibility.Collapsed;
-                }
+                _selectedRequirementsPath = path;
+                InstallReqButton.Visibility = Visibility.Visible;
             }
+            else
+            {
+                InstallReqButton.Visibility = Visibility.Collapsed;
+            }
+
+            if (path.EndsWith(".Cobra", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    _currentScene = Scene.Load(path);
+                    _currentScenePath = path;
+                    ActiveSceneNameLabel.Text = _currentScene.SceneName;
+                    SwitchWorkspace("SceneEditor", NavSceneEditor);
+                    RedrawScene();
+                    ShowToast($"Loaded scene: {_currentScene.SceneName}");
+                }
+                catch (Exception ex)
+                {
+                    OutputConsole.AppendText($"Failed to load scene: {ex.Message}\n");
+                }
+                return;
+            }
+
+            OpenFileInTab(path);
         }
 
         private void OpenFileInTab(string filePath)
         {
-            var existingTab = openTabs.FirstOrDefault(t => t.FilePath == filePath);
-            if (existingTab != null)
+            if (!File.Exists(filePath)) return;
+
+            var existing = _openTabs.FirstOrDefault(t => t.FilePath.Equals(filePath, StringComparison.OrdinalIgnoreCase));
+            if (existing != null)
             {
-                FileTabs.SelectedItem = existingTab;
+                FileTabs.SelectedItem = existing;
                 return;
             }
 
             string content = File.ReadAllText(filePath);
-            var newTab = new OpenTab
+            var newTab = new OpenTabItem
             {
                 FilePath = filePath,
-                Name = System.IO.Path.GetFileName(filePath),
+                Name = Path.GetFileName(filePath),
                 Content = content,
-                Icon = GetFileIcon(System.IO.Path.GetExtension(filePath))
+                Icon = GetFileIcon(filePath),
+                IsDirty = false
             };
-            openTabs.Add(newTab);
+
+            _openTabs.Add(newTab);
             FileTabs.SelectedItem = newTab;
-            OutputConsole.Text += $"Opened: {newTab.Name}\n";
+            SwitchWorkspace("CodeEditor", NavCodeEditor);
         }
 
         private async void OnTabSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (FileTabs.SelectedItem is OpenTab tab)
+            try
             {
-                currentFilePath = tab.FilePath;
-                if (isWebViewReady && CodeWebView?.CoreWebView2 != null)
+                if (FileTabs.SelectedItem is not OpenTabItem tab) return;
+
+                _currentFilePath = tab.FilePath;
+                if (SplitEditorBorder.Visibility == Visibility.Visible)
                 {
-                    string escapedContent = EscapeJs(tab.Content);
-                    await CodeWebView.CoreWebView2.ExecuteScriptAsync($"setCode(`{escapedContent}`)");
+                    SplitPreviewTextBox.Text = tab.Content;
                 }
+
+                if (!_isWebViewReady || CodeWebView.CoreWebView2 == null) return;
+
+                string lang = DetectMonacoLanguage(tab.FilePath);
+                string escapedContent = JsonSerializer.Serialize(tab.Content);
+                await CodeWebView.CoreWebView2.ExecuteScriptAsync($"if (window.setEditorContent) window.setEditorContent({escapedContent}, '{lang}');");
+
+                if (tab.FilePath.EndsWith(".py", StringComparison.OrdinalIgnoreCase))
+                {
+                    await UpdatePythonIntelligenceForFileAsync(tab.FilePath);
+                }
+                else
+                {
+                    SymbolOutlineCombo.ItemsSource = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private static string DetectMonacoLanguage(string path)
+        {
+            return Path.GetExtension(path).ToLowerInvariant() switch
+            {
+                ".py" => "python",
+                ".json" or ".cobra" => "json",
+                ".md" => "markdown",
+                ".html" => "html",
+                ".css" => "css",
+                _ => "plaintext"
+            };
+        }
+
+        private async Task UpdatePythonIntelligenceForFileAsync(string filePath)
+        {
+            string pythonExe = PythonService.ResolveProjectPython(_projectPath, _projectConfig.PythonInterpreter);
+            var (diagnostics, symbols) = await PythonIntelligenceService.AnalyzePythonFileAsync(pythonExe, filePath);
+
+            SymbolOutlineCombo.ItemsSource = symbols;
+            SymbolOutlineCombo.DisplayMemberPath = "Signature";
+
+            if (!SettingsManager.Instance.CurrentSettings.Linting) return;
+
+            _currentDiagnostics.Clear();
+            _currentDiagnostics.AddRange(diagnostics);
+            List<string> diagTexts = [.. _currentDiagnostics.Select(d => d.DisplayText)];
+            ProblemsListBox.ItemsSource = diagTexts;
+
+            if (_isWebViewReady && CodeWebView.CoreWebView2 != null)
+            {
+                string diagJson = JsonSerializer.Serialize(diagnostics.Select(d => new
+                {
+                    line = d.Line,
+                    column = d.Column,
+                    message = d.Message,
+                    severity = d.Severity
+                }));
+                await CodeWebView.CoreWebView2.ExecuteScriptAsync($"if (window.setDiagnostics) window.setDiagnostics({diagJson});");
+            }
+        }
+
+        private async void SymbolOutlineCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                if (SymbolOutlineCombo.SelectedItem is PythonSymbolInfo symbol)
+                {
+                    await RevealLineInEditorAsync(symbol.Line);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void ProblemsListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            try
+            {
+                int idx = ProblemsListBox.SelectedIndex;
+                if (idx >= 0 && idx < _currentDiagnostics.Count)
+                {
+                    await RevealLineInEditorAsync(_currentDiagnostics[idx].Line);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async Task RevealLineInEditorAsync(int line)
+        {
+            if (_isWebViewReady && CodeWebView.CoreWebView2 != null)
+            {
+                await CodeWebView.CoreWebView2.ExecuteScriptAsync($"if (window.revealLine) window.revealLine({line});");
             }
         }
 
         private async void OnCloseTabClick(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.Tag is OpenTab tab)
-
+            try
             {
+                if (sender is not Button btn || btn.Tag is not OpenTabItem tab) return;
+
                 if (tab.IsDirty)
                 {
-                    var result = await CustomDialog.ShowAsync(
-                        Window.GetWindow(this),
-                        $"Save changes to {tab.Name}?",
+                    bool save = await CustomDialog.ShowAsync(Window.GetWindow(this),
+                        $"Save changes to '{tab.Name}' before closing?",
                         "Unsaved Changes",
-                        DialogIcon.Question,
-                        "Yes",
-                        "No");
+                        DialogIcon.Warning,
+                        "Save",
+                        "Discard");
+                    if (save)
+                    {
+                        await SaveTabAsync(tab);
+                    }
+                }
 
-                    if (result)
-                    {
-                        await SaveCurrentFile();
-                    }
-                }
-                openTabs.Remove(tab);
-                OutputConsole.Text += $"Closed: {tab.Name}\n";
-                if (openTabs.Count > 0)
+                _openTabs.Remove(tab);
+                if (_openTabs.Count == 0 && _isWebViewReady && CodeWebView.CoreWebView2 != null)
                 {
-                    FileTabs.SelectedItem = openTabs.Last();
+                    _currentFilePath = string.Empty;
+                    await CodeWebView.CoreWebView2.ExecuteScriptAsync("if (window.setEditorContent) window.setEditorContent('', 'python');");
                 }
-                else
-                {
-                    currentFilePath = string.Empty;
-                    if (isWebViewReady && CodeWebView?.CoreWebView2 != null)
-                    {
-                        await CodeWebView.CoreWebView2.ExecuteScriptAsync("setCode('')");
-                    }
-                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
             }
         }
 
         private async void OnSaveClicked(object sender, RoutedEventArgs e)
         {
-            await SaveCurrentFile();
+            try
+            {
+                if (FileTabs.SelectedItem is OpenTabItem activeTab)
+                {
+                    await SaveTabAsync(activeTab);
+                    ShowToast($"Saved {activeTab.Name}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
         }
 
-        private async System.Threading.Tasks.Task SaveCurrentFile()
+        private async void OnSaveAllClicked(object sender, RoutedEventArgs e)
         {
-            if (FileTabs.SelectedItem is OpenTab tab)
+            try
             {
-                try
+                foreach (var tab in _openTabs.Where(t => t.IsDirty).ToList())
                 {
-                    if (!isWebViewReady || CodeWebView?.CoreWebView2 == null)
-                    {
-                        await CustomDialog.ShowAsync(Window.GetWindow(this), "Editor is not ready yet.", "Error", DialogIcon.Error);
-                        return;
-                    }
+                    await SaveTabAsync(tab);
+                }
+                PopulateStartupFiles();
+                ShowToast("All modified files saved");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
 
-                    string code = await CodeWebView.CoreWebView2.ExecuteScriptAsync("getCode()");
-                    code = UnescapeJs(code);
-                    File.WriteAllText(tab.FilePath, code);
-                    tab.Content = code;
-                    tab.IsDirty = false;
-                    ShowToast($"Saved: {System.IO.Path.GetFileName(tab.FilePath)}");
-                    OutputConsole.Text += $"Saved: {System.IO.Path.GetFileName(tab.FilePath)}\n";
-                }
-                catch (Exception ex)
+        private async Task SaveTabAsync(OpenTabItem tab)
+        {
+            if (string.IsNullOrEmpty(tab.FilePath)) return;
+
+            if (_isWebViewReady && CodeWebView.CoreWebView2 != null && FileTabs.SelectedItem == tab)
+            {
+                string raw = await CodeWebView.CoreWebView2.ExecuteScriptAsync("window.getEditorContent ? window.getEditorContent() : ''");
+                string? unescaped = JsonSerializer.Deserialize<string>(raw);
+                if (unescaped != null) tab.Content = unescaped;
+            }
+
+            if (SettingsManager.Instance.CurrentSettings.FormatOnSave && tab.FilePath.EndsWith(".py", StringComparison.OrdinalIgnoreCase))
+            {
+                string pythonExe = PythonService.ResolveProjectPython(_projectPath, _projectConfig.PythonInterpreter);
+                var (_, formatted) = await PythonIntelligenceService.FormatPythonCodeAsync(pythonExe, tab.FilePath, tab.Content);
+                tab.Content = formatted;
+            }
+
+            await File.WriteAllTextAsync(tab.FilePath, tab.Content);
+            tab.IsDirty = false;
+
+            if (tab.FilePath.EndsWith(".py", StringComparison.OrdinalIgnoreCase))
+            {
+                await UpdatePythonIntelligenceForFileAsync(tab.FilePath);
+            }
+        }
+
+        private async void OnUndoClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (SceneEditorContainer.Visibility == Visibility.Visible)
                 {
-                    await CustomDialog.ShowAsync(Window.GetWindow(this), $"Error saving file: {ex.Message}", "Error", DialogIcon.Error);
+                    OnSceneUndoClicked(sender, e);
+                    return;
                 }
+                if (_isWebViewReady && CodeWebView.CoreWebView2 != null)
+                {
+                    await CodeWebView.CoreWebView2.ExecuteScriptAsync("if (window.triggerEditorAction) window.triggerEditorAction('undo');");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void OnRedoClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (SceneEditorContainer.Visibility == Visibility.Visible)
+                {
+                    OnSceneRedoClicked(sender, e);
+                    return;
+                }
+                if (_isWebViewReady && CodeWebView.CoreWebView2 != null)
+                {
+                    await CodeWebView.CoreWebView2.ExecuteScriptAsync("if (window.triggerEditorAction) window.triggerEditorAction('redo');");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void OnFormatCodeClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (FileTabs.SelectedItem is not OpenTabItem activeTab) return;
+
+                string pythonExe = PythonService.ResolveProjectPython(_projectPath, _projectConfig.PythonInterpreter);
+                var (_, formatted) = await PythonIntelligenceService.FormatPythonCodeAsync(pythonExe, activeTab.FilePath, activeTab.Content);
+                activeTab.Content = formatted;
+                activeTab.IsDirty = true;
+
+                if (_isWebViewReady && CodeWebView.CoreWebView2 != null)
+                {
+                    string escaped = JsonSerializer.Serialize(formatted);
+                    await CodeWebView.CoreWebView2.ExecuteScriptAsync($"if (window.setEditorContent) window.setEditorContent({escaped}, 'python');");
+                }
+                ShowToast("Formatted Python code");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void OnFindClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (_isWebViewReady && CodeWebView.CoreWebView2 != null)
+                {
+                    await CodeWebView.CoreWebView2.ExecuteScriptAsync("if (window.triggerEditorAction) window.triggerEditorAction('actions.find');");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void OnReplaceClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (_isWebViewReady && CodeWebView.CoreWebView2 != null)
+                {
+                    await CodeWebView.CoreWebView2.ExecuteScriptAsync("if (window.triggerEditorAction) window.triggerEditorAction('editor.action.startFindReplaceAction');");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private void OnSplitEditorToggleClicked(object sender, RoutedEventArgs e)
+        {
+            if (SplitEditorBorder.Visibility == Visibility.Collapsed)
+            {
+                SplitEditorCol.Width = new GridLength(1, GridUnitType.Star);
+                SplitEditorBorder.Visibility = Visibility.Visible;
+                if (FileTabs.SelectedItem is OpenTabItem activeTab)
+                {
+                    SplitPreviewTextBox.Text = activeTab.Content;
+                }
+            }
+            else
+            {
+                SplitEditorCol.Width = new GridLength(0);
+                SplitEditorBorder.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -876,1302 +1361,2229 @@ namespace Cobra.UI.Views
         {
             try
             {
-                // Save current file first
-                await SaveCurrentFile();
+                await SaveAllDirtyTabsQuietlyAsync();
+                OnBottomTabClicked(TabGameLogsBtn, e);
+                GameLogsBox.Clear();
+                _isDebuggingSession = false;
 
-                // Check for JS/NPM project first
-                string packageJsonPath = System.IO.Path.Combine(projectPath, "package.json");
-                if (System.IO.File.Exists(packageJsonPath))
+                var config = BuildRunConfiguration(debugMode: false);
+                bool started = await _gameRunner.StartGameAsync(config);
+                if (started)
                 {
-                    OutputConsole.Text += "\nDetected JS/NPM project. Running 'npm run dev' in Terminal...\n";
-                    // Focus terminal
-                    OnTabTerminalClick(null!, null!);
-                    
-                    string cmd = "cmd.exe";
-                    string args = "/c npm run dev";
-                    
-                    // Run in terminal so user can see the dev server output
-                    _ = RunTerminalCommandAsync(cmd, args);
-                    return;
+                    StatusRightText.Text = $"Running {config.StartupFile}";
+                    ShowToast($"Running {config.StartupFile}");
                 }
-
-                string runFile = "";
-                if (FileTabs.SelectedItem is OpenTab tab && tab.FilePath.EndsWith(".py"))
-                {
-                    runFile = tab.FilePath;
-                }
-                else
-                {
-                    runFile = System.IO.Path.Combine(projectPath, "main.py");
-                }
-
-                if (!File.Exists(runFile))
-                {
-                    await CustomDialog.ShowAsync(Window.GetWindow(this), "No project file detected. Ensure main.py or package.json exists.", "Error", DialogIcon.Error);
-                    return;
-                }
-
-                OutputConsole.Text += $"\nRunning {System.IO.Path.GetFileName(runFile)}...\n";
-                string pythonPath = GetPythonPath() ?? "python";
-
-                ProcessStartInfo psi = new()
-                {
-                    FileName = pythonPath,
-                    Arguments = $"\"{runFile}\"",
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    WorkingDirectory = projectPath
-                };
-
-                currentProcess = new Process { StartInfo = psi, EnableRaisingEvents = true };
-                currentProcess.OutputDataReceived += (s, args) =>
-                {
-                    if (!string.IsNullOrEmpty(args.Data))
-                        Dispatcher.Invoke(() => OutputConsole.Text += args.Data + "\n");
-                };
-                currentProcess.ErrorDataReceived += (s, args) =>
-                {
-                    if (!string.IsNullOrEmpty(args.Data))
-                        Dispatcher.Invoke(() => OutputConsole.Text += "Error: " + args.Data + "\n");
-                };
-                currentProcess.Exited += (s, args) =>
-                {
-                    Dispatcher.Invoke(() => {
-                        OutputConsole.Text += $"\nProcess exited with code: {currentProcess.ExitCode}\n";
-                        OutputConsole.Text += "----------------------------------------------------------------------------------------\n\n";
-                        OutputConsole.ScrollToEnd();
-                    });
-                };
-
-                currentProcess.Start();
-                currentProcess.BeginOutputReadLine();
-                currentProcess.BeginErrorReadLine();
             }
             catch (Exception ex)
             {
-                await CustomDialog.ShowAsync(Window.GetWindow(this), $"Error: {ex.Message}", "Error", DialogIcon.Error);
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void OnDebugClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await SaveAllDirtyTabsQuietlyAsync();
+                SwitchWorkspace("Debugger", NavDebugger);
+                OnBottomTabClicked(TabDebugBtn, e);
+                DebugConsoleBox.Clear();
+                _isDebuggingSession = true;
+
+                var config = BuildRunConfiguration(debugMode: true);
+                bool started = await _gameRunner.StartGameAsync(config);
+                if (started)
+                {
+                    StatusRightText.Text = $"Debugging {config.StartupFile}";
+                    ShowToast("Python Debugger attached");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
             }
         }
 
         private void OnStopClicked(object sender, RoutedEventArgs e)
         {
+            _isDebuggingSession = false;
+            _gameRunner.StopGame();
+            StatusRightText.Text = "Ready";
+            ShowToast("Game process stopped");
+        }
+
+        private async void OnRestartGameClicked(object sender, RoutedEventArgs e)
+        {
             try
             {
-                if (currentProcess != null && !currentProcess.HasExited)
+                await SaveAllDirtyTabsQuietlyAsync();
+                _isDebuggingSession = false;
+                var config = BuildRunConfiguration(debugMode: false);
+                await _gameRunner.StartGameAsync(config);
+                ShowToast("Game restarted");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private GameRunConfiguration BuildRunConfiguration(bool debugMode)
+        {
+            string startup = StartupFileCombo.SelectedItem as string ?? _projectConfig.StartupFile;
+            string pythonExe = PythonService.ResolveProjectPython(_projectPath, _projectConfig.PythonInterpreter);
+            string fullStartup = Path.Combine(_projectPath, startup);
+
+            List<int> bps = _fileBreakpoints.TryGetValue(fullStartup, out var set) ? [.. set] : [];
+            return new GameRunConfiguration
+            {
+                ProjectPath = _projectPath,
+                StartupFile = startup,
+                PythonExecutable = pythonExe,
+                CommandLineArguments = _projectConfig.CommandLineArgs,
+                EnvironmentVariables = new Dictionary<string, string>(_projectConfig.EnvironmentVariables),
+                EnableDebugMode = debugMode,
+                BreakpointLines = bps
+            };
+        }
+
+        private async Task SaveAllDirtyTabsQuietlyAsync()
+        {
+            foreach (var tab in _openTabs.Where(t => t.IsDirty).ToList())
+            {
+                await SaveTabAsync(tab);
+            }
+        }
+
+        private void OnDebugContinueClicked(object sender, RoutedEventArgs e) => _gameRunner.SendDebugCommand("continue");
+        private void OnDebugStepOverClicked(object sender, RoutedEventArgs e) => _gameRunner.SendDebugCommand("step_over");
+        private void OnDebugStepIntoClicked(object sender, RoutedEventArgs e) => _gameRunner.SendDebugCommand("step_into");
+        private void OnDebugStepOutClicked(object sender, RoutedEventArgs e) => _gameRunner.SendDebugCommand("step_out");
+
+        private void OnEvaluateWatchClicked(object sender, RoutedEventArgs e)
+        {
+            string expr = DebugWatchInput.Text.Trim();
+            if (string.IsNullOrEmpty(expr)) return;
+            _gameRunner.SendDebugCommand($"eval:{expr}");
+            DebugWatchInput.Clear();
+        }
+
+        private async void OnProjectConfigModalClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var stack = new StackPanel { Width = 400 };
+                stack.Children.Add(new TextBlock { Text = "Startup Python File:", Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 4) });
+                var startupBox = new TextBox { Text = _projectConfig.StartupFile, Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)), Foreground = Brushes.White, Padding = new Thickness(6), Margin = new Thickness(0, 0, 0, 10) };
+                stack.Children.Add(startupBox);
+
+                stack.Children.Add(new TextBlock { Text = "Command-Line Arguments:", Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 4) });
+                var argsBox = new TextBox { Text = _projectConfig.CommandLineArgs, Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)), Foreground = Brushes.White, Padding = new Thickness(6), Margin = new Thickness(0, 0, 0, 10) };
+                stack.Children.Add(argsBox);
+
+                stack.Children.Add(new TextBlock { Text = "Environment Variables (KEY=VALUE per line):", Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 4) });
+                var envBox = new TextBox
                 {
-                    currentProcess.Kill();
-                    OutputConsole.Text += "\nProcess stopped.\n";
+                    Text = string.Join("\n", _projectConfig.EnvironmentVariables.Select(kv => $"{kv.Key}={kv.Value}")),
+                    AcceptsReturn = true,
+                    Height = 80,
+                    Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
+                    Foreground = Brushes.White,
+                    Padding = new Thickness(6)
+                };
+                stack.Children.Add(envBox);
+
+                var (confirmed, _) = await AnimatedModal.ShowCustomModalAsync(Window.GetWindow(this), "Run & Environment Configuration", stack, "Save Configuration");
+                if (confirmed)
+                {
+                    _projectConfig.StartupFile = string.IsNullOrWhiteSpace(startupBox.Text) ? "main.py" : startupBox.Text.Trim();
+                    _projectConfig.CommandLineArgs = argsBox.Text.Trim();
+                    _projectConfig.EnvironmentVariables.Clear();
+                    foreach (var line in envBox.Text.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        int eq = line.IndexOf('=');
+                        if (eq > 0)
+                        {
+                            _projectConfig.EnvironmentVariables[line[..eq].Trim()] = line[(eq + 1)..].Trim();
+                        }
+                    }
+                    _projectConfig.SaveManifest();
+                    PopulateStartupFiles();
+                    ShowToast("Saved run configuration");
                 }
             }
             catch (Exception ex)
             {
-                OutputConsole.Text += $"\nError: {ex.Message}\n";
+                Debug.WriteLine(ex.Message);
             }
         }
 
-        private void OnCloseFolderClicked(object sender, RoutedEventArgs e)
+        private void SaveSceneUndoSnapshot()
         {
-            var window = Window.GetWindow(this);
-            window?.Close();
+            string json = JsonSerializer.Serialize(_currentScene);
+            _sceneUndoStack.Push(json);
+            _sceneRedoStack.Clear();
         }
 
-        private string? GetPythonPath()
+        private void OnSceneUndoClicked(object sender, RoutedEventArgs e)
         {
-            string windowsPath = System.IO.Path.Combine(projectPath, "venv", "Scripts", "python.exe");
-            string unixPath = System.IO.Path.Combine(projectPath, "venv", "bin", "python");
+            if (_sceneUndoStack.Count <= 1) return;
+            string currentJson = _sceneUndoStack.Pop();
+            _sceneRedoStack.Push(currentJson);
 
-            if (File.Exists(windowsPath)) return windowsPath;
-            if (File.Exists(unixPath)) return unixPath;
-
-            return null;
-        }
-
-        private static string EscapeJs(string text)
-        {
-            return text.Replace("\\", "\\\\").Replace("`", "\\`").Replace("$", "\\$");
-        }
-
-        private static string UnescapeJs(string text)
-        {
-            if (text.StartsWith('"') && text.EndsWith('"'))
-                text = text[1..^1];
-
-            return text.Replace("\\n", "\n").Replace("\\r", "\r").Replace("\\t", "\t").Replace("\\\"", "\"");
-        }
-
-        // Menu Handlers
-        private async void OnNewFileMenuClick(object sender, RoutedEventArgs e)
-        {
-            await CreateNewFileAsync(projectPath);
-        }
-
-        private void OnSaveAllClicked(object sender, RoutedEventArgs e)
-        {
-            foreach (var tab in openTabs)
+            string previousJson = _sceneUndoStack.Peek();
+            var restored = JsonSerializer.Deserialize<Scene>(previousJson);
+            if (restored != null)
             {
-                if (tab.IsDirty)
-                {
-                    File.WriteAllText(tab.FilePath, tab.Content);
-                    tab.IsDirty = false;
-                }
-            }
-            OutputConsole.Text += "Saved all files\n";
-        }
-
-        private void OnUndoClicked(object sender, RoutedEventArgs e)
-        {
-            _ = CodeWebView.CoreWebView2?.ExecuteScriptAsync("undo()");
-        }
-
-        private void OnRedoClicked(object sender, RoutedEventArgs e)
-        {
-            _ = CodeWebView.CoreWebView2?.ExecuteScriptAsync("redo()");
-        }
-
-        private void OnFindClicked(object sender, RoutedEventArgs e)
-        {
-            _ = CodeWebView.CoreWebView2?.ExecuteScriptAsync("find()");
-        }
-
-        private void OnReplaceClicked(object sender, RoutedEventArgs e)
-        {
-            _ = CodeWebView.CoreWebView2?.ExecuteScriptAsync("replace()");
-        }
-
-        private void OnToggleFullScreenClicked(object sender, RoutedEventArgs e)
-        {
-            ToggleFullScreen();
-        }
-
-        private void OnZoomInClicked(object sender, RoutedEventArgs e)
-        {
-            _ = CodeWebView.CoreWebView2?.ExecuteScriptAsync("setFontSize(16)");
-        }
-
-        private void OnZoomOutClicked(object sender, RoutedEventArgs e)
-        {
-            _ = CodeWebView.CoreWebView2?.ExecuteScriptAsync("setFontSize(12)");
-        }
-
-        private void OnDebugClicked(object sender, RoutedEventArgs e)
-        {
-            OutputConsole.Text += "Debug mode - Add breakpoints to debug your code\n";
-        }
-
-        private void OnNewTerminalClicked(object sender, RoutedEventArgs e)
-        {
-            OutputConsole.Text += "\n$> Terminal ready. Use 'python main.py' to run your game\n";
-        }
-
-        private void OnClearConsoleClicked(object sender, RoutedEventArgs e)
-        {
-            if (OutputConsole.Visibility == Visibility.Visible)
-            {
-                OutputConsole.Clear();
-                OutputConsole.Text = "Console cleared.\n";
-            }
-            else
-            {
-                TerminalConsole.Clear();
-                TerminalConsole.Text = "Terminal cleared.\n";
-            }
-        }
-
-        private void OnTabOutputClick(object sender, RoutedEventArgs e)
-        {
-            OutputConsole.Visibility = Visibility.Visible;
-            TerminalContainer.Visibility = Visibility.Collapsed;
-            
-            TabOutputBtn.Foreground = Brushes.White;
-            TabOutputBtn.BorderThickness = new Thickness(0, 0, 0, 2);
-            TabOutputBtn.Background = new SolidColorBrush(Color.FromRgb(45, 45, 48));
-
-            TabTerminalBtn.Foreground = new SolidColorBrush(Color.FromRgb(170, 170, 170));
-            TabTerminalBtn.BorderThickness = new Thickness(0);
-            TabTerminalBtn.Background = Brushes.Transparent;
-        }
-
-        private void OnTabTerminalClick(object sender, RoutedEventArgs e)
-        {
-            OutputConsole.Visibility = Visibility.Collapsed;
-            TerminalContainer.Visibility = Visibility.Visible;
-
-            TabTerminalBtn.Foreground = Brushes.White;
-            TabTerminalBtn.BorderThickness = new Thickness(0, 0, 0, 2);
-            TabTerminalBtn.Background = new SolidColorBrush(Color.FromRgb(45, 45, 48));
-
-            TabOutputBtn.Foreground = new SolidColorBrush(Color.FromRgb(170, 170, 170));
-            TabOutputBtn.BorderThickness = new Thickness(0);
-            TabOutputBtn.Background = Brushes.Transparent;
-            
-            TerminalInput.Focus();
-        }
-
-        private async void OnInstallRequirementsClicked(object sender, RoutedEventArgs e)
-        {
-            if (string.IsNullOrEmpty(selectedRequirementsPath)) return;
-
-            OnTabTerminalClick(null!, null!);
-            TerminalConsole.Text += $"\n> Installing requirements from {Path.GetFileName(selectedRequirementsPath)}...\n";
-
-            string pythonPath = GetPythonPath() ?? "python";
-            string pipPath = Path.Combine(Path.GetDirectoryName(pythonPath) ?? "", "pip.exe");
-            
-            // If pip doesn't exist in same folder, use -m pip
-            string cmd = File.Exists(pipPath) ? $"\"{pipPath}\"" : $"\"{pythonPath}\" -m pip";
-            string args = $"install -r \"{selectedRequirementsPath}\"";
-
-            await RunTerminalCommandAsync(cmd, args);
-        }
-        
-        private async void OnInstallNpmClicked(object sender, RoutedEventArgs e)
-        {
-            OnTabTerminalClick(null!, null!);
-            TerminalConsole.Text += "\n> Running 'npm install'...\n";
-
-            string cmd = "cmd.exe";
-            string args = "/c npm install";
-
-            await RunTerminalCommandAsync(cmd, args);
-            ShowToast("Dependencies installation finished");
-        }
-
-        private async void TerminalInput_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
-        {
-            if (e.Key == System.Windows.Input.Key.Enter)
-            {
-                string input = TerminalInput.Text.Trim();
-                if (string.IsNullOrEmpty(input)) return;
-
-                TerminalInput.Clear();
-                TerminalConsole.Text += $"$ {input}\n";
-
-                if (input.Equals("clear", StringComparison.OrdinalIgnoreCase))
-                {
-                    TerminalConsole.Clear();
-                    return;
-                }
-
-                // Parse command and args
-                string[] parts = input.Split(' ', 2);
-                string cmd = parts[0];
-                string args = parts.Length > 1 ? parts[1] : "";
-
-                // Special handling for common commands
-                if (cmd.Equals("python", StringComparison.OrdinalIgnoreCase) || cmd.Equals("py", StringComparison.OrdinalIgnoreCase))
-                {
-                    cmd = GetPythonPath() ?? "python";
-                }
-                else if (cmd.Equals("pip", StringComparison.OrdinalIgnoreCase))
-                {
-                    string pythonPath = GetPythonPath() ?? "python";
-                    cmd = pythonPath;
-                    args = "-m pip " + args;
-                }
-
-                // Handle Windows shell built-ins and ensuring commands run correctly
-                if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
-                {
-                    // Check if it's a known exe, if not wrap in cmd /c
-                    string originalCmd = cmd;
-                    string originalArgs = args;
-                    
-                    cmd = "cmd.exe";
-                    args = $"/c \"{originalCmd} {originalArgs}\"";
-                }
-
-                await RunTerminalCommandAsync(cmd, args);
-            }
-        }
-
-        private async Task RunTerminalCommandAsync(string fileName, string arguments)
-        {
-            try
-            {
-                ProcessStartInfo psi = new()
-                {
-                    FileName = fileName,
-                    Arguments = arguments,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    WorkingDirectory = projectPath
-                };
-
-                using Process process = new() { StartInfo = psi };
-                process.OutputDataReceived += (s, args) =>
-                {
-                    if (!string.IsNullOrEmpty(args.Data))
-                    {
-                        string cleanData = StripAnsi(args.Data);
-                        Dispatcher.Invoke(() => {
-                            TerminalConsole.Text += cleanData + "\n";
-                            TerminalConsole.ScrollToEnd();
-                            
-                            // Detect Vite/Dev server URL
-                            if (cleanData.Contains("http://localhost:"))
-                            {
-                                DetectAndOpenUrl(cleanData);
-                            }
-                        });
-                    }
-                };
-                process.ErrorDataReceived += (s, args) =>
-                {
-                    if (!string.IsNullOrEmpty(args.Data))
-                    {
-                        string cleanData = StripAnsi(args.Data);
-                        Dispatcher.Invoke(() => {
-                            TerminalConsole.Text += "Error: " + cleanData + "\n";
-                            TerminalConsole.ScrollToEnd();
-                        });
-                    }
-                };
-
-                process.Start();
-                process.BeginOutputReadLine();
-                process.BeginErrorReadLine();
-                await process.WaitForExitAsync();
-
-                Dispatcher.Invoke(() => {
-                    TerminalConsole.Text += $"\nCommand finished with exit code: {process.ExitCode}\n";
-                    TerminalConsole.ScrollToEnd();
-                });
-            }
-            catch (Exception ex)
-            {
-                TerminalConsole.Text += $"Error: {ex.Message}\n";
-            }
-        }
-
-        private void OnDocumentationClicked(object sender, RoutedEventArgs e)
-        {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = "#",
-                UseShellExecute = true
-            });
-        }
-
-        private async void OnAboutClicked(object sender, RoutedEventArgs e)
-        {
-            await CustomDialog.ShowAsync(Window.GetWindow(this),
-                "Cobra IDE\nVersion 1.0\n\nA Python Game Development Environment\nBuilt with WPF and WebView2",
-                "About Cobra IDE",
-                DialogIcon.Info);
-        }
-
-        private void OnSettingsClicked(object sender, RoutedEventArgs e) => OnSettingsIconClicked(sender, e);
-        private void OnPreferencesClicked(object sender, RoutedEventArgs e) => OnSettingsIconClicked(sender, e);
-
-        private async void OnNewFileToolbarClick(object sender, RoutedEventArgs e)
-        {
-            await CreateNewFileAsync(projectPath);
-        }
-
-        private async void OnNewFolderToolbarClick(object sender, RoutedEventArgs e)
-        {
-            string? folderName = await AnimatedModal.ShowInputModalAsync(Window.GetWindow(this), "New Folder", "Enter folder name:", "NewFolder");
-            if (!string.IsNullOrWhiteSpace(folderName))
-            {
-                string folderPath = System.IO.Path.Combine(projectPath, folderName);
-                Directory.CreateDirectory(folderPath);
-                LoadFiles();
-                ShowToast($"Created folder: {folderName}");
-                OutputConsole.Text += $"Created folder: {folderName}\n";
-            }
-        }
-
-        private void OnRefreshClicked(object sender, RoutedEventArgs e)
-        {
-            LoadFiles();
-            OutputConsole.Text += "File explorer refreshed\n";
-        }
-
-        // Updated Menu Handlers with CustomDialog
-        private async void OnNewProjectClicked(object sender, RoutedEventArgs e)
-            => await CustomDialog.ShowAsync(Window.GetWindow(this), "New Project dialog would open here.", "New Project", DialogIcon.Info);
-
-        private async void OnOpenProjectClicked(object sender, RoutedEventArgs e)
-            => await CustomDialog.ShowAsync(Window.GetWindow(this), "Open Project dialog would open here.", "Open Project", DialogIcon.Info);
-
-        private void OnExitClicked(object sender, RoutedEventArgs e)
-            => System.Windows.Application.Current.Shutdown();
-
-
-
-        private async void OnResetLayoutClicked(object sender, RoutedEventArgs e)
-            => await CustomDialog.ShowAsync(Window.GetWindow(this), "Layout reset.", "Reset Layout", DialogIcon.Info);
-
-        private async void OnRecentProjectsClicked(object sender, RoutedEventArgs e)
-            => await CustomDialog.ShowAsync(Window.GetWindow(this), "Recent projects list would appear here.", "Recent Projects", DialogIcon.Info);
-
-        private void OnProjectSettingsClicked(object sender, RoutedEventArgs e)
-        {
-            var folderSettings = new FolderSettings(projectPath);
-            var settingsView = new SettingsView(folderSettings);
-            var settingsWindow = new Window
-            {
-                Title = $"Project Settings - {Path.GetFileName(projectPath)}",
-                Content = settingsView,
-                Width = 1200,
-                Height = 800,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
-                WindowStyle = WindowStyle.None
-            };
-            WindowChrome.SetWindowChrome(settingsWindow, new WindowChrome { CaptionHeight = 35, ResizeBorderThickness = new Thickness(5), GlassFrameThickness = new Thickness(0), CornerRadius = new CornerRadius(0) });
-            settingsWindow.ShowDialog();
-        }
-
-        private async void OnBuildClicked(object sender, RoutedEventArgs e)
-            => await CustomDialog.ShowAsync(Window.GetWindow(this), "Build process would start here.", "Build", DialogIcon.Info);
-
-        private async void OnExportClicked(object sender, RoutedEventArgs e)
-            => await CustomDialog.ShowAsync(Window.GetWindow(this), "Export options would appear here.", "Export", DialogIcon.Info);
-
-        private async void OnPackageManagerClicked(object sender, RoutedEventArgs e)
-            => await CustomDialog.ShowAsync(Window.GetWindow(this), "Package manager would open here.", "Package Manager", DialogIcon.Info);
-
-        private async void OnExtensionsClicked(object sender, RoutedEventArgs e)
-            => await CustomDialog.ShowAsync(Window.GetWindow(this), "Extensions manager would open here.", "Extensions", DialogIcon.Info);
-
-        private async void OnOpenTerminalClicked(object sender, RoutedEventArgs e)
-            => await CustomDialog.ShowAsync(Window.GetWindow(this), "Terminal would open here.", "Terminal", DialogIcon.Info);
-
-        private async void OnRunCommandClicked(object sender, RoutedEventArgs e)
-            => await CustomDialog.ShowAsync(Window.GetWindow(this), "Command runner would open here.", "Run Command", DialogIcon.Info);
-
-
-
-        private void OnSettingsIconClicked(object sender, RoutedEventArgs e)
-        {
-            var settingsView = new SettingsView();
-            var settingsWindow = new Window
-            {
-                Title = "Cobra IDE - Settings",
-                Content = settingsView,
-                Width = 1200,
-                Height = 800,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
-                WindowStyle = WindowStyle.None
-            };
-            WindowChrome.SetWindowChrome(settingsWindow, new WindowChrome { CaptionHeight = 35, ResizeBorderThickness = new Thickness(5), GlassFrameThickness = new Thickness(0), CornerRadius = new CornerRadius(0) });
-            settingsWindow.ShowDialog();
-        }
-
-
-
-        private void OnRenameGameObject(object sender, RoutedEventArgs e)
-        {
-            if (selectedGameObject != null)
-            {
-                var renamePanel = new StackPanel();
-                renamePanel.Children.Add(new TextBlock
-                {
-                    Text = "Enter new name:",
-                    Foreground = Brushes.White,
-                    Margin = new Thickness(0, 0, 0, 10)
-                });
-
-                var nameBox = new TextBox
-                {
-                    Text = selectedGameObject.Name,
-                    Background = new SolidColorBrush(Color.FromRgb(60, 60, 60)),
-                    Foreground = Brushes.White,
-                    Margin = new Thickness(0, 0, 0, 10),
-                    Padding = new Thickness(5)
-                };
-                renamePanel.Children.Add(nameBox);
-
-                _ = CustomDialog.ShowCustomAsync(Window.GetWindow(this), "Rename Object", renamePanel, "Rename", "Cancel");
-            }
-        }
-
-
-
-        private void ToggleFullScreen()
-        {
-            var window = Window.GetWindow(this);
-            if (window != null)
-            {
-                if (!isFullScreen)
-                {
-                    previousState = window.WindowState;
-                    window.WindowStyle = WindowStyle.None;
-                    window.WindowState = WindowState.Maximized;
-                    isFullScreen = true;
-                }
-                else
-                {
-                    window.WindowStyle = WindowStyle.SingleBorderWindow;
-                    window.WindowState = previousState;
-                    isFullScreen = false;
-                }
-            }
-        }
-
-        // --- SCENE EDITOR LOGIC ---
-
-        private void NavItem_Click(object sender, MouseButtonEventArgs e)
-        {
-            if (sender is Border clickedNav)
-            {
-                string? tag = clickedNav.Tag?.ToString();
-                if (string.IsNullOrEmpty(tag)) return;
-
-                // Reset previous selection
-                if (currentSelectedNav != null)
-                {
-                    currentSelectedNav.Background = Brushes.Transparent;
-                    if (currentSelectedNav.Child is StackPanel sp)
-                    {
-                        foreach (var child in sp.Children.OfType<StackPanel>())
-                        {
-                            foreach (var textBlock in child.Children.OfType<TextBlock>())
-                            {
-                                if (textBlock.FontSize == 14) // Title text
-                                    textBlock.Foreground = new SolidColorBrush(Color.FromRgb(224, 224, 224));
-                            }
-                        }
-                    }
-                }
-
-                // Highlight new selection
-                clickedNav.Background = new SolidColorBrush(Color.FromRgb(45, 45, 48));
-                if (clickedNav.Child is StackPanel newSp)
-                {
-                    foreach (var child in newSp.Children.OfType<StackPanel>())
-                    {
-                        foreach (var textBlock in child.Children.OfType<TextBlock>())
-                        {
-                            if (textBlock.FontSize == 14) // Title text
-                                textBlock.Foreground = Brushes.White;
-                        }
-                    }
-                }
-                currentSelectedNav = clickedNav;
-
-                // Switch view based on tag
-                switch (tag)
-                {
-                    case "CodeEditor":
-                        OnShowCodeEditor(null!, null!);
-                        break;
-                    case "SceneEditor":
-                        OnShowSceneEditor(null!, null!);
-                        break;
-                    case "VisualScripting":
-                        OnShowVisualScripting(null!, null!);
-                        break;
-                }
-            }
-        }
-
-        private void OnShowCodeEditor(object sender, RoutedEventArgs e)
-        {
-            CodeEditorContainer.Visibility = Visibility.Visible;
-            SceneEditorContainer.Visibility = Visibility.Collapsed;
-            VisualScriptingContainer.Visibility = Visibility.Collapsed;
-            
-            ExplorerContainer.Visibility = Visibility.Visible;
-            InspectorContainer.Visibility = Visibility.Collapsed;
-        }
-
-        private void OnShowSceneEditor(object sender, RoutedEventArgs e)
-        {
-            CodeEditorContainer.Visibility = Visibility.Collapsed;
-            SceneEditorContainer.Visibility = Visibility.Visible;
-            VisualScriptingContainer.Visibility = Visibility.Collapsed;
-            
-            ExplorerContainer.Visibility = Visibility.Collapsed;
-            InspectorContainer.Visibility = Visibility.Visible;
-
-            RefreshHierarchy();
-        }
-
-        private void OnShowVisualScripting(object sender, RoutedEventArgs e)
-        {
-            CodeEditorContainer.Visibility = Visibility.Collapsed;
-            SceneEditorContainer.Visibility = Visibility.Collapsed;
-            VisualScriptingContainer.Visibility = Visibility.Visible;
-            
-            ExplorerContainer.Visibility = Visibility.Visible;
-            InspectorContainer.Visibility = Visibility.Collapsed;
-        }
-
-        private void OnPlayToggle(object sender, RoutedEventArgs e)
-        {
-            isPlaying = !isPlaying;
-
-            if (isPlaying)
-            {
-                PlayToggle.Content = "Stop";
-                PlayToggle.Background = Brushes.Red;
-                // Start logic if needed
-            }
-            else
-            {
-                PlayToggle.Content = "Play";
-                PlayToggle.Background = new SolidColorBrush(Color.FromRgb(40, 167, 69)); // #28a745
-            }
-        }
-
-        private void StartGameLoop()
-        {
-            gameLoop = new()
-            {
-                Interval = TimeSpan.FromMilliseconds(16) // ~60 FPS
-            };
-            gameLoop.Tick += (s, e) =>
-            {
-                if (isPlaying)
-                {
-                    Cobra.Engine.ECS.Systems.ScriptSystem.Update(world);
-                }
-
-                foreach (var plugin in pluginLoader.Plugins)
-                {
-                    plugin.Update();
-                }
-
+                _currentScene = restored;
+                _selectedGameObject = null;
                 RedrawScene();
-            };
-            gameLoop.Start();
+                SyncSceneTo3DViewport();
+                UpdateInspector();
+            }
+        }
+
+        private void OnSceneRedoClicked(object sender, RoutedEventArgs e)
+        {
+            if (_sceneRedoStack.Count == 0) return;
+            string nextJson = _sceneRedoStack.Pop();
+            _sceneUndoStack.Push(nextJson);
+
+            var restored = JsonSerializer.Deserialize<Scene>(nextJson);
+            if (restored != null)
+            {
+                _currentScene = restored;
+                _selectedGameObject = null;
+                RedrawScene();
+                SyncSceneTo3DViewport();
+                UpdateInspector();
+            }
+        }
+
+        private void OnNewSceneClicked(object sender, RoutedEventArgs e)
+        {
+            SaveSceneUndoSnapshot();
+            _currentScene = new Scene { SceneName = $"Scene_{DateTime.Now:HHmm}", Framework = _projectConfig.Framework };
+            _currentScenePath = string.Empty;
+            _selectedGameObject = null;
+            ActiveSceneNameLabel.Text = _currentScene.SceneName;
+            RedrawScene();
+            SyncSceneTo3DViewport();
+            UpdateInspector();
+            ShowToast("Created new scene");
         }
 
         private void OnAddGameObject(object sender, RoutedEventArgs e)
         {
-            AddGameObject();
+            SaveSceneUndoSnapshot();
+            var obj = new SceneObject
+            {
+                Name = $"Object_{_currentScene.Objects.Count + 1}",
+                Primitive3D = "Cube",
+                X = 120 + (_currentScene.Objects.Count * 20),
+                Y = 120 + (_currentScene.Objects.Count * 20),
+                Width = 64,
+                Height = 64,
+                Color = "#ff8c00"
+            };
+            _currentScene.Objects.Add(obj);
+            _selectedGameObject = obj;
+            RedrawScene();
+            SyncSceneTo3DViewport();
+            UpdateInspector();
+        }
+
+        private void OnDuplicateSceneObject(object sender, RoutedEventArgs e)
+        {
+            if (_selectedGameObject == null) return;
+            SaveSceneUndoSnapshot();
+            var clone = _selectedGameObject.Clone();
+            _currentScene.Objects.Add(clone);
+            _selectedGameObject = clone;
+            RedrawScene();
+            SyncSceneTo3DViewport();
+            UpdateInspector();
+            ShowToast($"Duplicated {clone.Name}");
+        }
+
+        private void OnDeleteSceneObject(object sender, RoutedEventArgs e)
+        {
+            if (_selectedGameObject == null) return;
+            SaveSceneUndoSnapshot();
+            _currentScene.Objects.Remove(_selectedGameObject);
+            _selectedGameObject = null;
+            RedrawScene();
+            SyncSceneTo3DViewport();
+            UpdateInspector();
+        }
+
+        private void OnSaveScene(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string scenesDir = Path.Combine(_projectPath, "scenes");
+                Directory.CreateDirectory(scenesDir);
+
+                if (string.IsNullOrEmpty(_currentScenePath))
+                {
+                    _currentScenePath = Path.Combine(scenesDir, $"{_currentScene.SceneName}.Cobra");
+                }
+
+                _currentScene.Save(_currentScenePath);
+
+                string pyScenePath = Path.Combine(scenesDir, $"{_currentScene.SceneName.ToLowerInvariant()}_scene.py");
+                File.WriteAllText(pyScenePath, _currentScene.ExportToPythonModule());
+
+                LoadFiles();
+                ShowToast($"Saved {Path.GetFileName(_currentScenePath)} & synced Python module");
+            }
+            catch (Exception ex)
+            {
+                OutputConsole.AppendText($"Failed to save scene: {ex.Message}\n");
+            }
+        }
+
+        private void OnLoadScene(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                InitialDirectory = Path.Combine(_projectPath, "scenes"),
+                Filter = "Cobra Scene (*.Cobra)|*.Cobra|All Files (*.*)|*.*",
+                Title = "Open Cobra Scene"
+            };
+
+            if (dlg.ShowDialog() == true)
+            {
+                _currentScene = Scene.Load(dlg.FileName);
+                _currentScenePath = dlg.FileName;
+                ActiveSceneNameLabel.Text = _currentScene.SceneName;
+                SaveSceneUndoSnapshot();
+                RedrawScene();
+                SyncSceneTo3DViewport();
+                UpdateInspector();
+                ShowToast($"Opened {_currentScene.SceneName}");
+            }
         }
 
         private void OnSavePrefab(object sender, RoutedEventArgs e)
         {
-            // TODO: Implement prefab saving
-            ShowToast("Save Prefab not implemented yet");
+            if (_selectedGameObject == null) return;
+            var prefabManager = new PrefabManager(_projectPath);
+            var prefabMeta = new Prefab
+            {
+                Name = _selectedGameObject.Name,
+                JsonData = JsonSerializer.Serialize(_selectedGameObject, JsonIndentedOptions)
+            };
+            prefabManager.SavePrefab(_selectedGameObject.Name, _selectedGameObject);
+            LoadFiles();
+            ShowToast($"Saved prefab: {prefabMeta.Name} ({prefabMeta.JsonData.Length} bytes)");
         }
 
         private void OnLoadPrefab(object sender, RoutedEventArgs e)
         {
-            // TODO: Implement prefab loading
-            ShowToast("Load Prefab not implemented yet");
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                InitialDirectory = _projectPath,
+                Filter = "Prefab Files (*.json)|*.json",
+                Title = "Instantiate Prefab"
+            };
+
+            if (dlg.ShowDialog() == true)
+            {
+                var prefabManager = new PrefabManager(_projectPath);
+                string prefabName = Path.GetFileNameWithoutExtension(dlg.FileName);
+                var obj = prefabManager.LoadPrefab<SceneObject>(prefabName)
+                       ?? JsonSerializer.Deserialize<SceneObject>(File.ReadAllText(dlg.FileName));
+                if (obj != null)
+                {
+                    obj.Id = Guid.NewGuid().ToString("N")[..8];
+                    SaveSceneUndoSnapshot();
+                    _currentScene.Objects.Add(obj);
+                    _selectedGameObject = obj;
+                    RedrawScene();
+                    SyncSceneTo3DViewport();
+                    UpdateInspector();
+                }
+            }
         }
 
-        private void GameLoop_Tick(object? sender, EventArgs e)
+        private void OnSceneOverlayOptionChanged(object sender, RoutedEventArgs e)
         {
-            if (!isPlaying) return;
+            if (IsLoaded) RedrawScene();
+        }
 
-            foreach (var obj in currentScene.Objects)
-            {
-                RunPython(obj);
-            }
-
+        private void OnSceneZoomInClicked(object sender, RoutedEventArgs e)
+        {
+            _zoom = Math.Clamp(_zoom * 1.15, 0.25, 4.0);
             RedrawScene();
         }
 
-        private static void RunPython(SceneObject obj)
+        private void OnSceneZoomOutClicked(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrEmpty(obj.ScriptPath) || !File.Exists(obj.ScriptPath))
-                return;
-
-            try
-            {
-                ProcessStartInfo psi = new()
-                {
-                    FileName = "python",
-                    Arguments = $"\"{obj.ScriptPath}\" {obj.X} {obj.Y}",
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-
-                using var process = Process.Start(psi);
-                if (process == null) return;
-
-                string output = process.StandardOutput.ReadToEnd();
-                process.WaitForExit();
-
-                var parts = output.Split(',');
-
-                if (parts.Length == 2)
-                {
-                    if (double.TryParse(parts[0], out double newX)) obj.X = newX;
-                    if (double.TryParse(parts[1], out double newY)) obj.Y = newY;
-                }
-            }
-            catch { }
-        }
-
-        private void AddGameObject()
-        {
-            var go = new SceneObject { Name = "GameObject_" + (currentScene.Objects.Count + 1), X = 100, Y = 100 };
-            currentScene.Objects.Add(go);
-            RefreshHierarchy();
+            _zoom = Math.Clamp(_zoom * 0.85, 0.25, 4.0);
             RedrawScene();
         }
 
-        private void UpdateInspector(SceneObject obj)
+        private void OnSceneResetViewClicked(object sender, RoutedEventArgs e)
         {
-            InspectorPanel.Children.Clear();
-
-            InspectorPanel.Children.Add(new TextBlock { Text = obj.Name, Foreground = Brushes.Cyan, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 10) });
-
-            AddField("Name", obj.Name, v => { obj.Name = v; RefreshHierarchy(); });
-            AddField("X", obj.X.ToString("F1"), v => { if (double.TryParse(v, out double res)) { obj.X = res; RedrawScene(); } });
-            AddField("Y", obj.Y.ToString("F1"), v => { if (double.TryParse(v, out double res)) { obj.Y = res; RedrawScene(); } });
-            AddField("Width", obj.Width.ToString("F1"), v => { if (double.TryParse(v, out double res)) { obj.Width = res; RedrawScene(); } });
-            AddField("Height", obj.Height.ToString("F1"), v => { if (double.TryParse(v, out double res)) { obj.Height = res; RedrawScene(); } });
-            AddField("Sprite Path", obj.SpritePath, v => { obj.SpritePath = v; RedrawScene(); });
-            AddField("Script Path", obj.ScriptPath, v => { obj.ScriptPath = v; });
+            _zoom = 1.0;
+            _camX = 0;
+            _camY = 0;
+            RedrawScene();
         }
 
-        // --- Visual Scripting Methods ---
-
-        private void AddNode(string title, double x, double y)
+        private void OnToggle2D3DViewportClicked(object sender, RoutedEventArgs e)
         {
-            var node = new Node { Title = title, X = x, Y = y };
-            nodes.Add(node);
+            _is3DMode = !_is3DMode;
+            _currentScene.Is3D = _is3DMode;
+            Toggle2D3DText.Text = _is3DMode ? "Mode: 3D Three.js" : "Mode: 2D Canvas";
+            SceneCanvas.Visibility = _is3DMode ? Visibility.Collapsed : Visibility.Visible;
+            Viewport3DWebView.Visibility = _is3DMode ? Visibility.Visible : Visibility.Collapsed;
 
-            var border = new Border
+            if (_is3DMode)
             {
-                Width = 150,
-                Height = 80,
-                Background = new SolidColorBrush(Color.FromRgb(60, 60, 60)),
-                CornerRadius = new CornerRadius(5),
-                BorderBrush = Brushes.Gray,
-                BorderThickness = new Thickness(1),
-                Child = new TextBlock
-                {
-                    Text = title,
-                    Foreground = Brushes.White,
-                    Margin = new Thickness(10),
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center
-                },
-                Tag = node
-            };
-
-            Canvas.SetLeft(border, x);
-            Canvas.SetTop(border, y);
-
-            border.MouseLeftButtonDown += (s, e) => OnNodeClicked(border);
-            NodeCanvas.Children.Add(border);
-
-            EnableNodeDrag(border);
-        }
-
-        private void EnableNodeDrag(Border nodeUI)
-        {
-            nodeUI.MouseMove += (s, e) =>
-            {
-                if (e.LeftButton == MouseButtonState.Pressed)
-                {
-                    var pos = e.GetPosition(NodeCanvas);
-                    var node = (Node)nodeUI.Tag;
-
-                    node.X = pos.X - (nodeUI.Width / 2);
-                    node.Y = pos.Y - (nodeUI.Height / 2);
-
-                    Canvas.SetLeft(nodeUI, node.X);
-                    Canvas.SetTop(nodeUI, node.Y);
-
-                    // Draw connections would go here
-                }
-            };
-        }
-
-        private void OnNodeClicked(Border nodeUI)
-        {
-            var node = (Node)nodeUI.Tag;
-
-            if (selectedNode == null)
-            {
-                selectedNode = node;
-                nodeUI.BorderBrush = Brushes.Yellow;
+                SyncSceneTo3DViewport();
             }
             else
             {
-                if (selectedNode != node)
-                {
-                    selectedNode.Outputs.Add(node.Id);
-                    // Reset selection or handle multi-connection
-                    ShowToast($"Connected {selectedNode.Title} to {node.Title}");
-                }
-
-                // Clear selection highlight
-                foreach (var child in NodeCanvas.Children.OfType<Border>())
-                    child.BorderBrush = Brushes.Gray;
-
-                selectedNode = null;
+                RedrawScene();
             }
         }
 
-        private string ExportNodes()
+        private void SyncSceneTo3DViewport()
         {
-            return JsonSerializer.Serialize(nodes, JsonIndentedOptions);
+            if (!_is3DWebViewReady || Viewport3DWebView.CoreWebView2 == null) return;
+
+            var payload = new
+            {
+                type = "loadScene",
+                objects = _currentScene.Objects.Select(o => new
+                {
+                    id = o.Id,
+                    name = o.Name,
+                    objectType = o.Primitive3D,
+                    x = o.X,
+                    y = o.Y,
+                    z = o.Z,
+                    rotationX = o.RotationX,
+                    rotationY = o.RotationY,
+                    rotation = o.Rotation,
+                    scaleX = o.ScaleX,
+                    scaleY = o.ScaleY,
+                    scaleZ = o.ScaleZ,
+                    visible = o.IsVisible,
+                    colorHex = o.Color
+                })
+            };
+
+            string json = JsonSerializer.Serialize(payload);
+            Viewport3DWebView.CoreWebView2.PostWebMessageAsString(json);
+        }
+
+        private void OnPlayToggle(object sender, RoutedEventArgs e)
+        {
+            _isPlaying = PlayToggle.IsChecked == true;
+            ShowToast(_isPlaying ? "Scene physics simulation started" : "Scene simulation stopped");
+        }
+
+        private void UpdateSceneSimulation(double dt)
+        {
+            foreach (var obj in _currentScene.Objects)
+            {
+                if (!obj.IsVisible || !obj.HasRigidbody || !obj.UseGravity) continue;
+                obj.Y += 400.0 * obj.GravityScale * dt * 0.25;
+                if (obj.Y + obj.Height > 480)
+                {
+                    obj.Y = 480 - obj.Height;
+                }
+            }
+        }
+
+        private void RedrawScene()
+        {
+            if (SceneCanvas == null) return;
+            SceneCanvas.Children.Clear();
+            DrawGrid();
+
+            foreach (var obj in _currentScene.Objects.OrderBy(o => o.SortingOrder))
+            {
+                if (!obj.IsVisible) continue;
+
+                double sx = (obj.X * _zoom) + _camX;
+                double sy = (obj.Y * _zoom) + _camY;
+                double sw = Math.Max(8, obj.Width * obj.ScaleX * _zoom);
+                double sh = Math.Max(8, obj.Height * obj.ScaleY * _zoom);
+
+                FrameworkElement visual;
+                string fullSpritePath = !string.IsNullOrEmpty(obj.SpritePath)
+                    ? (Path.IsPathRooted(obj.SpritePath) ? obj.SpritePath : Path.Combine(_projectPath, obj.SpritePath))
+                    : string.Empty;
+
+                if (!string.IsNullOrEmpty(fullSpritePath) && File.Exists(fullSpritePath))
+                {
+                    visual = new System.Windows.Controls.Image
+                    {
+                        Source = new BitmapImage(new Uri(fullSpritePath)),
+                        Width = sw,
+                        Height = sh,
+                        Stretch = Stretch.Fill
+                    };
+                }
+                else
+                {
+                    obj.IsSelected = obj == _selectedGameObject;
+                    Color fillColor = Color.FromRgb(255, 140, 0);
+                    try
+                    {
+                        fillColor = (Color)ColorConverter.ConvertFromString(obj.Color);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine(ex.Message);
+                    }
+
+                    visual = new Border
+                    {
+                        Width = sw,
+                        Height = sh,
+                        Background = new SolidColorBrush(Color.FromArgb(220, fillColor.R, fillColor.G, fillColor.B)),
+                        BorderBrush = obj.IsSelected ? Brushes.Yellow : Brushes.White,
+                        BorderThickness = new Thickness(obj.IsSelected ? 2 : 1),
+                        CornerRadius = new CornerRadius(2),
+                        Child = new TextBlock
+                        {
+                            Text = obj.Name,
+                            Foreground = Brushes.White,
+                            FontSize = 10,
+                            HorizontalAlignment = HorizontalAlignment.Center,
+                            VerticalAlignment = VerticalAlignment.Center
+                        }
+                    };
+                }
+
+                visual.RenderTransformOrigin = new Point(0.5, 0.5);
+                visual.RenderTransform = new RotateTransform(obj.Rotation);
+
+                Canvas.SetLeft(visual, sx);
+                Canvas.SetTop(visual, sy);
+                SceneCanvas.Children.Add(visual);
+
+                if (ShowCollidersCheck?.IsChecked == true && !string.Equals(obj.ColliderType, "None", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (obj.ColliderType == "Circle")
+                    {
+                        double r = obj.ColliderRadius * 2 * _zoom;
+                        var circle = new Ellipse
+                        {
+                            Width = r,
+                            Height = r,
+                            Stroke = Brushes.LimeGreen,
+                            StrokeThickness = 1.5,
+                            StrokeDashArray = [3, 2]
+                        };
+                        Canvas.SetLeft(circle, sx + (sw - r) / 2);
+                        Canvas.SetTop(circle, sy + (sh - r) / 2);
+                        SceneCanvas.Children.Add(circle);
+                    }
+                    else
+                    {
+                        var rect = new System.Windows.Shapes.Rectangle
+                        {
+                            Width = sw,
+                            Height = sh,
+                            Stroke = Brushes.LimeGreen,
+                            StrokeThickness = 1.5,
+                            StrokeDashArray = [4, 2]
+                        };
+                        Canvas.SetLeft(rect, sx);
+                        Canvas.SetTop(rect, sy);
+                        SceneCanvas.Children.Add(rect);
+                    }
+                }
+            }
+
+            if (_selectedGameObject is { IsVisible: true })
+            {
+                DrawGizmos(_selectedGameObject);
+            }
+
+            UpdateHierarchy();
+        }
+
+        private void DrawGrid()
+        {
+            double width = SceneCanvas.ActualWidth > 0 ? SceneCanvas.ActualWidth : 900;
+            double height = SceneCanvas.ActualHeight > 0 ? SceneCanvas.ActualHeight : 600;
+            double step = Math.Max(10, DefaultGridSize * _zoom);
+
+            var brush = new SolidColorBrush(Color.FromRgb(38, 38, 42));
+            for (double x = _camX % step; x < width; x += step)
+            {
+                SceneCanvas.Children.Add(new Line { X1 = x, Y1 = 0, X2 = x, Y2 = height, Stroke = brush, StrokeThickness = 1 });
+            }
+            for (double y = _camY % step; y < height; y += step)
+            {
+                SceneCanvas.Children.Add(new Line { X1 = 0, Y1 = y, X2 = width, Y2 = y, Stroke = brush, StrokeThickness = 1 });
+            }
+        }
+
+        private void DrawGizmos(SceneObject obj)
+        {
+            double cx = (obj.X + obj.Width / 2) * _zoom + _camX;
+            double cy = (obj.Y + obj.Height / 2) * _zoom + _camY;
+
+            SceneCanvas.Children.Add(new Line { X1 = cx, Y1 = cy, X2 = cx + 55, Y2 = cy, Stroke = Brushes.Red, StrokeThickness = 2.5 });
+            SceneCanvas.Children.Add(new Line { X1 = cx, Y1 = cy, X2 = cx, Y2 = cy - 55, Stroke = Brushes.LimeGreen, StrokeThickness = 2.5 });
+
+            var rotRing = new Ellipse
+            {
+                Width = 76,
+                Height = 76,
+                Stroke = Brushes.DeepSkyBlue,
+                StrokeThickness = 1.2,
+                StrokeDashArray = [3, 3]
+            };
+            Canvas.SetLeft(rotRing, cx - 38);
+            Canvas.SetTop(rotRing, cy - 38);
+            SceneCanvas.Children.Add(rotRing);
+        }
+
+        private void SceneCanvas_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            Point mouse = e.GetPosition(SceneCanvas);
+            _lastMousePos = mouse;
+
+            if (Keyboard.IsKeyDown(Key.Space))
+            {
+                _isPanning = true;
+                _lastPanPoint = mouse;
+                return;
+            }
+
+            if (_selectedGameObject is { IsLocked: false })
+            {
+                double cx = (_selectedGameObject.X + _selectedGameObject.Width / 2) * _zoom + _camX;
+                double cy = (_selectedGameObject.Y + _selectedGameObject.Height / 2) * _zoom + _camY;
+
+                if (Math.Abs(mouse.X - (cx + 55)) < 12 && Math.Abs(mouse.Y - cy) < 12)
+                {
+                    SaveSceneUndoSnapshot();
+                    _currentGizmo = GizmoMode.MoveX;
+                    return;
+                }
+                if (Math.Abs(mouse.X - cx) < 12 && Math.Abs(mouse.Y - (cy - 55)) < 12)
+                {
+                    SaveSceneUndoSnapshot();
+                    _currentGizmo = GizmoMode.MoveY;
+                    return;
+                }
+                double dist = Math.Sqrt(Math.Pow(mouse.X - cx, 2) + Math.Pow(mouse.Y - cy, 2));
+                if (Math.Abs(dist - 38) < 8)
+                {
+                    SaveSceneUndoSnapshot();
+                    _currentGizmo = GizmoMode.Rotate;
+                    return;
+                }
+            }
+
+            double worldX = (mouse.X - _camX) / _zoom;
+            double worldY = (mouse.Y - _camY) / _zoom;
+
+            _selectedGameObject = _currentScene.Objects
+                .OrderByDescending(o => o.SortingOrder)
+                .FirstOrDefault(o => o.IsVisible && worldX >= o.X && worldX <= o.X + o.Width && worldY >= o.Y && worldY <= o.Y + o.Height);
+
+            if (_selectedGameObject is { IsLocked: false })
+            {
+                SaveSceneUndoSnapshot();
+                _isDragging = true;
+                _dragOffset = new Point(worldX - _selectedGameObject.X, worldY - _selectedGameObject.Y);
+            }
+
+            RedrawScene();
+            UpdateInspector();
+        }
+
+        private void SceneCanvas_MouseMove(object sender, MouseEventArgs e)
+        {
+            Point pos = e.GetPosition(SceneCanvas);
+
+            if (_isPanning && e.LeftButton == MouseButtonState.Pressed)
+            {
+                _camX += pos.X - _lastPanPoint.X;
+                _camY += pos.Y - _lastPanPoint.Y;
+                _lastPanPoint = pos;
+                RedrawScene();
+                return;
+            }
+
+            if (_selectedGameObject is { IsLocked: false } && _currentGizmo != GizmoMode.None)
+            {
+                Vector delta = pos - _lastMousePos;
+                if (_currentGizmo == GizmoMode.MoveX) _selectedGameObject.X += delta.X / _zoom;
+                else if (_currentGizmo == GizmoMode.MoveY) _selectedGameObject.Y += delta.Y / _zoom;
+                else if (_currentGizmo == GizmoMode.Rotate) _selectedGameObject.Rotation = (_selectedGameObject.Rotation + delta.X) % 360;
+
+                _lastMousePos = pos;
+                RedrawScene();
+                UpdateInspector();
+                return;
+            }
+
+            if (_isDragging && _selectedGameObject is { IsLocked: false } && e.LeftButton == MouseButtonState.Pressed)
+            {
+                double worldX = (pos.X - _camX) / _zoom - _dragOffset.X;
+                double worldY = (pos.Y - _camY) / _zoom - _dragOffset.Y;
+
+                if (SnapToGridCheck.IsChecked == true)
+                {
+                    int snap = Math.Max(4, SettingsManager.Instance.CurrentSettings.GridSnapSize);
+                    worldX = Math.Round(worldX / snap) * snap;
+                    worldY = Math.Round(worldY / snap) * snap;
+                }
+
+                _selectedGameObject.X = worldX;
+                _selectedGameObject.Y = worldY;
+                RedrawScene();
+                UpdateInspector();
+            }
+        }
+
+        private void SceneCanvas_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            _isDragging = false;
+            _isPanning = false;
+            _currentGizmo = GizmoMode.None;
+        }
+
+        private void SceneCanvas_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            _zoom = Math.Clamp(_zoom + (e.Delta > 0 ? 0.1 : -0.1), 0.25, 4.0);
+            RedrawScene();
         }
 
         private void OnAssetDropped(object sender, DragEventArgs e)
         {
-            if (!e.Data.GetDataPresent(DataFormats.FileDrop))
-                return;
+            if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+            if (e.Data.GetData(DataFormats.FileDrop) is not string[] { Length: > 0 } files) return;
 
-            var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            string file = files[0];
+            Point pos = e.GetPosition(SceneCanvas);
+            SaveSceneUndoSnapshot();
 
-            foreach (var file in files)
+            var obj = new SceneObject
             {
-                if (!file.EndsWith(".png", StringComparison.OrdinalIgnoreCase) && !file.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                CreateSpriteFromImage(file);
-            }
-        }
-
-        private void CreateSpriteFromImage(string path)
-        {
-            var go = new SceneObject 
-            { 
-                Name = System.IO.Path.GetFileNameWithoutExtension(path),
-                X = 200, 
-                Y = 200,
-                SpritePath = path
+                Name = Path.GetFileNameWithoutExtension(file),
+                SpritePath = Path.GetRelativePath(_projectPath, file).Replace('\\', '/'),
+                X = (pos.X - _camX) / _zoom,
+                Y = (pos.Y - _camY) / _zoom,
+                Width = 64,
+                Height = 64
             };
-
-            currentScene.Objects.Add(go);
-            RefreshHierarchy();
+            _currentScene.Objects.Add(obj);
+            _selectedGameObject = obj;
             RedrawScene();
+            UpdateInspector();
         }
 
-
-
-        private static bool IsImageFile(string path)
+        private void UpdateHierarchy()
         {
-            string ext = System.IO.Path.GetExtension(path).ToLower();
-            return ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp" || ext == ".gif";
+            if (SceneHierarchy == null) return;
+            string filter = SearchHierarchy?.Text.Trim() ?? "";
+
+            List<SceneObject> list = string.IsNullOrEmpty(filter)
+                ? [.. _currentScene.Objects]
+                : [.. _currentScene.Objects.Where(o => o.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))];
+
+            SceneHierarchy.ItemsSource = list;
+        }
+
+        private void SearchHierarchy_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (IsLoaded) UpdateHierarchy();
         }
 
         private void OnHierarchySelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (SceneHierarchy.SelectedItem is SceneObject obj)
             {
-                foreach (var item in currentScene.Objects) item.IsSelected = false;
-                obj.IsSelected = true;
-                selectedGameObject = obj;
-                UpdateInspector(obj);
+                _selectedGameObject = obj;
                 RedrawScene();
-            }
-        }
-
-        private void RedrawScene()
-        {
-            SceneCanvas.Children.Clear();
-
-            // Draw ECS World
-            Cobra.Engine.ECS.Systems.RenderSystem.Render(world, SceneCanvas);
-
-            // Draw Legacy SceneObjects (if any)
-            foreach (var obj in currentScene.Objects)
-            {
-                var rect = new System.Windows.Shapes.Rectangle
+                UpdateInspector();
+                if (_is3DMode && _is3DWebViewReady && Viewport3DWebView.CoreWebView2 != null)
                 {
-                    Width = obj.Width * zoom,
-                    Height = obj.Height * zoom,
-                    Fill = Brushes.White,
-                    RenderTransform = new RotateTransform(
-                        obj.Rotation,
-                        (obj.Width * zoom) / 2,
-                        (obj.Height * zoom) / 2
-                    )
-                };
-
-                Canvas.SetLeft(rect, obj.X * zoom + camX);
-                Canvas.SetTop(rect, obj.Y * zoom + camY);
-
-                SceneCanvas.Children.Add(rect);
-
-                if (obj.IsSelected)
-                {
-                    DrawMoveGizmo(obj);
-                    DrawRotationGizmo(obj);
+                    Viewport3DWebView.CoreWebView2.PostWebMessageAsString(JsonSerializer.Serialize(new { type = "selectObject", id = obj.Id }));
                 }
             }
         }
 
-        private void SceneCanvas_MouseDown(object sender, MouseButtonEventArgs e)
+        private void UpdateInspector()
         {
-            Point click = e.GetPosition(SceneCanvas);
-            lastMousePos = click;
+            if (InspectorPanel == null) return;
+            InspectorPanel.Children.Clear();
 
-            if (e.MiddleButton == MouseButtonState.Pressed)
+            if (_selectedGameObject == null)
             {
-                isPanning = true;
-                lastPanPoint = click;
+                InspectorPanel.Children.Add(new TextBlock
+                {
+                    Text = "Select an object in the scene or hierarchy to inspect its properties.",
+                    Foreground = Brushes.Gray,
+                    TextWrapping = TextWrapping.Wrap,
+                    FontSize = 11
+                });
                 return;
             }
 
-            if (selectedGameObject != null)
-            {
-                double cx = selectedGameObject.X * zoom + camX + (selectedGameObject.Width * zoom) / 2;
-                double cy = selectedGameObject.Y * zoom + camY + (selectedGameObject.Height * zoom) / 2;
+            var obj = _selectedGameObject;
 
-                // X Axis hit
-                if (DistanceToLine(click, cx, cy, cx + 40, cy) < 5)
-                {
-                    currentGizmo = GizmoMode.MoveX;
-                    return;
-                }
+            AddInspectorTextField("Name", obj.Name, v => { obj.Name = v; RedrawScene(); SyncSceneTo3DViewport(); });
+            AddInspectorNumberField("Position X", obj.X, v => { obj.X = v; RedrawScene(); SyncSceneTo3DViewport(); });
+            AddInspectorNumberField("Position Y", obj.Y, v => { obj.Y = v; RedrawScene(); SyncSceneTo3DViewport(); });
+            AddInspectorNumberField("Position Z (3D)", obj.Z, v => { obj.Z = v; SyncSceneTo3DViewport(); });
+            AddInspectorNumberField("Rotation", obj.Rotation, v => { obj.Rotation = v; RedrawScene(); SyncSceneTo3DViewport(); });
+            AddInspectorNumberField("Width", obj.Width, v => { obj.Width = Math.Max(4, v); RedrawScene(); });
+            AddInspectorNumberField("Height", obj.Height, v => { obj.Height = Math.Max(4, v); RedrawScene(); });
+            AddInspectorNumberField("Scale X", obj.ScaleX, v => { obj.ScaleX = Math.Max(0.1, v); RedrawScene(); SyncSceneTo3DViewport(); });
+            AddInspectorNumberField("Scale Y", obj.ScaleY, v => { obj.ScaleY = Math.Max(0.1, v); RedrawScene(); SyncSceneTo3DViewport(); });
+            AddInspectorTextField("Layer", obj.Layer, v => { obj.Layer = v; RedrawScene(); });
+            AddInspectorNumberField("Sorting Order", obj.SortingOrder, v => { obj.SortingOrder = (int)v; RedrawScene(); });
+            AddInspectorTextField("Color Hex", obj.Color, v => { obj.Color = v; RedrawScene(); SyncSceneTo3DViewport(); });
+            AddInspectorTextField("Sprite Path", obj.SpritePath, v => { obj.SpritePath = v; RedrawScene(); });
+            AddInspectorTextField("Python Script", obj.ScriptPath, v => { obj.ScriptPath = v; });
+            AddInspectorTextField("Collider (Rectangle/Circle/None)", obj.ColliderType, v => { obj.ColliderType = v; RedrawScene(); });
 
-                // Y Axis hit
-                if (DistanceToLine(click, cx, cy, cx, cy - 40) < 5)
-                {
-                    currentGizmo = GizmoMode.MoveY;
-                    return;
-                }
+            var visCheck = new CheckBox { Content = "Visible", Foreground = Brushes.White, IsChecked = obj.IsVisible, Margin = new Thickness(0, 6, 0, 2) };
+            visCheck.Checked += (_, _) => { obj.IsVisible = true; RedrawScene(); SyncSceneTo3DViewport(); };
+            visCheck.Unchecked += (_, _) => { obj.IsVisible = false; RedrawScene(); SyncSceneTo3DViewport(); };
+            InspectorPanel.Children.Add(visCheck);
 
-                // Rotation hit (near circle)
-                double dist = Math.Sqrt(Math.Pow(click.X - cx, 2) + Math.Pow(click.Y - cy, 2));
-                if (Math.Abs(dist - 40) < 5)
-                {
-                    currentGizmo = GizmoMode.Rotate;
-                    return;
-                }
-            }
+            var lockCheck = new CheckBox { Content = "Lock Transform", Foreground = Brushes.White, IsChecked = obj.IsLocked, Margin = new Thickness(0, 4, 0, 6) };
+            lockCheck.Checked += (_, _) => { obj.IsLocked = true; UpdateHierarchy(); };
+            lockCheck.Unchecked += (_, _) => { obj.IsLocked = false; UpdateHierarchy(); };
+            InspectorPanel.Children.Add(lockCheck);
 
-            // Normal selection hit detection
-            foreach (var obj in currentScene.Objects)
-            {
-                double screenX = obj.X * zoom + camX;
-                double screenY = obj.Y * zoom + camY;
-                double screenW = obj.Width * zoom;
-                double screenH = obj.Height * zoom;
+            var rbCheck = new CheckBox { Content = "Enable Rigidbody", Foreground = Brushes.LightGreen, IsChecked = obj.HasRigidbody, Margin = new Thickness(0, 4, 0, 4) };
+            rbCheck.Checked += (_, _) => obj.HasRigidbody = true;
+            rbCheck.Unchecked += (_, _) => obj.HasRigidbody = false;
+            InspectorPanel.Children.Add(rbCheck);
 
-                if (click.X >= screenX && click.X <= screenX + screenW &&
-                    click.Y >= screenY && click.Y <= screenY + screenH)
-                {
-                    foreach (var other in currentScene.Objects) other.IsSelected = false;
-                    selectedGameObject = obj;
-                    obj.IsSelected = true;
-                    currentGizmo = GizmoMode.None;
-                    
-                    dragOffset = new Point(click.X - screenX, click.Y - screenY);
-                    isDragging = true;
-
-                    RedrawScene();
-                    RefreshHierarchy();
-                    return;
-                }
-            }
-
-            selectedGameObject = null;
-            currentGizmo = GizmoMode.None;
-            foreach (var obj in currentScene.Objects) obj.IsSelected = false;
-            RedrawScene();
+            var gravCheck = new CheckBox { Content = "Use Gravity (Physics)", Foreground = Brushes.LightSkyBlue, IsChecked = obj.UseGravity, Margin = new Thickness(0, 4, 0, 4) };
+            gravCheck.Checked += (_, _) => obj.UseGravity = true;
+            gravCheck.Unchecked += (_, _) => obj.UseGravity = false;
+            InspectorPanel.Children.Add(gravCheck);
         }
 
-        private void SceneCanvas_MouseMove(object sender, MouseEventArgs e)
+        private void AddInspectorTextField(string label, string initialValue, Action<string> onUpdate)
         {
-            Point current = e.GetPosition(SceneCanvas);
-            double dx = current.X - lastMousePos.X;
-            double dy = current.Y - lastMousePos.Y;
-
-            if (isPanning)
-            {
-                camX += dx;
-                camY += dy;
-                lastMousePos = current;
-                RedrawScene();
-                return;
-            }
-
-            if (selectedGameObject == null) return;
-
-            switch (currentGizmo)
-            {
-                case GizmoMode.MoveX:
-                    selectedGameObject.X += dx / zoom;
-                    break;
-
-                case GizmoMode.MoveY:
-                    selectedGameObject.Y += dy / zoom;
-                    break;
-
-                case GizmoMode.Rotate:
-                    RotateObject(selectedGameObject, current);
-                    break;
-
-                case GizmoMode.None:
-                    if (isDragging)
-                    {
-                        double newScreenX = current.X - dragOffset.X;
-                        double newScreenY = current.Y - dragOffset.Y;
-                        selectedGameObject.X = (newScreenX - camX) / zoom;
-                        selectedGameObject.Y = (newScreenY - camY) / zoom;
-                    }
-                    break;
-            }
-
-            lastMousePos = current;
-            RedrawScene();
-        }
-
-        private void SceneCanvas_MouseUp(object sender, MouseButtonEventArgs e)
-        {
-            isDragging = false;
-            isPanning = false;
-        }
-
-        private void SceneCanvas_MouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            double zoomFactor = 1.1;
-            if (e.Delta > 0) zoom *= zoomFactor;
-            else zoom /= zoomFactor;
-            RedrawScene();
-        }
-
-        private static double Snap(double value) => Math.Round(value / GridSize) * GridSize;
-
-        private static void LoadInspector() { /* replaced by UpdateInspector(GameObject) */ }
-
-        private void OnApplyInspector(object sender, RoutedEventArgs e)
-        {
-            // Inspector updates are now live via the AddField callbacks
-            if (selectedGameObject != null)
-                UpdateInspector(selectedGameObject);
-        }
-
-        private void RefreshHierarchy()
-        {
-            SceneHierarchy.ItemsSource = null;
-            SceneHierarchy.ItemsSource = currentScene.Objects;
-        }
-
-        private async void OnSaveScene(object sender, RoutedEventArgs e)
-        {
-            var dialog = new Microsoft.Win32.SaveFileDialog { Filter = "Cobra Scene (*.Cobra)|*.Cobra", InitialDirectory = projectPath };
-
-            if (dialog.ShowDialog() == true)
-            {
-                try
-                {
-                    currentScene.Save(dialog.FileName);
-                    OutputConsole.Text += $"Scene saved: {System.IO.Path.GetFileName(dialog.FileName)}\n";
-                    await CustomDialog.ShowAsync(Window.GetWindow(this), "Scene saved successfully!", "Success", DialogIcon.Success);
-                }
-                catch (Exception ex)
-                {
-                    await CustomDialog.ShowAsync(Window.GetWindow(this), $"Error saving scene: {ex.Message}", "Error", DialogIcon.Error);
-                }
-            }
-        }
-
-        private async void OnLoadScene(object sender, RoutedEventArgs e)
-        {
-            var dialog = new Microsoft.Win32.OpenFileDialog { Filter = "Cobra Scene (*.Cobra)|*.Cobra", InitialDirectory = projectPath };
-
-            if (dialog.ShowDialog() == true)
-            {
-                try
-                {
-                    currentScene = Scene.Load(dialog.FileName);
-                    SceneCanvas.Children.Clear();
-                    DrawGrid();
-                    RefreshHierarchy();
-                    OutputConsole.Text += $"Scene loaded: {System.IO.Path.GetFileName(dialog.FileName)}\n";
-                    await CustomDialog.ShowAsync(Window.GetWindow(this), "Scene loaded successfully!", "Success", DialogIcon.Success);
-                }
-                catch (Exception ex)
-                {
-                    await CustomDialog.ShowAsync(Window.GetWindow(this), $"Error loading scene: {ex.Message}", "Error", DialogIcon.Error);
-                }
-            }
-        }
-
-        private void DrawGrid()
-        {
-            double width = SceneCanvas.ActualWidth > 0 ? SceneCanvas.ActualWidth : 2000;
-            double height = SceneCanvas.ActualHeight > 0 ? SceneCanvas.ActualHeight : 2000;
-
-            for (double x = 0; x < width; x += GridSize)
-            {
-                var line = new System.Windows.Shapes.Line
-                {
-                    X1 = x, Y1 = 0, X2 = x, Y2 = height,
-                    Stroke = new SolidColorBrush(Color.FromArgb(30, 255, 255, 255)),
-                    StrokeThickness = 0.5
-                };
-                SceneCanvas.Children.Add(line);
-            }
-
-            for (double y = 0; y < height; y += GridSize)
-            {
-                var line = new System.Windows.Shapes.Line
-                {
-                    X1 = 0, Y1 = y, X2 = width, Y2 = y,
-                    Stroke = new SolidColorBrush(Color.FromArgb(30, 255, 255, 255)),
-                    StrokeThickness = 0.5
-                };
-                SceneCanvas.Children.Add(line);
-            }
-        }
-
-        private void ShowToast(string message, bool isSuccess = true)
-        {
-            if (FindName("ToastMessage") is TextBlock toastMessage &&
-                FindName("ToastIcon") is PackIconMaterial toastIcon &&
-                FindName("ToastOverlay") is Grid toastOverlay &&
-                FindName("ToastTranslate") is TranslateTransform toastTranslate)
-            {
-                toastMessage.Text = message;
-                toastIcon.Kind = isSuccess ? PackIconMaterialKind.CheckCircle : PackIconMaterialKind.CloseCircle;
-                toastOverlay.Visibility = Visibility.Visible;
-
-                DoubleAnimation slideUp = new()
-                {
-                    From = 100,
-                    To = 0,
-                    Duration = TimeSpan.FromMilliseconds(400),
-                    EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
-                };
-
-                DoubleAnimation fadeIn = new()
-                {
-                    From = 0,
-                    To = 1,
-                    Duration = TimeSpan.FromMilliseconds(400)
-                };
-
-                toastTranslate.BeginAnimation(TranslateTransform.YProperty, slideUp);
-                toastOverlay.BeginAnimation(OpacityProperty, fadeIn);
-
-                var timer = new System.Windows.Threading.DispatcherTimer
-                {
-                    Interval = TimeSpan.FromSeconds(3)
-                };
-                timer.Tick += (s, args) =>
-                {
-                    DoubleAnimation slideDown = new()
-                    {
-                        To = 100,
-                        Duration = TimeSpan.FromMilliseconds(400),
-                        EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn }
-                    };
-                    DoubleAnimation fadeOut = new()
-                    {
-                        To = 0,
-                        Duration = TimeSpan.FromMilliseconds(400)
-                    };
-                    slideDown.Completed += (s2, args2) => toastOverlay.Visibility = Visibility.Collapsed;
-                    toastTranslate.BeginAnimation(TranslateTransform.YProperty, slideDown);
-                    toastOverlay.BeginAnimation(OpacityProperty, fadeOut);
-                    timer.Stop();
-                };
-                timer.Start();
-            }
-        }
-
-        private void AddField(string label, string value, Action<string> onUpdate)
-        {
-            var stack = new StackPanel { Margin = new Thickness(0, 5, 0, 5) };
-            stack.Children.Add(new TextBlock { Text = label, Foreground = Brushes.Gray, FontSize = 14 });
+            InspectorPanel.Children.Add(new TextBlock { Text = label, Foreground = Brushes.Silver, FontSize = 11, Margin = new Thickness(0, 4, 0, 2) });
             var box = new TextBox
             {
-                Text = value,
-                Background = new SolidColorBrush(Color.FromRgb(45, 45, 48)),
+                Text = initialValue,
+                Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
                 Foreground = Brushes.White,
-                BorderThickness = new Thickness(1),
-                Padding = new Thickness(5, 2, 5, 2)
+                BorderBrush = new SolidColorBrush(Color.FromRgb(68, 68, 68)),
+                Padding = new Thickness(4, 2, 4, 2),
+                FontSize = 11
             };
-            box.TextChanged += (s, e) => onUpdate(box.Text);
-            stack.Children.Add(box);
-            InspectorPanel.Children.Add(stack);
+            box.LostFocus += (_, _) => onUpdate(box.Text);
+            InspectorPanel.Children.Add(box);
         }
 
-        private void DrawMoveGizmo(SceneObject obj)
+        private void AddInspectorNumberField(string label, double initialValue, Action<double> onUpdate)
         {
-            double centerX = obj.X * zoom + camX + (obj.Width * zoom) / 2;
-            double centerY = obj.Y * zoom + camY + (obj.Height * zoom) / 2;
-
-            double size = 40;
-
-            // X Axis (RED)
-            var xLine = new System.Windows.Shapes.Line
+            AddInspectorTextField(label, Math.Round(initialValue, 2).ToString(CultureInfo.InvariantCulture), text =>
             {
-                X1 = centerX,
-                Y1 = centerY,
-                X2 = centerX + size,
-                Y2 = centerY,
-                Stroke = Brushes.Red,
-                StrokeThickness = 3
-            };
-
-            // Y Axis (GREEN)
-            var yLine = new System.Windows.Shapes.Line
-            {
-                X1 = centerX,
-                Y1 = centerY,
-                X2 = centerX,
-                Y2 = centerY - size,
-                Stroke = Brushes.LimeGreen,
-                StrokeThickness = 3
-            };
-
-            SceneCanvas.Children.Add(xLine);
-            SceneCanvas.Children.Add(yLine);
+                if (double.TryParse(text, out double val))
+                    onUpdate(val);
+            });
         }
 
-        private void DrawRotationGizmo(SceneObject obj)
+        private void InitializeVisualScriptingLibrary()
         {
-            double centerX = obj.X * zoom + camX + (obj.Width * zoom) / 2;
-            double centerY = obj.Y * zoom + camY + (obj.Height * zoom) / 2;
+            var lib = NodeGraph.GetStandardLibrary();
+            NodeTemplateCombo.ItemsSource = lib;
+            NodeTemplateCombo.DisplayMemberPath = "Title";
+            NodeTemplateCombo.SelectedIndex = 0;
 
-            var circle = new System.Windows.Shapes.Ellipse
+            if (_currentGraph.Nodes.Count == 0 && lib.Count >= 4)
             {
-                Width = 80,
-                Height = 80,
-                Stroke = Brushes.Gold,
+                var startNode = CreateNodeFromTemplateDef(lib[0], 80, 120);
+                var moveNode = CreateNodeFromTemplateDef(lib[3], 320, 120);
+                startNode.Outputs.Add(moveNode.Id);
+                _currentGraph.Nodes.Add(startNode);
+                _currentGraph.Nodes.Add(moveNode);
+            }
+        }
+
+        private static Node CreateNodeFromTemplateDef(NodeTemplateDefinition def, double x, double y)
+        {
+            return new Node
+            {
+                Category = def.Category,
+                Type = def.Type,
+                Title = def.Title,
+                X = x,
+                Y = y,
+                Properties = new Dictionary<string, string>(def.DefaultProperties)
+            };
+        }
+
+        private void OnAddVisualNodeClicked(object sender, RoutedEventArgs e)
+        {
+            if (NodeTemplateCombo.SelectedItem is not NodeTemplateDefinition def) return;
+            var node = CreateNodeFromTemplateDef(def, 120 + (_currentGraph.Nodes.Count * 35), 100 + (_currentGraph.Nodes.Count * 25));
+            _currentGraph.Nodes.Add(node);
+            _selectedNode = node;
+            RedrawNodeGraph();
+        }
+
+        private void OnDeleteVisualNodeClicked(object sender, RoutedEventArgs e)
+        {
+            if (_selectedNode == null) return;
+            _currentGraph.Nodes.Remove(_selectedNode);
+            foreach (var n in _currentGraph.Nodes)
+            {
+                n.Outputs.Remove(_selectedNode.Id);
+            }
+            _selectedNode = null;
+            RedrawNodeGraph();
+        }
+
+        private async void OnValidateNodeGraphClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var (isValid, errors) = _currentGraph.ValidateGraph();
+                string msg = isValid ? "Visual Scripting Graph is valid and ready to generate Python code." : string.Join("\n", errors);
+                await CustomDialog.ShowAsync(Window.GetWindow(this), msg, "Visual Graph Validation", isValid ? DialogIcon.Success : DialogIcon.Warning);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private void OnGeneratePythonFromGraphClicked(object sender, RoutedEventArgs e)
+        {
+            string scriptsDir = Path.Combine(_projectPath, "scripts");
+            Directory.CreateDirectory(scriptsDir);
+            string outPath = Path.Combine(scriptsDir, "visual_logic.py");
+            File.WriteAllText(outPath, _currentGraph.GeneratePythonCode());
+            LoadFiles();
+            OpenFileInTab(outPath);
+            ShowToast("Compiled Visual Graph to scripts/visual_logic.py");
+        }
+
+        private void OnSaveNodeGraphClicked(object sender, RoutedEventArgs e)
+        {
+            string scriptsDir = Path.Combine(_projectPath, "scripts");
+            Directory.CreateDirectory(scriptsDir);
+            string path = Path.Combine(scriptsDir, $"{_currentGraph.GraphName}.graph.json");
+            _currentGraph.Save(path);
+            LoadFiles();
+            ShowToast($"Saved node graph: {Path.GetFileName(path)}");
+        }
+
+        private void OnLoadNodeGraphClicked(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                InitialDirectory = _projectPath,
+                Filter = "Visual Graph (*.graph.json)|*.graph.json|All Files (*.*)|*.*"
+            };
+            if (dlg.ShowDialog() == true)
+            {
+                var loaded = NodeGraph.Load(dlg.FileName);
+                _currentGraph.Nodes = loaded.Nodes;
+                _currentGraph.GraphName = loaded.GraphName;
+                RedrawNodeGraph();
+                ShowToast($"Loaded {loaded.GraphName}");
+            }
+        }
+
+        private void RedrawNodeGraph()
+        {
+            if (NodeCanvas == null) return;
+            NodeCanvas.Children.Clear();
+
+            foreach (var node in _currentGraph.Nodes)
+            {
+                foreach (var targetId in node.Outputs)
+                {
+                    var target = _currentGraph.Nodes.FirstOrDefault(n => n.Id == targetId);
+                    if (target != null)
+                    {
+                        NodeCanvas.Children.Add(new Line
+                        {
+                            X1 = node.X + 150,
+                            Y1 = node.Y + 32,
+                            X2 = target.X,
+                            Y2 = target.Y + 32,
+                            Stroke = Brushes.Orange,
+                            StrokeThickness = 2
+                        });
+                    }
+                }
+            }
+
+            foreach (var node in _currentGraph.Nodes)
+            {
+                string summary = node.Properties.Count > 0
+                    ? string.Join(", ", node.Properties.Select(kv => $"{kv.Key}={kv.Value}"))
+                    : node.Type;
+
+                var card = new Border
+                {
+                    Width = 155,
+                    MinHeight = 64,
+                    Background = new SolidColorBrush(Color.FromRgb(42, 42, 46)),
+                    BorderBrush = node == _selectedNode ? Brushes.Orange : new SolidColorBrush(Color.FromRgb(80, 80, 86)),
+                    BorderThickness = new Thickness(node == _selectedNode ? 2 : 1),
+                    CornerRadius = new CornerRadius(5),
+                    Padding = new Thickness(8),
+                    Cursor = Cursors.Hand,
+                    Child = new StackPanel
+                    {
+                        Children =
+                        {
+                            new TextBlock { Text = node.Category.ToUpperInvariant(), Foreground = Brushes.MediumAquamarine, FontSize = 9, FontWeight = FontWeights.Bold },
+                            new TextBlock { Text = node.Title, Foreground = Brushes.White, FontSize = 11, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 2, 0, 2) },
+                            new TextBlock { Text = summary, Foreground = Brushes.Silver, FontSize = 10, TextTrimming = TextTrimming.CharacterEllipsis }
+                        }
+                    }
+                };
+
+                Point dragStart = default;
+                bool draggingNode = false;
+
+                card.MouseLeftButtonDown += (_, ev) =>
+                {
+                    ev.Handled = true;
+                    if (_pendingConnectionSource != null && _pendingConnectionSource != node)
+                    {
+                        if (!_pendingConnectionSource.Outputs.Contains(node.Id))
+                            _pendingConnectionSource.Outputs.Add(node.Id);
+                        _pendingConnectionSource = null;
+                        RedrawNodeGraph();
+                        return;
+                    }
+
+                    _selectedNode = node;
+                    draggingNode = true;
+                    dragStart = ev.GetPosition(NodeCanvas);
+                    card.CaptureMouse();
+                    PopulateNodeInspector(node);
+                };
+
+                card.MouseMove += (_, ev) =>
+                {
+                    if (draggingNode && ev.LeftButton == MouseButtonState.Pressed)
+                    {
+                        Point cur = ev.GetPosition(NodeCanvas);
+                        node.X += cur.X - dragStart.X;
+                        node.Y += cur.Y - dragStart.Y;
+                        dragStart = cur;
+                        RedrawNodeGraph();
+                    }
+                };
+
+                card.MouseLeftButtonUp += (_, _) =>
+                {
+                    draggingNode = false;
+                    card.ReleaseMouseCapture();
+                };
+
+                Canvas.SetLeft(card, node.X);
+                Canvas.SetTop(card, node.Y);
+                NodeCanvas.Children.Add(card);
+            }
+        }
+
+        private void PopulateNodeInspector(Node node)
+        {
+            NodePropertiesPanel.Children.Clear();
+            NodePropertiesPanel.Children.Add(new TextBlock { Text = "NODE PROPERTIES", Foreground = Brushes.Silver, FontWeight = FontWeights.Bold, FontSize = 11, Margin = new Thickness(0, 0, 0, 8) });
+            NodePropertiesPanel.Children.Add(new TextBlock { Text = $"Title: {node.Title}", Foreground = Brushes.White, FontSize = 12, Margin = new Thickness(0, 0, 0, 6) });
+
+            foreach (var key in node.Properties.Keys.ToList())
+            {
+                NodePropertiesPanel.Children.Add(new TextBlock { Text = key, Foreground = Brushes.Silver, FontSize = 11 });
+                var paramBox = new TextBox { Text = node.Properties[key], Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)), Foreground = Brushes.White, Margin = new Thickness(0, 4, 0, 8), Padding = new Thickness(5, 3, 5, 3) };
+                string capturedKey = key;
+                paramBox.TextChanged += (_, _) => { node.Properties[capturedKey] = paramBox.Text; RedrawNodeGraph(); };
+                NodePropertiesPanel.Children.Add(paramBox);
+            }
+
+            var connectBtn = new Button { Content = "Connect Output To Next Clicked Node", Padding = new Thickness(8, 5, 8, 5), Background = Brushes.DarkOrange, Foreground = Brushes.White, BorderThickness = new Thickness(0), Cursor = Cursors.Hand };
+            connectBtn.Click += (_, _) =>
+            {
+                _pendingConnectionSource = node;
+                ShowToast("Click another node to complete connection");
+            };
+            NodePropertiesPanel.Children.Add(connectBtn);
+        }
+
+        private void RefreshAssetsWorkspace()
+        {
+            if (AssetListBox == null) return;
+
+            string search = AssetSearchBox?.Text.Trim() ?? "";
+            string cat = (AssetCategoryCombo?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "All Assets";
+            AssetCategory? filterCat = null;
+            if (cat != "All Assets" && Enum.TryParse<AssetCategory>(cat, out var parsedCat))
+            {
+                filterCat = parsedCat;
+            }
+
+            AssetListBox.ItemsSource = AssetService.ScanProjectAssets(_projectPath, search, filterCat);
+        }
+
+        private void AssetSearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (IsLoaded) RefreshAssetsWorkspace();
+        }
+
+        private void AssetCategoryCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (IsLoaded) RefreshAssetsWorkspace();
+        }
+
+        private void OnRefreshAssetsClicked(object sender, RoutedEventArgs e) => RefreshAssetsWorkspace();
+
+        private async void OnImportAssetClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dlg = new Microsoft.Win32.OpenFileDialog
+                {
+                    Title = "Import Validated Game Asset",
+                    Filter = "Game Assets (*.png;*.jpg;*.bmp;*.gif;*.wav;*.ogg;*.mp3;*.obj;*.gltf;*.glb;*.ttf)|*.png;*.jpg;*.bmp;*.gif;*.wav;*.ogg;*.mp3;*.obj;*.gltf;*.glb;*.ttf|All Files (*.*)|*.*"
+                };
+
+                if (dlg.ShowDialog() == true)
+                {
+                    var (ok, message, _) = AssetService.ImportAsset(_projectPath, dlg.FileName);
+                    if (ok)
+                    {
+                        RefreshAssetsWorkspace();
+                        LoadFiles();
+                        ShowToast(message);
+                    }
+                    else
+                    {
+                        await CustomDialog.ShowAsync(Window.GetWindow(this), message, "Asset Validation Failed", DialogIcon.Error);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void OnCheckMissingAssetsClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var missing = AssetService.FindMissingSceneAssets(_projectPath);
+                var duplicates = AssetService.FindDuplicateAssets(_projectPath);
+
+                string report = $"Missing Scene Asset References: {missing.Count}\n" +
+                                (missing.Count > 0 ? string.Join("\n", missing) + "\n\n" : "\n") +
+                                $"Duplicate Asset Files: {duplicates.Count}\n" +
+                                (duplicates.Count > 0 ? string.Join("\n", duplicates) : "No duplicate assets found.");
+
+                await CustomDialog.ShowAsync(Window.GetWindow(this), report, "Asset Audit Report");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private void AssetListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (AssetListBox.SelectedItem is not AssetItem asset) return;
+
+            AssetDetailsText.Text = $"Name: {asset.Name}\nCategory: {asset.Category}\nSize: {asset.FormattedSize}\nInfo: {asset.DimensionsOrInfo}\nCode References: {asset.UsageCount}\nPath: {asset.RelativePath}";
+            AudioPreviewControls.Visibility = asset.Category == AssetCategory.Audio ? Visibility.Visible : Visibility.Collapsed;
+
+            if (asset.Category == AssetCategory.Image && File.Exists(asset.FullPath))
+            {
+                AssetImagePreview.Source = new BitmapImage(new Uri(asset.FullPath));
+            }
+            else
+            {
+                AssetImagePreview.Source = null;
+            }
+        }
+
+        private void OnPlayAudioAssetClicked(object sender, RoutedEventArgs e)
+        {
+            if (AssetListBox.SelectedItem is AssetItem asset && File.Exists(asset.FullPath))
+            {
+                _audioPreviewPlayer.Open(new Uri(asset.FullPath));
+                _audioPreviewPlayer.Play();
+                ShowToast($"Playing {asset.Name}");
+            }
+        }
+
+        private void OnStopAudioAssetClicked(object sender, RoutedEventArgs e)
+        {
+            _audioPreviewPlayer.Stop();
+        }
+
+        private void OnSelectSpriteSheetClicked(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                InitialDirectory = _projectPath,
+                Filter = "Image Files (*.png;*.jpg;*.bmp)|*.png;*.jpg;*.bmp"
+            };
+            if (dlg.ShowDialog() == true)
+            {
+                _loadedSpriteSheet = new BitmapImage(new Uri(dlg.FileName));
+                AnimPreviewImage.Source = _loadedSpriteSheet;
+                AnimStatusLabel.Text = $"Loaded: {Path.GetFileName(dlg.FileName)} ({_loadedSpriteSheet.PixelWidth}x{_loadedSpriteSheet.PixelHeight})";
+            }
+        }
+
+        private void OnStartAnimPreviewClicked(object sender, RoutedEventArgs e)
+        {
+            if (_loadedSpriteSheet == null || _animPreviewTimer == null)
+            {
+                ShowToast("Load a sprite sheet image first");
+                return;
+            }
+            if (int.TryParse(AnimFrameDurationBox.Text, out int ms) && ms >= 20)
+            {
+                _animPreviewTimer.Interval = TimeSpan.FromMilliseconds(ms);
+            }
+            _currentAnimFrame = 0;
+            _animPreviewTimer.Start();
+        }
+
+        private void OnStopAnimPreviewClicked(object sender, RoutedEventArgs e)
+        {
+            _animPreviewTimer?.Stop();
+        }
+
+        private void StepAnimationPreview()
+        {
+            if (_loadedSpriteSheet == null) return;
+            int frameCount = int.TryParse(AnimFrameCountBox.Text, out int fc) && fc > 0 ? fc : 4;
+            int frameWidth = Math.Max(1, _loadedSpriteSheet.PixelWidth / frameCount);
+            int frameHeight = _loadedSpriteSheet.PixelHeight;
+
+            if (_currentAnimFrame >= frameCount)
+            {
+                if (AnimLoopCheck.IsChecked == true) _currentAnimFrame = 0;
+                else { _animPreviewTimer?.Stop(); return; }
+            }
+
+            int x = _currentAnimFrame * frameWidth;
+            if (x + frameWidth <= _loadedSpriteSheet.PixelWidth)
+            {
+                AnimPreviewImage.Source = new CroppedBitmap(_loadedSpriteSheet, new Int32Rect(x, 0, frameWidth, frameHeight));
+                AnimStatusLabel.Text = $"Frame {_currentAnimFrame + 1} / {frameCount}";
+            }
+            _currentAnimFrame++;
+        }
+
+        private async void RefreshPythonEnvironmentWorkspace()
+        {
+            try
+            {
+                if (ProjectInterpreterCombo == null) return;
+
+                var interpreters = PythonService.DetectAvailableInterpreters(_projectPath);
+                ProjectInterpreterCombo.ItemsSource = interpreters;
+                ProjectInterpreterCombo.DisplayMemberPath = "DisplayName";
+                if (interpreters.Count > 0) ProjectInterpreterCombo.SelectedIndex = 0;
+
+                List<string> curatedPackages =
+                [
+                    .. PipPackageService.GetCuratedGamePackages()
+                        .Select(p => $"{p.Name} — {p.Summary}")
+                ];
+                CuratedPackagesList.ItemsSource = curatedPackages;
+
+                string activePython = PythonService.ResolveProjectPython(_projectPath, _projectConfig.PythonInterpreter);
+                var (isValid, missing) = await PythonService.ValidateProjectEnvironmentAsync(_projectPath, _projectConfig.PythonInterpreter);
+                string nodeInfo = NodeService.IsNodeInstalled() && NodeService.IsNpmInstalled()
+                    ? $"Node {NodeService.GetNodeVersion()} / npm {NodeService.GetNpmVersion()}"
+                    : "Optional Node/npm not detected";
+                EnvValidationStatusText.ToolTip = nodeInfo;
+                EnvValidationStatusText.Text = isValid
+                    ? $"Environment validated ({activePython}) — All dependencies installed"
+                    : $"Missing dependencies in requirements.txt: {string.Join(", ", missing)}";
+
+                var installed = await PipPackageService.GetInstalledPackagesAsync(activePython);
+                List<string> installedPackages = [.. installed.Select(p => $"{p.Name}=={p.Version}")];
+                InstalledPackagesList.ItemsSource = installedPackages;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private void ProjectInterpreterCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ProjectInterpreterCombo.SelectedItem is PythonInterpreterInfo info)
+            {
+                _projectConfig.PythonInterpreter = info.Path;
+                _projectConfig.SaveManifest();
+                StatusInterpreterText.Text = $"Python: {info.Version}";
+            }
+        }
+
+        private void OnBrowseInterpreterClicked(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "Python Executable (python.exe)|python.exe|All Files (*.*)|*.*",
+                Title = "Select Python Interpreter"
+            };
+            if (dlg.ShowDialog() == true && PythonService.IsPythonInstalled(dlg.FileName))
+            {
+                string ver = PythonService.GetPythonVersion(dlg.FileName);
+                _projectConfig.PythonInterpreter = dlg.FileName;
+                _projectConfig.SaveManifest();
+                RefreshPythonEnvironmentWorkspace();
+                ShowToast($"Selected {ver}");
+            }
+        }
+
+        private async void OnCreateOrValidateVenvClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                OnBottomTabClicked(TabOutputBtn, e);
+                OutputConsole.AppendText("Creating / validating project virtual environment...\n");
+                var progress = new Progress<string>(msg => OutputConsole.AppendText(msg + "\n"));
+                bool ok = await VenvService.CreateProjectVenvAsync(_projectPath, _projectConfig.PythonInterpreter, progress);
+                CheckVenvStatus();
+                RefreshPythonEnvironmentWorkspace();
+                ShowToast(ok ? "Virtual environment ready" : "Venv setup encountered an error");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private void OnRefreshPackagesClicked(object sender, RoutedEventArgs e) => RefreshPythonEnvironmentWorkspace();
+
+        private async void OnInstallTypedPackageClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string pkg = PackageInstallInput.Text.Trim();
+                if (string.IsNullOrEmpty(pkg)) return;
+
+                string pythonExe = PythonService.ResolveProjectPython(_projectPath, _projectConfig.PythonInterpreter);
+                OnBottomTabClicked(TabOutputBtn, e);
+                var progress = new Progress<string>(msg => OutputConsole.AppendText(msg + "\n"));
+                var (ok, output) = await PipPackageService.InstallPackageAsync(pythonExe, pkg, SettingsManager.Instance.CurrentSettings.PipIndexUrl, progress);
+                if (ok)
+                {
+                    await PipPackageService.UpdateRequirementsTxtAsync(_projectPath, pkg);
+                    PackageInstallInput.Clear();
+                }
+                else
+                {
+                    OutputConsole.AppendText(output + "\n");
+                }
+                RefreshPythonEnvironmentWorkspace();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private void OnCuratedPackageDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (CuratedPackagesList.SelectedItem is string item)
+            {
+                string pkgName = item.Split('—')[0].Trim();
+                PackageInstallInput.Text = pkgName;
+            }
+        }
+
+        private async void OnUpdateSelectedPackageClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (InstalledPackagesList.SelectedItem is not string item) return;
+                string pkgName = item.Split("==")[0].Trim();
+                string pythonExe = PythonService.ResolveProjectPython(_projectPath, _projectConfig.PythonInterpreter);
+                OnBottomTabClicked(TabOutputBtn, e);
+                string details = await PipPackageService.GetPackageDetailsAsync(pythonExe, pkgName);
+                OutputConsole.AppendText(details + "\n");
+                var progress = new Progress<string>(msg => OutputConsole.AppendText(msg + "\n"));
+                await PipPackageService.UpdatePackageAsync(pythonExe, pkgName, progress);
+                RefreshPythonEnvironmentWorkspace();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void OnUninstallSelectedPackageClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (InstalledPackagesList.SelectedItem is not string item) return;
+                string pkgName = item.Split("==")[0].Trim();
+                string pythonExe = PythonService.ResolveProjectPython(_projectPath, _projectConfig.PythonInterpreter);
+                OnBottomTabClicked(TabOutputBtn, e);
+                var progress = new Progress<string>(msg => OutputConsole.AppendText(msg + "\n"));
+                await PipPackageService.UninstallPackageAsync(pythonExe, pkgName, progress);
+                await PipPackageService.UpdateRequirementsTxtAsync(_projectPath, pkgName, remove: true);
+                RefreshPythonEnvironmentWorkspace();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void OnInstallAllRequirementsClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string reqPath = Path.Combine(_projectPath, "requirements.txt");
+                string pythonExe = PythonService.ResolveProjectPython(_projectPath, _projectConfig.PythonInterpreter);
+                OnBottomTabClicked(TabOutputBtn, e);
+                var progress = new Progress<string>(msg => OutputConsole.AppendText(msg + "\n"));
+                await PipPackageService.InstallRequirementsFileAsync(pythonExe, reqPath, progress);
+                RefreshPythonEnvironmentWorkspace();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private void UpdateProfilerMetrics()
+        {
+            if (ProfilerContainer.Visibility != Visibility.Visible) return;
+
+            var snap = _gameRunner.CaptureMetrics(60.0);
+            ProfCpuText.Text = $"{snap.IdeCpuPercent:F1} %";
+            ProfIdeMemText.Text = $"{snap.IdeMemoryMb:F1} MB";
+            ProfGameMemText.Text = snap.IsGameRunning ? $"{snap.GameMemoryMb:F1} MB (PID {_gameRunner.ActiveProcessId})" : "Not Running";
+            ProfFpsText.Text = $"{snap.EstimatedFps:F0} FPS ({snap.FrameTimeMs:F1} ms)";
+
+            _memoryHistory.Add(snap.IdeMemoryMb);
+            if (_memoryHistory.Count > 40) _memoryHistory.RemoveAt(0);
+
+            ProfilerHistoryLog.Items.Insert(0, $"[{snap.Timestamp:HH:mm:ss}] CPU: {snap.IdeCpuPercent:F1}% | IDE RAM: {snap.IdeMemoryMb:F1} MB | Game RAM: {snap.GameMemoryMb:F1} MB");
+            while (ProfilerHistoryLog.Items.Count > 50)
+                ProfilerHistoryLog.Items.RemoveAt(ProfilerHistoryLog.Items.Count - 1);
+
+            DrawProfilerGraph();
+        }
+
+        private void DrawProfilerGraph()
+        {
+            ProfilerGraphCanvas.Children.Clear();
+            double w = ProfilerGraphCanvas.ActualWidth > 0 ? ProfilerGraphCanvas.ActualWidth : 600;
+            double h = ProfilerGraphCanvas.ActualHeight > 0 ? ProfilerGraphCanvas.ActualHeight : 200;
+            if (_memoryHistory.Count < 2) return;
+
+            double max = Math.Max(100, _memoryHistory.Max() * 1.2);
+            var poly = new Polyline
+            {
+                Stroke = new SolidColorBrush(Color.FromRgb(78, 201, 176)),
                 StrokeThickness = 2
             };
 
-            Canvas.SetLeft(circle, centerX - 40);
-            Canvas.SetTop(circle, centerY - 40);
-
-            SceneCanvas.Children.Add(circle);
+            for (int i = 0; i < _memoryHistory.Count; i++)
+            {
+                double x = (i / (double)(_memoryHistory.Count - 1)) * w;
+                double y = h - ((_memoryHistory[i] / max) * (h - 20)) - 10;
+                poly.Points.Add(new Point(x, Math.Clamp(y, 4, h - 4)));
+            }
+            ProfilerGraphCanvas.Children.Add(poly);
         }
 
-        private void RotateObject(SceneObject obj, Point mouse)
+        private async Task RefreshGitWorkspaceAsync()
         {
-            double cx = obj.X * zoom + camX + (obj.Width * zoom) / 2;
-            double cy = obj.Y * zoom + camY + (obj.Height * zoom) / 2;
+            if (GitBranchLabel == null) return;
+            if (!GitService.IsGitRepository(_projectPath))
+            {
+                GitBranchLabel.Text = "Branch: (No Repo)";
+                GitStatusList.ItemsSource = null;
+                GitHistoryList.ItemsSource = null;
+                StatusGitText.Text = "Git: Not initialized";
+                return;
+            }
 
-            double angle = Math.Atan2(mouse.Y - cy, mouse.X - cx);
-            obj.Rotation = angle * (180 / Math.PI);
+            string branch = await GitService.GetCurrentBranchAsync(_projectPath);
+            GitBranchLabel.Text = $"Branch: {branch}";
+            StatusGitText.Text = $"Git: {branch}";
+
+            var entries = await GitService.GetStatusAsync(_projectPath);
+            GitStatusList.ItemsSource = entries;
+            GitStatusList.DisplayMemberPath = "DisplayText";
+            if (entries.Count > 0)
+            {
+                GitStatusList.ToolTip = entries[0].DisplayText;
+            }
+
+            var commits = await GitService.GetCommitHistoryAsync(_projectPath);
+            GitHistoryList.ItemsSource = commits;
         }
 
-        private static double DistanceToLine(Point p, double x1, double y1, double x2, double y2)
+        private async void OnGitInitClicked(object sender, RoutedEventArgs e)
         {
-            double A = p.X - x1;
-            double B = p.Y - y1;
-            double C = x2 - x1;
-            double D = y2 - y1;
+            try
+            {
+                var (_, output) = await GitService.InitRepositoryAsync(_projectPath);
+                OutputConsole.AppendText(output + "\n");
+                await RefreshGitWorkspaceAsync();
+                ShowToast("Initialized Git repository");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
 
-            double dot = A * C + B * D;
-            double lenSq = C * C + D * D;
-            double param = lenSq != 0 ? dot / lenSq : -1;
+        private async void OnGitSwitchBranchClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var branches = await GitService.GetBranchesAsync(_projectPath);
+                string defaultBranch = branches.FirstOrDefault() ?? "feature/gameplay";
+                string? branchName = await AnimatedModal.ShowInputModalAsync(
+                    Window.GetWindow(this),
+                    "Switch or Create Git Branch",
+                    branches.Count > 0 ? $"Existing branches: {string.Join(", ", branches)}" : "Enter branch name:",
+                    defaultBranch);
+                if (!string.IsNullOrWhiteSpace(branchName))
+                {
+                    bool createNew = !branches.Contains(branchName.Trim(), StringComparer.OrdinalIgnoreCase);
+                    await GitService.CreateOrSwitchBranchAsync(_projectPath, branchName.Trim(), createNew);
+                    await RefreshGitWorkspaceAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
 
-            double xx, yy;
+        private async void OnGitStageAllClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await GitService.StageAllAsync(_projectPath);
+                await RefreshGitWorkspaceAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
 
-            if (param < 0) { xx = x1; yy = y1; }
-            else if (param > 1) { xx = x2; yy = y2; }
-            else { xx = x1 + param * C; yy = y1 + param * D; }
+        private async void OnGitStageSelectedClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (GitStatusList.SelectedItem is GitFileStatus entry)
+                {
+                    await GitService.StageFileAsync(_projectPath, entry.FilePath);
+                    await RefreshGitWorkspaceAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
 
-            double dx = p.X - xx;
-            double dy = p.Y - yy;
+        private async void OnGitUnstageSelectedClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (GitStatusList.SelectedItem is GitFileStatus entry)
+                {
+                    await GitService.UnstageFileAsync(_projectPath, entry.FilePath);
+                    await RefreshGitWorkspaceAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
 
-            return Math.Sqrt(dx * dx + dy * dy);
+        private async void OnGitCommitClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string msg = GitCommitMessageBox.Text.Trim();
+                var (ok, output) = await GitService.CommitAsync(_projectPath, msg);
+                if (ok)
+                {
+                    GitCommitMessageBox.Clear();
+                    ShowToast("Committed changes");
+                }
+                else
+                {
+                    OutputConsole.AppendText($"[Git Commit] {output}\n");
+                }
+                await RefreshGitWorkspaceAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void OnGitPullClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var (_, output) = await GitService.PullAsync(_projectPath);
+                OutputConsole.AppendText($"[Git Pull] {output}\n");
+                await RefreshGitWorkspaceAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void OnGitPushClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var (_, output) = await GitService.PushAsync(_projectPath);
+                OutputConsole.AppendText($"[Git Push] {output}\n");
+                await RefreshGitWorkspaceAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void OnGitFetchClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var (_, output) = await GitService.FetchAsync(_projectPath);
+                OutputConsole.AppendText($"[Git Fetch] {output}\n");
+                await RefreshGitWorkspaceAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void OnGitRefreshClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await RefreshGitWorkspaceAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void GitStatusList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                if (GitStatusList.SelectedItem is GitFileStatus entry)
+                {
+                    GitDiffTextBox.Text = await GitService.GetFileDiffAsync(_projectPath, entry.FilePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void OnStartBuildPackageClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                OnBottomTabClicked(TabBuildBtn, e);
+                BuildOutputBox.Clear();
+
+                var cfg = CreateBuildConfigFromInputs();
+                var progress = new Progress<string>(msg => BuildOutputBox.AppendText(msg + "\n"));
+                var (ok, output, exePath) = await BuildPackagingService.BuildGameAsync(cfg, progress);
+                if (!ok)
+                {
+                    BuildOutputBox.AppendText($"\n[Build Failed]\n{output}\n");
+                }
+                else
+                {
+                    BuildOutputBox.AppendText($"\n[Build Succeeded] Output: {exePath}\n");
+                    ShowToast("Game packaged successfully");
+                }
+                LoadFiles();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private void OnTestPackagedGameClicked(object sender, RoutedEventArgs e)
+        {
+            var cfg = CreateBuildConfigFromInputs();
+            string exePath = Path.Combine(_projectPath, cfg.OutputDirectory, $"{cfg.ApplicationName}.exe");
+            if (File.Exists(exePath))
+            {
+                Process.Start(new ProcessStartInfo { FileName = exePath, WorkingDirectory = Path.GetDirectoryName(exePath), UseShellExecute = true });
+            }
+            else
+            {
+                ShowToast("Packaged executable not found. Run 'Package Game Now' first.");
+            }
+        }
+
+        private void OnCleanBuildClicked(object sender, RoutedEventArgs e)
+        {
+            OnBottomTabClicked(TabBuildBtn, e);
+            BuildPackagingService.CleanBuildArtifacts(_projectPath);
+            BuildOutputBox.AppendText("Cleaned build/ and dist/ artifacts.\n");
+            LoadFiles();
+        }
+
+        private GameBuildConfig CreateBuildConfigFromInputs()
+        {
+            return new GameBuildConfig
+            {
+                ProjectPath = _projectPath,
+                ApplicationName = BuildAppNameBox.Text.Trim(),
+                Version = BuildVersionBox.Text.Trim(),
+                StartupScript = _projectConfig.StartupFile,
+                OutputDirectory = BuildOutputDirBox.Text.Trim(),
+                PythonExecutable = PythonService.ResolveProjectPython(_projectPath, _projectConfig.PythonInterpreter),
+                Mode = BuildModeCombo.SelectedIndex == 0 ? BuildMode.Release : BuildMode.Development,
+                OneFile = true,
+                Windowed = BuildModeCombo.SelectedIndex == 0,
+                CleanBeforeBuild = BuildCleanCheck.IsChecked == true
+            };
+        }
+
+        private async void OnAiActionClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is not Button btn || btn.Tag is not string tag) return;
+                if (!Enum.TryParse<AiAssistantTask>(tag, out var task)) return;
+
+                bool consent = AiConsentCheckBox.IsChecked == true;
+                SettingsManager.Instance.CurrentSettings.AiConsentGranted = consent;
+
+                string activeCode = (FileTabs.SelectedItem as OpenTabItem)?.Content ?? "";
+                string inputContext = task == AiAssistantTask.ExplainError ? OutputConsole.Text : activeCode;
+
+                AiOutputTextBox.Text = "Analyzing Python game context...";
+                string response = await AiAssistantService.ExecuteAssistantTaskAsync(
+                    task,
+                    inputContext,
+                    _projectConfig.Framework,
+                    SettingsManager.Instance.CurrentSettings.TranslationApiKey,
+                    consent);
+
+                AiOutputTextBox.Text = response;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void TerminalInput_KeyDown(object sender, KeyEventArgs e)
+        {
+            try
+            {
+                if (e.Key != Key.Enter) return;
+                string command = TerminalInput.Text.Trim();
+                if (string.IsNullOrEmpty(command)) return;
+
+                TerminalConsole.AppendText($"PS {_projectPath}> {command}\n");
+                TerminalInput.Clear();
+
+                if (command.Equals("cls", StringComparison.OrdinalIgnoreCase) || command.Equals("clear", StringComparison.OrdinalIgnoreCase))
+                {
+                    TerminalConsole.Clear();
+                    return;
+                }
+
+                if (command.Equals("cobra init-backend", StringComparison.OrdinalIgnoreCase))
+                {
+                    var progress = new Progress<string>(m => TerminalConsole.AppendText(m + "\n"));
+                    string backendMsg = await ProjectCreator.AddBackendToProjectAsync(_projectPath, "python", progress);
+                    TerminalConsole.AppendText(backendMsg + "\n");
+                    LoadFiles();
+                    return;
+                }
+
+                await Task.Run(() =>
+                {
+                    try
+                    {
+                        var psi = new ProcessStartInfo
+                        {
+                            FileName = "powershell.exe",
+                            WorkingDirectory = _projectPath,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        };
+                        psi.ArgumentList.Add("-NoProfile");
+                        psi.ArgumentList.Add("-Command");
+                        psi.ArgumentList.Add(command);
+
+                        using var proc = Process.Start(psi);
+                        if (proc == null) return;
+                        string stdout = proc.StandardOutput.ReadToEnd();
+                        string stderr = proc.StandardError.ReadToEnd();
+                        proc.WaitForExit(20000);
+
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (!string.IsNullOrEmpty(stdout)) TerminalConsole.AppendText(StripAnsi(stdout));
+                            if (!string.IsNullOrEmpty(stderr)) TerminalConsole.AppendText(StripAnsi(stderr));
+                            TerminalConsole.ScrollToEnd();
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Dispatcher.Invoke(() => TerminalConsole.AppendText($"Terminal error: {ex.Message}\n"));
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private void OnTreeViewPreviewRightClick(object sender, MouseButtonEventArgs e)
+        {
+            DependencyObject? source = e.OriginalSource as DependencyObject;
+            while (source != null && source is not TreeViewItem)
+            {
+                source = VisualTreeHelper.GetParent(source);
+            }
+
+            if (source is TreeViewItem item)
+            {
+                item.IsSelected = true;
+                if (FindResource("FileContextMenu") is ContextMenu menu)
+                {
+                    item.ContextMenu = menu;
+                }
+            }
+        }
+
+        private void OnOpenFileClick(object sender, RoutedEventArgs e)
+        {
+            if (FileTree.SelectedItem is FileNode { IsDirectory: false } node)
+            {
+                OpenFileInTab(node.FullPath);
+            }
+        }
+
+        private void OnNewFileToolbarClick(object sender, RoutedEventArgs e) => CreateNewFileOrFolder(isFolder: false);
+        private void OnNewFolderToolbarClick(object sender, RoutedEventArgs e) => CreateNewFileOrFolder(isFolder: true);
+        private void OnNewFileClick(object sender, RoutedEventArgs e) => CreateNewFileOrFolder(isFolder: false);
+        private void OnNewFolderClick(object sender, RoutedEventArgs e) => CreateNewFileOrFolder(isFolder: true);
+
+        private async void CreateNewFileOrFolder(bool isFolder)
+        {
+            try
+            {
+                string targetDir = _projectPath;
+                if (FileTree.SelectedItem is FileNode selected)
+                {
+                    targetDir = selected.IsDirectory ? selected.FullPath : (Path.GetDirectoryName(selected.FullPath) ?? _projectPath);
+                }
+
+                var box = new TextBox
+                {
+                    Text = isFolder ? "new_folder" : "new_script.py",
+                    Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
+                    Foreground = Brushes.White,
+                    Padding = new Thickness(6)
+                };
+
+                var (confirmed, _) = await AnimatedModal.ShowCustomModalAsync(
+                    Window.GetWindow(this),
+                    isFolder ? "Create New Folder" : "Create New File",
+                    box);
+
+                if (!confirmed) return;
+
+                string name = box.Text.Trim();
+                if (!SecurityValidator.IsValidFileName(name, out string nameError))
+                {
+                    await CustomDialog.ShowAsync(Window.GetWindow(this), nameError, "Validation Error", DialogIcon.Error);
+                    return;
+                }
+
+                string newPath = Path.Combine(targetDir, name);
+                if (!SecurityValidator.IsPathWithinDirectory(newPath, _projectPath)) return;
+
+                if (isFolder)
+                {
+                    Directory.CreateDirectory(newPath);
+                }
+                else
+                {
+                    if (!File.Exists(newPath))
+                    {
+                        string initialContent = name.EndsWith(".py", StringComparison.OrdinalIgnoreCase)
+                            ? "# Cobra Python Script\n"
+                            : "";
+                        await File.WriteAllTextAsync(newPath, initialContent);
+                    }
+                    OpenFileInTab(newPath);
+                }
+
+                LoadFiles();
+                PopulateStartupFiles();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private void OnDuplicateFileClick(object sender, RoutedEventArgs e)
+        {
+            if (FileTree.SelectedItem is not FileNode node || node.IsDirectory || !File.Exists(node.FullPath)) return;
+
+            string dir = Path.GetDirectoryName(node.FullPath) ?? _projectPath;
+            string copyName = $"{Path.GetFileNameWithoutExtension(node.FullPath)}_copy{Path.GetExtension(node.FullPath)}";
+            string dest = Path.Combine(dir, copyName);
+            File.Copy(node.FullPath, dest, overwrite: true);
+            LoadFiles();
+            ShowToast($"Duplicated as {copyName}");
+        }
+
+        private async void OnRenameClick(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (FileTree.SelectedItem is not FileNode node) return;
+                if (node.FullPath.Equals(_projectPath, StringComparison.OrdinalIgnoreCase)) return;
+
+                var box = new TextBox { Text = node.Name, Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)), Foreground = Brushes.White, Padding = new Thickness(6) };
+                var (confirmed, _) = await AnimatedModal.ShowCustomModalAsync(Window.GetWindow(this), "Rename Item", box, "Rename");
+                if (!confirmed) return;
+
+                string newName = box.Text.Trim();
+                if (!SecurityValidator.IsValidFileName(newName, out _)) return;
+
+                string parentDir = Path.GetDirectoryName(node.FullPath) ?? _projectPath;
+                string destPath = Path.Combine(parentDir, newName);
+                if (!SecurityValidator.IsPathWithinDirectory(destPath, _projectPath)) return;
+
+                if (node.IsDirectory) Directory.Move(node.FullPath, destPath);
+                else File.Move(node.FullPath, destPath);
+
+                LoadFiles();
+                PopulateStartupFiles();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void OnDeleteClick(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (FileTree.SelectedItem is not FileNode node) return;
+
+                if (!node.IsDirectory && SecurityValidator.IsProtectedProjectFile(_projectPath, node.FullPath))
+                {
+                    bool force = await CustomDialog.ShowAsync(Window.GetWindow(this),
+                        $"'{node.Name}' is a core project file. Are you sure you want to delete it?",
+                        "Protected Project File",
+                        DialogIcon.Warning,
+                        "Delete Anyway",
+                        "Keep File");
+                    if (!force) return;
+                }
+                else
+                {
+                    bool confirm = await CustomDialog.ShowAsync(Window.GetWindow(this),
+                        $"Delete '{node.Name}' permanently?",
+                        "Confirm Delete",
+                        DialogIcon.Warning,
+                        "Delete",
+                        "Cancel");
+                    if (!confirm) return;
+                }
+
+                if (node.IsDirectory && Directory.Exists(node.FullPath))
+                    Directory.Delete(node.FullPath, recursive: true);
+                else if (File.Exists(node.FullPath))
+                    File.Delete(node.FullPath);
+
+                LoadFiles();
+                PopulateStartupFiles();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private void OnSetStartupFileClick(object sender, RoutedEventArgs e)
+        {
+            if (FileTree.SelectedItem is FileNode { IsDirectory: false } node && node.FullPath.EndsWith(".py", StringComparison.OrdinalIgnoreCase))
+            {
+                _projectConfig.StartupFile = Path.GetRelativePath(_projectPath, node.FullPath);
+                _projectConfig.SaveManifest();
+                PopulateStartupFiles();
+                ShowToast($"Startup script set to {_projectConfig.StartupFile}");
+            }
+        }
+
+        private void OnCopyPathClick(object sender, RoutedEventArgs e)
+        {
+            if (FileTree.SelectedItem is FileNode node)
+            {
+                Clipboard.SetText(node.FullPath);
+                ShowToast("Copied path to clipboard");
+            }
+        }
+
+        private void OnRevealInExplorerClick(object sender, RoutedEventArgs e)
+        {
+            string target = (FileTree.SelectedItem as FileNode)?.FullPath ?? _projectPath;
+            Process.Start(new ProcessStartInfo { FileName = "explorer.exe", Arguments = $"/select,\"{target}\"", UseShellExecute = true });
+        }
+
+        private void OnRefreshClicked(object sender, RoutedEventArgs e)
+        {
+            LoadFiles();
+            PopulateStartupFiles();
+            ShowToast("Project explorer refreshed");
+        }
+
+        private void OnTreeViewDragEnter(object sender, DragEventArgs e)
+        {
+            e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
+            e.Handled = true;
+        }
+
+        private void OnTreeViewDrop(object sender, DragEventArgs e)
+        {
+            if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+            if (e.Data.GetData(DataFormats.FileDrop) is not string[] files) return;
+            foreach (var file in files)
+            {
+                if (File.Exists(file))
+                {
+                    AssetService.ImportAsset(_projectPath, file);
+                }
+            }
+            LoadFiles();
+            RefreshAssetsWorkspace();
+        }
+
+        private void OnAddVenvClicked(object sender, MouseButtonEventArgs e)
+        {
+            OnCreateOrValidateVenvClicked(sender, new RoutedEventArgs());
+        }
+
+        private async void OnInstallRequirementsClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(_selectedRequirementsPath)) return;
+                string pythonExe = PythonService.ResolveProjectPython(_projectPath, _projectConfig.PythonInterpreter);
+                OnBottomTabClicked(TabOutputBtn, e);
+                var progress = new Progress<string>(msg => OutputConsole.AppendText(msg + "\n"));
+                await PipPackageService.InstallRequirementsFileAsync(pythonExe, _selectedRequirementsPath, progress);
+                RefreshPythonEnvironmentWorkspace();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private void OnNewProjectClicked(object sender, RoutedEventArgs e)
+        {
+            CleanupResources();
+            Window.GetWindow(this)?.Close();
+        }
+
+        private void OnOpenProjectClicked(object sender, RoutedEventArgs e)
+        {
+            using var dialog = new FolderBrowserDialog();
+            dialog.Description = "Select a Cobra Python Game Project Folder";
+            dialog.UseDescriptionForTitle = true;
+            if (dialog.ShowDialog() == DialogResult.OK && ProjectManager.IsValidProjectDirectory(dialog.SelectedPath))
+            {
+                CleanupResources();
+                if (Window.GetWindow(this) is { } win)
+                {
+                    win.Title = $"Cobra IDE - {Path.GetFileName(dialog.SelectedPath)}";
+                    win.Content = new EditorView(dialog.SelectedPath);
+                }
+            }
+        }
+
+        private void OnExitClicked(object sender, RoutedEventArgs e)
+        {
+            CleanupResources();
+            Application.Current.Shutdown();
+        }
+
+        private void OnPreferencesClicked(object sender, RoutedEventArgs e)
+            => NavigationService?.Navigate(new SettingsView());
+
+        private void OnSettingsClicked(object sender, RoutedEventArgs e)
+            => NavigationService?.Navigate(new SettingsView());
+
+        private void OnSettingsIconClicked(object sender, RoutedEventArgs e)
+            => NavigationService?.Navigate(new SettingsView());
+
+        private void OnProjectSettingsClicked(object sender, RoutedEventArgs e)
+            => NavigationService?.Navigate(new SettingsView(new FolderSettings(_projectPath)));
+
+        private void OnToggleFullScreenClicked(object sender, RoutedEventArgs e)
+        {
+            if (_parentWindow == null) return;
+            if (!_isFullScreen)
+            {
+                _parentWindow.WindowStyle = WindowStyle.None;
+                _parentWindow.WindowState = WindowState.Maximized;
+                _isFullScreen = true;
+            }
+            else
+            {
+                _parentWindow.WindowStyle = WindowStyle.SingleBorderWindow;
+                _parentWindow.WindowState = WindowState.Normal;
+                _isFullScreen = false;
+            }
+        }
+
+        private void OnResetLayoutClicked(object sender, RoutedEventArgs e)
+        {
+            LayoutPresetCombo.SelectedIndex = 0;
+            LeftSidebarCol.Width = new GridLength(195);
+            RightSidebarCol.Width = new GridLength(285);
+            BottomPanelRow.Height = new GridLength(230);
+            BottomPanelBorder.Visibility = Visibility.Visible;
+            _isBottomPanelCollapsed = false;
+            ShowToast("Workspace layout reset to default");
+        }
+
+        private void OnRecentProjectsClicked(object sender, RoutedEventArgs e)
+            => OnNewProjectClicked(sender, e);
+
+        private void OnBuildClicked(object sender, RoutedEventArgs e)
+            => SwitchWorkspace("BuildPackage", NavBuildPackage);
+
+        private void OnExportClicked(object sender, RoutedEventArgs e)
+            => SwitchWorkspace("BuildPackage", NavBuildPackage);
+
+        private void OnPackageManagerClicked(object sender, RoutedEventArgs e)
+            => SwitchWorkspace("PythonEnv", NavPythonEnv);
+
+        private void OnExtensionsClicked(object sender, RoutedEventArgs e)
+            => SwitchWorkspace("Extensions", NavExtensions);
+
+        private void OnOpenTerminalClicked(object sender, RoutedEventArgs e)
+        {
+            OnBottomTabClicked(TabTerminalBtn, e);
+            TerminalInput.Focus();
+        }
+
+        private void OnRunCommandClicked(object sender, RoutedEventArgs e)
+            => OnOpenTerminalClicked(sender, e);
+
+        private async void OnDocumentationClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await CustomDialog.ShowAsync(Window.GetWindow(this),
+                    "Cobra IDE Documentation is available in the repository Docs/ folder:\n" +
+                    "• Docs/user_guide.md\n" +
+                    "• Docs/python_environment.md\n" +
+                    "• Docs/game_frameworks.md\n" +
+                    "• Docs/build_and_packaging.md\n" +
+                    "• Docs/security.md",
+                    "Cobra IDE Documentation");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void OnAboutClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await CustomDialog.ShowAsync(Window.GetWindow(this),
+                    "Cobra IDE — Python Game Development Environment\nVersion 2.0 (.NET 8 / WPF / Monaco / Pygame / Panda3D / Ursina)",
+                    "About Cobra IDE");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private static string StripAnsi(string text)
+        {
+            return string.IsNullOrEmpty(text) ? text : AnsiRegex().Replace(text, "");
+        }
+
+        private async void ShowToast(string message)
+        {
+            try
+            {
+                ToastMessage.Text = message;
+                ToastOverlay.Visibility = Visibility.Visible;
+
+                var slideIn = new DoubleAnimation(100, 0, TimeSpan.FromMilliseconds(220))
+                {
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                };
+                ToastTranslate.BeginAnimation(TranslateTransform.YProperty, slideIn);
+
+                await Task.Delay(2400);
+
+                var slideOut = new DoubleAnimation(0, 100, TimeSpan.FromMilliseconds(220))
+                {
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
+                };
+                slideOut.Completed += (_, _) => ToastOverlay.Visibility = Visibility.Collapsed;
+                ToastTranslate.BeginAnimation(TranslateTransform.YProperty, slideOut);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
         }
     }
 }
