@@ -42,7 +42,7 @@ namespace Cobra.Core.Settings
                 Console.WriteLine($"Error loading folder settings: {ex.Message}");
             }
 
-            // Return a default model (could also return global settings as base)
+            // return a default model (could also return global settings as base)
             return new SettingsModel();
         }
 
@@ -55,7 +55,7 @@ namespace Cobra.Core.Settings
                 if (directory != null && !Directory.Exists(directory))
                 {
                     Directory.CreateDirectory(directory);
-                    // Hide the .Cobra folder on Windows
+                    // hide the .cobra folder on windows
                     try { File.SetAttributes(directory, File.GetAttributes(directory) | FileAttributes.Hidden); } catch (Exception ex) { Debug.WriteLine(ex.Message); }
                 }
 

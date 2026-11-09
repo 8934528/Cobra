@@ -115,7 +115,7 @@
             <RowDefinition Height="24"/>
         </Grid.RowDefinitions>
 
-        <!-- ROW 0: Title Bar Control -->
+        <!-- row 0: title bar control -->
         <views:TitleBarControl Grid.Row="0" 
                                NewProjectClicked="OnNewProjectClicked"
                                OpenProjectClicked="OnOpenProjectClicked"
@@ -127,6 +127,8 @@
                                RecentProjectsClicked="OnRecentProjectsClicked"
                                ProjectSettingsClicked="OnProjectSettingsClicked"
                                BuildClicked="OnBuildClicked"
+                               RunGameClicked="OnRunClicked"
+                               DebugGameClicked="OnDebugClicked"
                                ExportClicked="OnExportClicked"
                                PackageManagerClicked="OnPackageManagerClicked"
                                ExtensionsClicked="OnExtensionsClicked"
@@ -136,7 +138,7 @@
                                AboutClicked="OnAboutClicked"
                                SettingsIconClicked="OnSettingsIconClicked"/>
 
-        <!-- ROW 1: Main IDE Toolbar -->
+        <!-- row 1: main ide toolbar -->
         <Border Grid.Row="1" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1" Padding="10,0">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -145,7 +147,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Left Toolbar Actions -->
+                <!-- left toolbar actions -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Click="OnNewProjectClicked" Style="{StaticResource SceneToolButton}" ToolTip="New Project (Ctrl+N)">
                         <iconPacks:PackIconMaterial Kind="FolderPlusOutline" Width="13" Height="13"/>
@@ -174,7 +176,7 @@
 
                     <Border Width="1" Height="18" Background="#3c3c3c" Margin="6,0"/>
 
-                    <!-- Startup File Selector -->
+                    <!-- startup file selector -->
                     <TextBlock Text="Startup:" Foreground="#999999" FontSize="11" VerticalAlignment="Center" Margin="4,0,4,0"/>
                     <ComboBox x:Name="StartupFileCombo" Width="130" Height="24" FontSize="11" VerticalContentAlignment="Center" SelectionChanged="StartupFileCombo_SelectionChanged" ToolTip="Startup file"/>
 
@@ -210,7 +212,7 @@
                     </Button>
                 </StackPanel>
 
-                <!-- Right Toolbar Layout & Environment Controls -->
+                <!-- right toolbar layout and environment controls -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="Layout:" Foreground="#999999" FontSize="11" VerticalAlignment="Center" Margin="0,0,5,0"/>
                     <ComboBox x:Name="LayoutPresetCombo" Width="115" Height="24" FontSize="11" VerticalContentAlignment="Center" SelectionChanged="LayoutPresetCombo_SelectionChanged" ToolTip="Layout">
@@ -229,7 +231,7 @@
             </Grid>
         </Border>
 
-        <!-- ROW 2: Main Workspace Grid -->
+        <!-- row 2: main workspace grid -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="LeftSidebarCol" Width="195" MinWidth="150"/>
@@ -244,7 +246,7 @@
                 <RowDefinition x:Name="BottomPanelRow" Height="230" MinHeight="80"/>
             </Grid.RowDefinitions>
 
-            <!-- ACTIVITY SIDEBAR (Left) -->
+            <!-- activity sidebar (left) -->
             <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="3" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="0,0,1,0">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="0,8,0,8">
@@ -348,10 +350,10 @@
 
             <GridSplitter Grid.Row="0" Grid.Column="1" Grid.RowSpan="3" Width="4" HorizontalAlignment="Stretch" Background="Transparent"/>
 
-            <!-- CENTER WORKSPACE AREA -->
+            <!-- center workspace area -->
             <Grid Grid.Row="0" Grid.Column="2">
 
-                <!-- 1. CODE EDITOR WORKSPACE -->
+                <!-- code editor workspace -->
                 <Border x:Name="CodeEditorContainer" Background="#1e1e1e" Visibility="Visible">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -359,7 +361,7 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Editor Tab Bar & Code Navigation Tools -->
+                        <!-- editor tab bar and code navigation tools -->
                         <Border Grid.Row="0" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1">
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -402,7 +404,7 @@
                             </Grid>
                         </Border>
 
-                        <!-- Editor Split Grid -->
+                        <!-- editor split grid -->
                         <Grid Grid.Row="1">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -423,14 +425,14 @@
                     </Grid>
                 </Border>
 
-                <!-- 2. SCENE EDITOR WORKSPACE (2D Canvas & Optional 3D Three.js Viewport) -->
+                <!-- scene editor workspace (2d canvas and optional 3d viewport) -->
                 <Grid x:Name="SceneEditorContainer" Visibility="Collapsed">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="36"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Scene Toolbar -->
+                    <!-- scene toolbar -->
                     <Border Grid.Row="0" Background="#2d2d30" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1" Padding="6,0">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <Button Click="OnNewSceneClicked" Style="{StaticResource SceneToolButton}" ToolTip="New Scene">
@@ -487,6 +489,27 @@
 
                             <Border Width="1" Height="18" Background="#3c3c3c" Margin="6,0"/>
 
+                            <Button Click="OnSyncCodeToSceneClicked" Style="{StaticResource SceneToolButton}" ToolTip="Generate / Synchronize Scene Python Code">
+                                <StackPanel Orientation="Horizontal">
+                                    <iconPacks:PackIconMaterial Kind="Sync" Width="12" Height="12" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Sync Code" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Click="OnManage3DPackagesClicked" Style="{StaticResource SceneToolButton}" ToolTip="3D Asset Packages &amp; Presets">
+                                <StackPanel Orientation="Horizontal">
+                                    <iconPacks:PackIconMaterial Kind="PackageVariant" Width="12" Height="12" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Packages" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Click="OnImport3DAssetClicked" Style="{StaticResource SceneToolButton}" ToolTip="Import 3D Asset (.obj/.gltf/.glb)">
+                                <StackPanel Orientation="Horizontal">
+                                    <iconPacks:PackIconMaterial Kind="Upload" Width="12" Height="12" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Import 3D" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <Border Width="1" Height="18" Background="#3c3c3c" Margin="6,0"/>
+
                             <Button x:Name="Toggle2D3DButton" Click="OnToggle2D3DViewportClicked" Style="{StaticResource SceneToolButton}" Background="#3b5998" ToolTip="Switch 2D/3D View">
                                 <TextBlock x:Name="Toggle2D3DText" Text="Mode: 2D Canvas" FontWeight="SemiBold"/>
                             </Button>
@@ -500,16 +523,69 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Scene Viewport & Inspector Split -->
+                    <!-- scene viewport and inspector split -->
                     <Grid Grid.Row="1">
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="220" MinWidth="180" MaxWidth="320"/>
+                            <ColumnDefinition Width="4"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="4"/>
                             <ColumnDefinition Width="265" MinWidth="200"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- 2D Canvas OR 3D WebView2 -->
-                        <Grid Grid.Column="0">
+                        <!-- left panel: 3d tools and objects palette -->
+                        <Border x:Name="ToolPaletteContainer" Grid.Column="0" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="0,0,1,0">
+                            <DockPanel>
+                                <Border DockPanel.Dock="Top" Background="#2d2d30" Padding="8,6" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1">
+                                    <Grid>
+                                        <TextBlock Text="3D OBJECTS &amp; TOOLS" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                                        <Button Click="OnImport3DAssetClicked" Style="{StaticResource SceneToolButton}" HorizontalAlignment="Right" Padding="4,2" ToolTip="Import custom 3D model">
+                                            <iconPacks:PackIconMaterial Kind="Plus" Width="10" Height="10"/>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+
+                                <!-- category filter -->
+                                <Border DockPanel.Dock="Top" Background="#1e1e1e" Padding="6,4" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1">
+                                    <ComboBox x:Name="ToolCategorySelector" Height="24" Background="#252526" Foreground="White" BorderBrush="#3c3c3c" FontSize="11" SelectionChanged="OnToolCategorySelectionChanged">
+                                        <ComboBoxItem Content="All Categories" IsSelected="True"/>
+                                        <ComboBoxItem Content="Basic Shapes"/>
+                                        <ComboBoxItem Content="Buildings"/>
+                                        <ComboBoxItem Content="Vehicles"/>
+                                        <ComboBoxItem Content="Environments"/>
+                                        <ComboBoxItem Content="Objects &amp; Furniture"/>
+                                    </ComboBox>
+                                </Border>
+
+                                <!-- quick action footer -->
+                                <Border DockPanel.Dock="Bottom" Background="#2d2d30" Padding="6,6" BorderBrush="#3c3c3c" BorderThickness="0,1,0,0">
+                                    <StackPanel>
+                                        <Button Click="OnImport3DAssetClicked" Style="{StaticResource SceneToolButton}" Height="24" Margin="0,0,0,4" HorizontalAlignment="Stretch" ToolTip="Import .glb / .gltf / .obj model">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <iconPacks:PackIconMaterial Kind="FolderUpload" Width="11" Height="11" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Import 3D Asset..." FontSize="11" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Click="OnManage3DPackagesClicked" Style="{StaticResource SceneToolButton}" Height="24" HorizontalAlignment="Stretch" ToolTip="Install &amp; Manage 3D Asset Packages">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <iconPacks:PackIconMaterial Kind="PackageVariantClosed" Width="11" Height="11" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                                <TextBlock Text="3D Asset Packages" FontSize="11" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- 3d tools list -->
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <StackPanel x:Name="ToolItemsPanel" Margin="4"/>
+                                </ScrollViewer>
+                            </DockPanel>
+                        </Border>
+
+                        <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch" Background="#3c3c3c"/>
+
+                        <!-- center: 2d canvas or 3d webview2 -->
+                        <Grid Grid.Column="2">
                             <Canvas x:Name="SceneCanvas"
                                     Background="#18181b"
                                     AllowDrop="True"
@@ -523,10 +599,10 @@
                             <wv2:WebView2 x:Name="Viewport3DWebView" Visibility="Collapsed"/>
                         </Grid>
 
-                        <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch" Background="Transparent"/>
+                        <GridSplitter Grid.Column="3" Width="4" HorizontalAlignment="Stretch" Background="#3c3c3c"/>
 
-                        <!-- Hierarchy & Contextual Property Inspector -->
-                        <Border x:Name="InspectorContainer" Grid.Column="2" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1,0,0,0">
+                        <!-- hierarchy and contextual property inspector -->
+                        <Border x:Name="InspectorContainer" Grid.Column="4" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1,0,0,0">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="210" MinHeight="120"/>
@@ -534,7 +610,7 @@
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
 
-                                <!-- Scene Hierarchy Tree/List -->
+                                <!-- scene hierarchy tree/list -->
                                 <DockPanel Grid.Row="0">
                                     <Border DockPanel.Dock="Top" Background="#2d2d30" Padding="8,6" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1">
                                         <Grid>
@@ -548,7 +624,7 @@
 
                                 <GridSplitter Grid.Row="1" Height="4" HorizontalAlignment="Stretch" Background="#3c3c3c"/>
 
-                                <!-- Object Inspector -->
+                                <!-- object inspector -->
                                 <DockPanel Grid.Row="2">
                                     <Border DockPanel.Dock="Top" Background="#2d2d30" Padding="8,6" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1">
                                         <TextBlock Text="INSPECTOR" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold"/>
@@ -562,7 +638,7 @@
                     </Grid>
                 </Grid>
 
-                <!-- 3. VISUAL SCRIPTING WORKSPACE -->
+                <!-- visual scripting workspace -->
                 <Border x:Name="VisualScriptingContainer" Background="#1e1e1e" Visibility="Collapsed">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -622,7 +698,7 @@
                     </Grid>
                 </Border>
 
-                <!-- 4. ASSET BROWSER WORKSPACE -->
+                <!-- asset browser workspace -->
                 <Border x:Name="AssetBrowserContainer" Background="#1e1e1e" Visibility="Collapsed">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -703,7 +779,7 @@
                     </Grid>
                 </Border>
 
-                <!-- 5. ANIMATION TOOLS WORKSPACE -->
+                <!-- animation tools workspace -->
                 <Border x:Name="AnimationToolsContainer" Background="#1e1e1e" Visibility="Collapsed" Padding="16">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -746,7 +822,7 @@
                     </Grid>
                 </Border>
 
-                <!-- 6. PYTHON ENVIRONMENT & PIP PACKAGE MANAGER -->
+                <!-- python environment and pip package manager -->
                 <Border x:Name="PythonEnvContainer" Background="#1e1e1e" Visibility="Collapsed" Padding="16">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -806,7 +882,7 @@
                     </Grid>
                 </Border>
 
-                <!-- 7. DEBUGGER WORKSPACE -->
+                <!-- debugger workspace -->
                 <Border x:Name="DebuggerContainer" Background="#1e1e1e" Visibility="Collapsed" Padding="16">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -853,7 +929,7 @@
                     </Grid>
                 </Border>
 
-                <!-- 8. PERFORMANCE PROFILER WORKSPACE -->
+                <!-- performance profiler workspace -->
                 <Border x:Name="ProfilerContainer" Background="#1e1e1e" Visibility="Collapsed" Padding="16">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -898,7 +974,7 @@
                     </Grid>
                 </Border>
 
-                <!-- 9. GIT SOURCE CONTROL WORKSPACE -->
+                <!-- git source control workspace -->
                 <Border x:Name="SourceControlContainer" Background="#1e1e1e" Visibility="Collapsed" Padding="16">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -952,7 +1028,7 @@
                     </Grid>
                 </Border>
 
-                <!-- 10. BUILD & PACKAGING WORKSPACE -->
+                <!-- build and packaging workspace -->
                 <Border x:Name="BuildPackageContainer" Background="#1e1e1e" Visibility="Collapsed" Padding="16">
                     <Border Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="18">
                         <StackPanel MaxWidth="680" HorizontalAlignment="Left">
@@ -997,7 +1073,7 @@
                     </Border>
                 </Border>
 
-                <!-- 11. EXTENSIONS WORKSPACE -->
+                <!-- extensions workspace -->
                 <Border x:Name="ExtensionsWorkspaceContainer" Background="#1e1e1e" Visibility="Collapsed" Padding="16">
                     <Border Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="14">
                         <DockPanel>
@@ -1027,7 +1103,7 @@
                     </Border>
                 </Border>
 
-                <!-- 12. AI ASSISTANT WORKSPACE -->
+                <!-- ai assistant workspace -->
                 <Border x:Name="AiAssistantContainer" Background="#1e1e1e" Visibility="Collapsed" Padding="16">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -1060,7 +1136,7 @@
 
             <GridSplitter Grid.Row="0" Grid.Column="3" Grid.RowSpan="3" Width="4" HorizontalAlignment="Stretch" Background="Transparent"/>
 
-            <!-- PROJECT EXPLORER (Right Sidebar) -->
+            <!-- project explorer (right sidebar) -->
             <Grid Grid.Row="0" Grid.Column="4" Grid.RowSpan="3">
                 <Border x:Name="ExplorerContainer" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1,0,0,0" Visibility="Visible">
                     <DockPanel>
@@ -1081,7 +1157,7 @@
                             </Grid>
                         </Border>
 
-                        <!-- Search & Filter Bar -->
+                        <!-- search and filter bar -->
                         <Border DockPanel.Dock="Top" Background="#252526" Padding="6,6,6,4">
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -1140,10 +1216,10 @@
                 </Border>
             </Grid>
 
-            <!-- BOTTOM SPLITTER -->
+            <!-- bottom splitter -->
             <GridSplitter Grid.Row="1" Grid.Column="2" Height="4" HorizontalAlignment="Stretch" Background="Transparent"/>
 
-            <!-- BOTTOM PANEL (7 Organized Tabs: Output, Terminal, Debug Console, Problems, Test Results, Build Output, Game Logs) -->
+            <!-- bottom panel (tabs: output, terminal, debug console, problems, test results, build output, game logs) -->
             <Border x:Name="BottomPanelBorder" Grid.Row="2" Grid.Column="2" Background="#1e1e1e" BorderBrush="#3c3c3c" BorderThickness="0,1,0,0">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -1164,6 +1240,14 @@
                             </StackPanel>
 
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Center">
+                                <StackPanel x:Name="TerminalShellPanel" Orientation="Horizontal" Visibility="Collapsed" Margin="0,0,10,0" VerticalAlignment="Center">
+                                    <TextBlock Text="Shell:" Foreground="#888888" FontSize="11" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                    <ComboBox x:Name="TerminalShellSelector" Width="160" Height="22" Background="#1e1e1e" Foreground="White" BorderBrush="#3c3c3c" FontSize="11" SelectionChanged="TerminalShellSelector_SelectionChanged">
+                                        <ComboBoxItem Content="Windows PowerShell" IsSelected="True"/>
+                                        <ComboBoxItem Content="Git Bash"/>
+                                        <ComboBoxItem Content="Command Prompt"/>
+                                    </ComboBox>
+                                </StackPanel>
                                 <Button x:Name="InstallReqButton" Click="OnInstallRequirementsClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" Height="22" Visibility="Collapsed" Margin="0,0,6,0">
                                     <TextBlock Text="Install requirements.txt" FontSize="10"/>
                                 </Button>
@@ -1178,10 +1262,10 @@
                     </Border>
 
                     <Grid Grid.Row="1">
-                        <!-- Output -->
+                        <!-- output -->
                         <TextBox x:Name="OutputConsole" Visibility="Visible" Background="#1e1e1e" Foreground="#4ec9b0" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Padding="8"/>
 
-                        <!-- Terminal -->
+                        <!-- terminal -->
                         <Grid x:Name="TerminalContainer" Visibility="Collapsed">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="*"/>
@@ -1194,32 +1278,32 @@
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="PS / Python &gt; " Foreground="#ff8c00" VerticalAlignment="Center" FontFamily="Consolas" FontSize="11"/>
+                                    <TextBlock x:Name="TerminalPromptLabel" Text="PS &gt; " Foreground="#ff8c00" VerticalAlignment="Center" FontFamily="Consolas" FontSize="11"/>
                                     <TextBox x:Name="TerminalInput" Grid.Column="1" Background="Transparent" Foreground="White" BorderThickness="0" CaretBrush="White" FontFamily="Consolas" FontSize="12" VerticalAlignment="Center" KeyDown="TerminalInput_KeyDown"/>
                                 </Grid>
                             </Border>
                         </Grid>
 
-                        <!-- Debug Console -->
+                        <!-- debug console -->
                         <TextBox x:Name="DebugConsoleBox" Visibility="Collapsed" Background="#1e1e1e" Foreground="#dcdcaa" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Padding="8"/>
 
-                        <!-- Problems List -->
+                        <!-- problems list -->
                         <ListBox x:Name="ProblemsListBox" Visibility="Collapsed" Background="#1e1e1e" Foreground="#f48771" BorderThickness="0" FontFamily="Consolas" FontSize="11" MouseDoubleClick="ProblemsListBox_MouseDoubleClick"/>
 
-                        <!-- Test Results -->
+                        <!-- test results -->
                         <TextBox x:Name="TestResultsBox" Visibility="Collapsed" Background="#1e1e1e" Foreground="#4ec9b0" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Padding="8"/>
 
-                        <!-- Build Output -->
+                        <!-- build output -->
                         <TextBox x:Name="BuildOutputBox" Visibility="Collapsed" Background="#1e1e1e" Foreground="#d4d4d4" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Padding="8"/>
 
-                        <!-- Game Logs -->
+                        <!-- game logs -->
                         <TextBox x:Name="GameLogsBox" Visibility="Collapsed" Background="#1e1e1e" Foreground="#9cdcfe" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Padding="8"/>
                     </Grid>
                 </Grid>
             </Border>
         </Grid>
 
-        <!-- ROW 3: Status Bar -->
+        <!-- row 3: status bar -->
         <Border Grid.Row="3" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="0,1,0,0" Padding="12,0">
             <Grid>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -1232,7 +1316,7 @@
             </Grid>
         </Border>
 
-        <!-- Notification Toast -->
+        <!-- notification toast -->
         <Grid x:Name="ToastOverlay" Grid.Row="0" Grid.RowSpan="4" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,36" Visibility="Collapsed">
             <Border Background="#2d2d30" CornerRadius="4" Padding="16,10" BorderBrush="#ff8c00" BorderThickness="1" SnapsToDevicePixels="True">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">

@@ -47,7 +47,7 @@ namespace Cobra.Engine.SceneSystem
             var json = File.ReadAllText(path);
             var scene = JsonSerializer.Deserialize<Scene>(json, Options) ?? new Scene();
 
-            // Migrate legacy v1 scenes seamlessly
+            // migrate legacy v1 scenes seamlessly
             if (scene.FormatVersion < CurrentFormatVersion)
             {
                 scene.FormatVersion = CurrentFormatVersion;
@@ -78,7 +78,7 @@ namespace Cobra.Engine.SceneSystem
             sb.AppendLine($"    'name': '{EscapePy(SceneName)}',");
             sb.AppendLine($"    'framework': '{EscapePy(Framework)}',");
             sb.AppendLine($"    'is_3d': {(Is3D ? "True" : "False")},");
-            sb.AppendLine($"    'camera': {{'x': {CameraX:F1}, 'y': {CameraY:F1}, 'width': {CameraWidth:F0}, 'height': {CameraHeight:F0}}},");
+            sb.AppendLine(FormattableString.Invariant($"    'camera': {{'x': {CameraX:F1}, 'y': {CameraY:F1}, 'width': {CameraWidth:F0}, 'height': {CameraHeight:F0}}},"));
             sb.AppendLine("}");
             sb.AppendLine();
             sb.AppendLine("SCENE_OBJECTS = [");
@@ -88,16 +88,21 @@ namespace Cobra.Engine.SceneSystem
                 sb.AppendLine("    {");
                 sb.AppendLine($"        'id': '{EscapePy(obj.Id)}',");
                 sb.AppendLine($"        'name': '{EscapePy(obj.Name)}',");
-                sb.AppendLine($"        'x': {obj.X:F1}, 'y': {obj.Y:F1}, 'z': {obj.Z:F1},");
-                sb.AppendLine($"        'width': {obj.Width:F1}, 'height': {obj.Height:F1}, 'depth': {obj.Depth:F1},");
-                sb.AppendLine($"        'rotation': {obj.Rotation:F1},");
-                sb.AppendLine($"        'scale_x': {obj.ScaleX:F2}, 'scale_y': {obj.ScaleY:F2}, 'scale_z': {obj.ScaleZ:F2},");
+                sb.AppendLine($"        'category_3d': '{EscapePy(obj.Category3D)}',");
+                sb.AppendLine($"        'primitive_3d': '{EscapePy(obj.Primitive3D)}',");
+                sb.AppendLine($"        'subtype_3d': '{EscapePy(obj.Subtype3D)}',");
+                sb.AppendLine($"        'model_path': '{EscapePy(obj.ModelPath)}',");
+                sb.AppendLine(FormattableString.Invariant($"        'x': {obj.X:F1}, 'y': {obj.Y:F1}, 'z': {obj.Z:F1},"));
+                sb.AppendLine(FormattableString.Invariant($"        'width': {obj.Width:F1}, 'height': {obj.Height:F1}, 'depth': {obj.Depth:F1},"));
+                sb.AppendLine(FormattableString.Invariant($"        'rotation': {obj.Rotation:F1}, 'rotation_x': {obj.RotationX:F1}, 'rotation_y': {obj.RotationY:F1},"));
+                sb.AppendLine(FormattableString.Invariant($"        'scale_x': {obj.ScaleX:F2}, 'scale_y': {obj.ScaleY:F2}, 'scale_z': {obj.ScaleZ:F2},"));
                 sb.AppendLine($"        'color': '{EscapePy(obj.Color)}',");
+                sb.AppendLine(FormattableString.Invariant($"        'roughness': {obj.Roughness:F2}, 'metalness': {obj.Metalness:F2},"));
                 sb.AppendLine($"        'layer': '{EscapePy(obj.Layer)}',");
                 sb.AppendLine($"        'sprite': '{EscapePy(obj.SpritePath)}',");
                 sb.AppendLine($"        'collider': '{EscapePy(obj.ColliderType)}',");
                 sb.AppendLine($"        'has_rigidbody': {(obj.HasRigidbody ? "True" : "False")},");
-                sb.AppendLine($"        'mass': {obj.Mass:F2},");
+                sb.AppendLine(FormattableString.Invariant($"        'mass': {obj.Mass:F2},"));
                 sb.AppendLine("    },");
             }
             sb.AppendLine("]");

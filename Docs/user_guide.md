@@ -38,12 +38,20 @@ This guide shows you how to create, design, run, debug, and package Python games
 ## 4. Design Scenes
 
 1. Click **Scene Editor** in the left sidebar.
-2. Click **+ Add Object** to add a sprite or 3D shape.
-3. Drag objects on the 2D canvas to position them.
-4. Turn on **Snap** to align objects to the grid.
-5. In the right-hand **Inspector**, edit position, size, rotation, and collider shapes.
-6. Click **Save Scene** to save your work.
-7. Click **Export to Python** to generate a Python data file (`scene_data.py`).
+2. In 2D scenes, click **+ Add Object** to add sprites or shapes and drag them on the canvas.
+3. In 3D scenes, use the **3D Tools & Objects Palette** on the left. Pick from categories: **Basic Shapes**, **Buildings**, **Vehicles**, **Environments**, or **Furniture & Objects**.
+4. **Drag and Drop:** Click and drag any 3D tool directly into the 3D viewport to place it at that location.
+5. **Import Assets & Packages:** Click **Import 3D Asset** to add `.glb`, `.gltf`, or `.obj` files, or open **3D Packages** to enable preset asset kits.
+6. **Transform Gizmos:** Select objects in the 3D viewport to move, rotate, or scale them interactively.
+7. In the right-hand **Inspector**, edit position, dimensions (including 3D depth), rotation angles, roughness, metalness, and colliders.
+8. **Bidirectional Code Sync:** Click **Sync Code** (or save the scene Python file) to automatically update the Python scene file and synchronise changes back and forth.
+
+## 5. Terminal & Shell Selection
+
+- Open the **Terminal** tab in the bottom panel.
+- Select your preferred shell from the dropdown: **Windows PowerShell**, **Git Bash**, or **Command Prompt**.
+- Run commands, git commands, and python scripts directly in your chosen terminal.
+- Your preferred terminal is saved automatically and restored whenever you open Cobra.
 
 ## 5. Visual Scripting
 

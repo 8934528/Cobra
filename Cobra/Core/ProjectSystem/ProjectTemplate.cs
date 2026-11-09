@@ -520,7 +520,7 @@ def main():
         pygame.draw.rect(screen, (110, 160, 240), npc, border_radius=6)
         pygame.draw.rect(screen, (255, 140, 0), player_rect, border_radius=6)
 
-        # Dialogue & RPG HUD
+        // dialogue and rpg hud
         pygame.draw.rect(screen, (20, 20, 24), (20, HEIGHT - 100, WIDTH - 40, 80), border_radius=8)
         pygame.draw.rect(screen, (255, 140, 0), (20, HEIGHT - 100, WIDTH - 40, 80), 2, border_radius=8)
         screen.blit(font.render(dialogue, True, (240, 240, 240)), (40, HEIGHT - 70))
@@ -633,7 +633,7 @@ def main():
     font = pygame.font.Font(None, 42)
     small_font = pygame.font.Font(None, 28)
 
-    # Perform valid shuffles
+    # perform valid shuffles
     for _ in range(80):
         zero_idx = board.index(0)
         zr, zc = divmod(zero_idx, GRID_N)
@@ -701,7 +701,7 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption(""Cobra Multiplayer Arena Starter"")
 clock = pygame.time.Clock()
 
-# Local + UDP Loopback state synchronization starter
+# local and udp loopback state synchronization starter
 UDP_PORT = 54545
 peer_state = {'x': 680.0, 'y': 280.0}
 
@@ -784,13 +784,13 @@ class CobraPanda3DGame(ShowBase):
         self.camera.set_pos(0, -14, 6)
         self.camera.look_at(0, 0, 0)
 
-        # Load default environment model included with Panda3D
+        # load default environment model included with panda3d
         self.cube = self.loader.load_model('models/box')
         self.cube.reparent_to(self.render)
         self.cube.set_scale(1.5, 1.5, 1.5)
         self.cube.set_pos(-0.75, -0.75, 0)
 
-        # Setup lighting
+        # setup lighting
         ambient = AmbientLight('ambient')
         ambient.set_color(Vec4(0.35, 0.35, 0.4, 1))
         self.render.set_light(self.render.attach_new_node(ambient))

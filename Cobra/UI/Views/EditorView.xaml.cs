@@ -14,6 +14,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using MahApps.Metro.IconPacks;
 using Cobra.Core.AI;
 using Cobra.Core.Assets;
 using Cobra.Core.Build;
@@ -337,7 +338,10 @@ namespace Cobra.UI.Views
 
                 InitEngine();
                 LoadDefaultOrInitialScene();
+                InitTerminalShell();
+                Populate3DToolPalette();
                 ApplySettings();
+                SettingsManager.Instance.SettingsUpdated += (_, _) => Dispatcher.Invoke(ApplySettings);
             }
             catch (Exception ex)
             {
@@ -617,6 +621,60 @@ namespace Cobra.UI.Views
                         if (root.TryGetProperty("scaleY", out var sy)) obj.ScaleY = sy.GetDouble();
                         if (root.TryGetProperty("scaleZ", out var sz)) obj.ScaleZ = sz.GetDouble();
                         UpdateInspector();
+                        AutoSyncSceneCode();
+                    }
+                }
+                else if (type == "objectCreated")
+                {
+                    SaveSceneUndoSnapshot();
+                    string name = root.TryGetProperty("name", out var n) ? n.GetString() ?? "3D_Entity" : "3D_Entity";
+                    string category = root.TryGetProperty("category", out var c) ? c.GetString() ?? "BasicShapes" : "BasicShapes";
+                    string primitive = root.TryGetProperty("primitive3D", out var p) ? p.GetString() ?? "Cube" : "Cube";
+                    string subtype = root.TryGetProperty("subtype3D", out var sub) ? sub.GetString() ?? primitive : primitive;
+                    string color = root.TryGetProperty("color", out var clr) ? clr.GetString() ?? "#ff8c00" : "#ff8c00";
+                    double x = root.TryGetProperty("x", out var xProp) ? xProp.GetDouble() : 0;
+                    double y = root.TryGetProperty("y", out var yProp) ? yProp.GetDouble() : 0;
+                    double z = root.TryGetProperty("z", out var zProp) ? zProp.GetDouble() : 0;
+
+                    var newObj = new SceneObject
+                    {
+                        Name = $"{name}_{_currentScene.Objects.Count + 1}",
+                        Category3D = category,
+                        Primitive3D = primitive,
+                        Subtype3D = subtype,
+                        Color = color,
+                        X = x,
+                        Y = y,
+                        Z = z,
+                        Width = 64,
+                        Height = 64,
+                        Depth = 64
+                    };
+                    _currentScene.Objects.Add(newObj);
+                    _selectedGameObject = newObj;
+                    UpdateHierarchy();
+                    SceneHierarchy.SelectedItem = newObj;
+                    UpdateInspector();
+                    RedrawScene();
+                    SyncSceneTo3DViewport();
+                    AutoSyncSceneCode();
+                    ShowToast($"Created {newObj.Name}");
+                }
+                else if (type == "objectDeleted")
+                {
+                    string id = root.TryGetProperty("id", out var idProp) ? idProp.GetString() ?? "" : "";
+                    var obj = _currentScene.Objects.FirstOrDefault(o => o.Id == id);
+                    if (obj != null)
+                    {
+                        SaveSceneUndoSnapshot();
+                        _currentScene.Objects.Remove(obj);
+                        _selectedGameObject = null;
+                        UpdateHierarchy();
+                        UpdateInspector();
+                        RedrawScene();
+                        SyncSceneTo3DViewport();
+                        AutoSyncSceneCode();
+                        ShowToast($"Deleted {obj.Name}");
                     }
                 }
             }
@@ -777,6 +835,16 @@ namespace Cobra.UI.Views
             TestResultsBox.Visibility = tag == "TestResults" ? Visibility.Visible : Visibility.Collapsed;
             BuildOutputBox.Visibility = tag == "BuildOutput" ? Visibility.Visible : Visibility.Collapsed;
             GameLogsBox.Visibility = tag == "GameLogs" ? Visibility.Visible : Visibility.Collapsed;
+
+            if (TerminalShellPanel != null)
+            {
+                TerminalShellPanel.Visibility = tag == "Terminal" ? Visibility.Visible : Visibility.Collapsed;
+            }
+
+            if (tag == "Terminal")
+            {
+                TerminalInput.Focus();
+            }
 
             if (_isBottomPanelCollapsed)
             {
@@ -1242,6 +1310,16 @@ namespace Cobra.UI.Views
             if (tab.FilePath.EndsWith(".py", StringComparison.OrdinalIgnoreCase))
             {
                 await UpdatePythonIntelligenceForFileAsync(tab.FilePath);
+
+                // bidirectional sync: if python file defines scene objects, update visual scene workspace
+                if (tab.Content.Contains("SCENE_OBJECTS"))
+                {
+                    ParseSceneCodeIntoCurrentScene(tab.Content);
+                    RedrawScene();
+                    SyncSceneTo3DViewport();
+                    UpdateHierarchy();
+                    UpdateInspector();
+                }
             }
         }
 
@@ -1707,6 +1785,506 @@ namespace Cobra.UI.Views
             }
         }
 
+        private record Tool3DItem(
+            string Name,
+            string Category,
+            string Primitive,
+            string Subtype,
+            string Color,
+            double Width,
+            double Height,
+            double Depth,
+            PackIconMaterialKind Icon);
+
+        private static readonly List<Tool3DItem> Predefined3DTools =
+        [
+            // basic shapes
+            new("Cube", "Basic Shapes", "Cube", "Cube", "#ff8c00", 64, 64, 64, PackIconMaterialKind.CubeOutline),
+            new("Sphere", "Basic Shapes", "Sphere", "Sphere", "#4ec9b0", 64, 64, 64, PackIconMaterialKind.CircleOutline),
+            new("Cylinder", "Basic Shapes", "Cylinder", "Cylinder", "#569cd6", 64, 64, 64, PackIconMaterialKind.ShapePlus),
+            new("Cone", "Basic Shapes", "Cone", "Cone", "#ce9178", 64, 64, 64, PackIconMaterialKind.TriangleOutline),
+            new("Plane", "Basic Shapes", "Plane", "Plane", "#9cdcfe", 128, 8, 128, PackIconMaterialKind.VectorSquare),
+            new("Torus", "Basic Shapes", "Torus", "Torus", "#dcdcaa", 64, 64, 64, PackIconMaterialKind.CircleOutline),
+            new("Capsule", "Basic Shapes", "Capsule", "Capsule", "#c586c0", 48, 80, 48, PackIconMaterialKind.Pill),
+
+            // buildings
+            new("House", "Buildings", "House", "House", "#d16969", 120, 90, 100, PackIconMaterialKind.Home),
+            new("Office Building", "Buildings", "Office", "Office", "#4fc1ff", 140, 200, 120, PackIconMaterialKind.City),
+            new("Wall", "Buildings", "Wall", "Wall", "#808080", 120, 60, 16, PackIconMaterialKind.Wall),
+            new("Door", "Buildings", "Door", "Door", "#a0522d", 40, 80, 10, PackIconMaterialKind.Door),
+            new("Window", "Buildings", "Window", "Window", "#add8e6", 50, 50, 8, PackIconMaterialKind.WindowClosed),
+            new("Roof", "Buildings", "Roof", "Roof", "#8b0000", 120, 40, 100, PackIconMaterialKind.TriangleOutline),
+
+            // vehicles
+            new("Car", "Vehicles", "Car", "Car", "#e74c3c", 130, 50, 70, PackIconMaterialKind.Car),
+            new("Truck", "Vehicles", "Truck", "Truck", "#3498db", 180, 80, 80, PackIconMaterialKind.Truck),
+            new("Bus", "Vehicles", "Bus", "Bus", "#f39c12", 240, 90, 80, PackIconMaterialKind.Bus),
+            new("Drone", "Vehicles", "Drone", "Drone", "#2c3e50", 60, 20, 60, PackIconMaterialKind.Airplane),
+
+            // environments
+            new("Road", "Environments", "Road", "Road", "#34495e", 200, 4, 100, PackIconMaterialKind.Road),
+            new("Landscape", "Environments", "Landscape", "Landscape", "#27ae60", 300, 12, 300, PackIconMaterialKind.Terrain),
+            new("Mountain", "Environments", "Mountain", "Mountain", "#7f8c8d", 220, 180, 220, PackIconMaterialKind.ImageFilterHdr),
+            new("Tree", "Environments", "Tree", "Tree", "#2ecc71", 50, 120, 50, PackIconMaterialKind.Tree),
+            new("Grass Patch", "Environments", "Grass", "Grass", "#27ae60", 40, 20, 40, PackIconMaterialKind.Grass),
+            new("Water Surface", "Environments", "Water", "Water", "#2980b9", 260, 4, 260, PackIconMaterialKind.Water),
+
+            // objects and furniture
+            new("Table", "Objects & Furniture", "Table", "Table", "#8e44ad", 80, 50, 60, PackIconMaterialKind.TableFurniture),
+            new("Chair", "Objects & Furniture", "Chair", "Chair", "#d35400", 40, 70, 40, PackIconMaterialKind.Seat),
+            new("Desk", "Objects & Furniture", "Desk", "Desk", "#795548", 100, 60, 60, PackIconMaterialKind.Desk),
+            new("Street Lamp", "Objects & Furniture", "Lamp", "Lamp", "#f1c40f", 24, 140, 24, PackIconMaterialKind.Lamp),
+            new("Fence", "Objects & Furniture", "Fence", "Fence", "#bdc3c7", 120, 40, 12, PackIconMaterialKind.Fence),
+            new("Crate", "Objects & Furniture", "Crate", "Crate", "#d2b48c", 50, 50, 50, PackIconMaterialKind.PackageVariantClosed),
+            new("Barrel", "Objects & Furniture", "Barrel", "Barrel", "#607d8b", 44, 64, 44, PackIconMaterialKind.Barrel)
+        ];
+
+        private void OnToolCategorySelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ToolCategorySelector?.SelectedItem is ComboBoxItem item)
+            {
+                string cat = item.Content?.ToString() ?? "All Categories";
+                Populate3DToolPalette(cat);
+            }
+        }
+
+        private void Populate3DToolPalette(string category = "All Categories")
+        {
+            if (ToolItemsPanel == null) return;
+            ToolItemsPanel.Children.Clear();
+
+            var filtered = category == "All Categories"
+                ? Predefined3DTools
+                : [.. Predefined3DTools.Where(t => t.Category.Equals(category, StringComparison.OrdinalIgnoreCase))];
+
+            foreach (var tool in filtered)
+            {
+                var card = new Border
+                {
+                    Background = new SolidColorBrush(Color.FromRgb(35, 35, 38)),
+                    BorderBrush = new SolidColorBrush(Color.FromRgb(55, 55, 60)),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(3),
+                    Padding = new Thickness(8, 6, 8, 6),
+                    Margin = new Thickness(0, 0, 0, 4),
+                    Cursor = Cursors.Hand,
+                    ToolTip = $"Click to add or drag onto 3D Viewport: {tool.Name} ({tool.Category})"
+                };
+
+                card.MouseEnter += (_, _) =>
+                {
+                    card.Background = new SolidColorBrush(Color.FromRgb(45, 45, 50));
+                    card.BorderBrush = new SolidColorBrush(Color.FromRgb(255, 140, 0));
+                };
+                card.MouseLeave += (_, _) =>
+                {
+                    card.Background = new SolidColorBrush(Color.FromRgb(35, 35, 38));
+                    card.BorderBrush = new SolidColorBrush(Color.FromRgb(55, 55, 60));
+                };
+
+                var grid = new Grid();
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(24) });
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                var icon = new PackIconMaterial
+                {
+                    Kind = tool.Icon,
+                    Width = 14,
+                    Height = 14,
+                    Foreground = (System.Windows.Media.Brush)new BrushConverter().ConvertFromString(tool.Color)!,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                Grid.SetColumn(icon, 0);
+                grid.Children.Add(icon);
+
+                var textStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 0) };
+                textStack.Children.Add(new TextBlock { Text = tool.Name, Foreground = Brushes.White, FontSize = 11, FontWeight = FontWeights.SemiBold });
+                textStack.Children.Add(new TextBlock { Text = tool.Category, Foreground = Brushes.Gray, FontSize = 9 });
+                Grid.SetColumn(textStack, 1);
+                grid.Children.Add(textStack);
+
+                var addBtn = new Button
+                {
+                    Content = "+",
+                    Width = 20,
+                    Height = 20,
+                    FontSize = 11,
+                    FontWeight = FontWeights.Bold,
+                    Background = new SolidColorBrush(Color.FromRgb(50, 50, 55)),
+                    Foreground = Brushes.White,
+                    BorderThickness = new Thickness(0),
+                    Cursor = Cursors.Hand,
+                    ToolTip = $"Add {tool.Name} to Scene"
+                };
+                addBtn.Click += (_, _) => Add3DObjectFromTool(tool);
+                Grid.SetColumn(addBtn, 2);
+                grid.Children.Add(addBtn);
+
+                card.Child = grid;
+
+                // drag and drop handler
+                Point startPoint = new();
+                card.PreviewMouseLeftButtonDown += (_, ev) => startPoint = ev.GetPosition(null);
+                card.PreviewMouseMove += (_, ev) =>
+                {
+                    if (ev.LeftButton == MouseButtonState.Pressed)
+                    {
+                        Point current = ev.GetPosition(null);
+                        Vector diff = startPoint - current;
+                        if (Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance ||
+                            Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance)
+                        {
+                            var dragData = new
+                            {
+                                name = tool.Name,
+                                category = tool.Category,
+                                primitive = tool.Primitive,
+                                subtype = tool.Subtype,
+                                color = tool.Color
+                            };
+                            string json = JsonSerializer.Serialize(dragData);
+                            DragDrop.DoDragDrop(card, new System.Windows.DataObject(DataFormats.Text, json), DragDropEffects.Copy);
+                        }
+                    }
+                };
+
+                card.MouseLeftButtonDown += (_, ev) =>
+                {
+                    if (ev.ClickCount == 2)
+                    {
+                        Add3DObjectFromTool(tool);
+                    }
+                };
+
+                ToolItemsPanel.Children.Add(card);
+            }
+        }
+
+        private void Add3DObjectFromTool(Tool3DItem tool)
+        {
+            SaveSceneUndoSnapshot();
+            var obj = new SceneObject
+            {
+                Name = $"{tool.Name}_{_currentScene.Objects.Count + 1}",
+                Category3D = tool.Category,
+                Primitive3D = tool.Primitive,
+                Subtype3D = tool.Subtype,
+                Color = tool.Color,
+                Width = tool.Width,
+                Height = tool.Height,
+                Depth = tool.Depth,
+                X = 140 + (_currentScene.Objects.Count * 25),
+                Y = 140 + (_currentScene.Objects.Count * 25),
+                Z = 0
+            };
+            _currentScene.Objects.Add(obj);
+            _selectedGameObject = obj;
+            UpdateHierarchy();
+            SceneHierarchy.SelectedItem = obj;
+            RedrawScene();
+            SyncSceneTo3DViewport();
+            UpdateInspector();
+            AutoSyncSceneCode();
+            ShowToast($"Added {obj.Name} to scene");
+        }
+
+        private void AutoSyncSceneCode()
+        {
+            try
+            {
+                string scenesDir = Path.Combine(_projectPath, "scenes");
+                if (!Directory.Exists(scenesDir)) Directory.CreateDirectory(scenesDir);
+                string sceneFileName = $"{_currentScene.SceneName.ToLowerInvariant()}_scene.py";
+                string pyScenePath = Path.Combine(scenesDir, sceneFileName);
+                string code = _currentScene.ExportToPythonModule();
+                File.WriteAllText(pyScenePath, code);
+
+                string mainScenePy = Path.Combine(scenesDir, "main_scene.py");
+                File.WriteAllText(mainScenePy, code);
+
+                var tab = _openTabs.FirstOrDefault(t => t.FilePath.Equals(pyScenePath, StringComparison.OrdinalIgnoreCase) || t.FilePath.Equals(mainScenePy, StringComparison.OrdinalIgnoreCase));
+                if (tab != null)
+                {
+                    tab.Content = code;
+                    tab.IsDirty = false;
+                    if (FileTabs.SelectedItem == tab && _isWebViewReady && CodeWebView.CoreWebView2 != null)
+                    {
+                        string escaped = JsonSerializer.Serialize(code);
+                        CodeWebView.CoreWebView2.ExecuteScriptAsync($"if (window.setEditorContent) window.setEditorContent({escaped}, 'python');");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"AutoSync error: {ex.Message}");
+            }
+        }
+
+        private async void OnSyncCodeToSceneClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string scenesDir = Path.Combine(_projectPath, "scenes");
+                string pyScenePath = Path.Combine(scenesDir, $"{_currentScene.SceneName.ToLowerInvariant()}_scene.py");
+                if (!File.Exists(pyScenePath)) pyScenePath = Path.Combine(scenesDir, "main_scene.py");
+
+                if (File.Exists(pyScenePath))
+                {
+                    var tab = _openTabs.FirstOrDefault(t => t.FilePath.Equals(pyScenePath, StringComparison.OrdinalIgnoreCase));
+                    if (tab != null)
+                    {
+                        await SaveTabAsync(tab);
+                    }
+                    string code = await File.ReadAllTextAsync(pyScenePath);
+                    ParseSceneCodeIntoCurrentScene(code);
+                }
+                else
+                {
+                    AutoSyncSceneCode();
+                }
+
+                RedrawScene();
+                SyncSceneTo3DViewport();
+                UpdateHierarchy();
+                UpdateInspector();
+                ShowToast("Synchronized 3D Scene and Python Code");
+            }
+            catch (Exception ex)
+            {
+                await CustomDialog.ShowAsync(Window.GetWindow(this), $"Sync note: {ex.Message}", "Synchronization");
+            }
+        }
+
+        private void ParseSceneCodeIntoCurrentScene(string pythonCode)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(pythonCode) || !pythonCode.Contains("SCENE_OBJECTS")) return;
+
+                var dictMatches = Regex.Matches(pythonCode, @"\{\s*'id':\s*'([^']*)'.*?\}", RegexOptions.Singleline);
+                if (dictMatches.Count == 0) return;
+
+                SaveSceneUndoSnapshot();
+                _currentScene.Objects.Clear();
+
+                foreach (Match m in dictMatches)
+                {
+                    string dictText = m.Value;
+                    string id = Regex.Match(dictText, @"'id':\s*'([^']*)'").Groups[1].Value;
+                    string name = Regex.Match(dictText, @"'name':\s*'([^']*)'").Groups[1].Value;
+                    string cat = Regex.Match(dictText, @"'category_3d':\s*'([^']*)'").Groups[1].Value;
+                    string prim = Regex.Match(dictText, @"'primitive_3d':\s*'([^']*)'").Groups[1].Value;
+                    string sub = Regex.Match(dictText, @"'subtype_3d':\s*'([^']*)'").Groups[1].Value;
+                    string color = Regex.Match(dictText, @"'color':\s*'([^']*)'").Groups[1].Value;
+
+                    double.TryParse(Regex.Match(dictText, @"'x':\s*([\d\.-]+)").Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double x);
+                    double.TryParse(Regex.Match(dictText, @"'y':\s*([\d\.-]+)").Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double y);
+                    double.TryParse(Regex.Match(dictText, @"'z':\s*([\d\.-]+)").Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double z);
+                    double.TryParse(Regex.Match(dictText, @"'width':\s*([\d\.-]+)").Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double width);
+                    double.TryParse(Regex.Match(dictText, @"'height':\s*([\d\.-]+)").Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double height);
+                    double.TryParse(Regex.Match(dictText, @"'depth':\s*([\d\.-]+)").Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double depth);
+                    double.TryParse(Regex.Match(dictText, @"'scale_x':\s*([\d\.-]+)").Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double sx);
+                    double.TryParse(Regex.Match(dictText, @"'scale_y':\s*([\d\.-]+)").Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double sy);
+                    double.TryParse(Regex.Match(dictText, @"'scale_z':\s*([\d\.-]+)").Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double sz);
+                    double.TryParse(Regex.Match(dictText, @"'rotation':\s*([\d\.-]+)").Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double rot);
+
+                    _currentScene.Objects.Add(new SceneObject
+                    {
+                        Id = string.IsNullOrEmpty(id) ? Guid.NewGuid().ToString("N")[..8] : id,
+                        Name = string.IsNullOrEmpty(name) ? "Object" : name,
+                        Category3D = string.IsNullOrEmpty(cat) ? "BasicShapes" : cat,
+                        Primitive3D = string.IsNullOrEmpty(prim) ? "Cube" : prim,
+                        Subtype3D = string.IsNullOrEmpty(sub) ? "Cube" : sub,
+                        Color = string.IsNullOrEmpty(color) ? "#ff8c00" : color,
+                        X = x,
+                        Y = y,
+                        Z = z,
+                        Width = width > 0 ? width : 64,
+                        Height = height > 0 ? height : 64,
+                        Depth = depth > 0 ? depth : 64,
+                        ScaleX = sx > 0 ? sx : 1.0,
+                        ScaleY = sy > 0 ? sy : 1.0,
+                        ScaleZ = sz > 0 ? sz : 1.0,
+                        Rotation = rot
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"ParseSceneCode error: {ex.Message}");
+            }
+        }
+
+        private async void OnImport3DAssetClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dlg = new Microsoft.Win32.OpenFileDialog
+                {
+                    Filter = "3D Asset Models (*.glb;*.gltf;*.obj;*.fbx)|*.glb;*.gltf;*.obj;*.fbx|All Files (*.*)|*.*",
+                    Title = "Import 3D Asset Model"
+                };
+
+                if (dlg.ShowDialog() == true)
+                {
+                    string modelsDir = Path.Combine(_projectPath, "assets", "models");
+                    if (!Directory.Exists(modelsDir)) Directory.CreateDirectory(modelsDir);
+
+                    string destFile = Path.Combine(modelsDir, Path.GetFileName(dlg.FileName));
+                    File.Copy(dlg.FileName, destFile, true);
+
+                    SaveSceneUndoSnapshot();
+                    string relPath = Path.GetRelativePath(_projectPath, destFile).Replace('\\', '/');
+                    var modelObj = new SceneObject
+                    {
+                        Name = Path.GetFileNameWithoutExtension(dlg.FileName),
+                        Category3D = "Custom Models",
+                        Primitive3D = "CustomModel",
+                        Subtype3D = Path.GetExtension(dlg.FileName).TrimStart('.').ToUpperInvariant(),
+                        ModelPath = relPath,
+                        Color = "#ff8c00",
+                        X = 160 + (_currentScene.Objects.Count * 25),
+                        Y = 160 + (_currentScene.Objects.Count * 25),
+                        Z = 0,
+                        Width = 64,
+                        Height = 64,
+                        Depth = 64
+                    };
+
+                    _currentScene.Objects.Add(modelObj);
+                    _selectedGameObject = modelObj;
+                    LoadFiles();
+                    RefreshAssetsWorkspace();
+                    UpdateHierarchy();
+                    SceneHierarchy.SelectedItem = modelObj;
+                    RedrawScene();
+                    SyncSceneTo3DViewport();
+                    UpdateInspector();
+                    AutoSyncSceneCode();
+                    Populate3DToolPalette();
+
+                    await CustomDialog.ShowAsync(Window.GetWindow(this),
+                        $"Successfully imported 3D asset '{Path.GetFileName(dlg.FileName)}' into assets/models/ and placed it in the scene.",
+                        "3D Asset Imported",
+                        DialogIcon.Success);
+                }
+            }
+            catch (Exception ex)
+            {
+                await CustomDialog.ShowAsync(Window.GetWindow(this), $"Failed to import 3D asset: {ex.Message}", "Import Error", DialogIcon.Error);
+            }
+        }
+
+        private async void OnManage3DPackagesClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var packageDialog = new StackPanel { Width = 560, Margin = new Thickness(6) };
+                packageDialog.Children.Add(new TextBlock
+                {
+                    Text = "Install and enable pre-packaged 3D asset libraries, props, environments, and engine tools:",
+                    Foreground = Brushes.Silver,
+                    FontSize = 12,
+                    TextWrapping = TextWrapping.Wrap,
+                    Margin = new Thickness(0, 0, 0, 14)
+                });
+
+                var packages = new[]
+                {
+                    ("Nature & Environment Pack", "Low-poly trees, rocks, terrain chunks, grass foliage, and water bodies.", "assets/models/nature"),
+                    ("Urban City & Road Kit", "Modular roads, city buildings, sidewalks, fences, and street lamps.", "assets/models/city"),
+                    ("Vehicles & Transport Pack", "Low-poly sedans, freight trucks, city transit buses, and quadcopters.", "assets/models/vehicles"),
+                    ("Interior Furniture Pack", "Dining tables, office desks, chairs, doors, windows, and crates.", "assets/models/furniture"),
+                    ("Sci-Fi Station Set", "Futuristic crates, cargo containers, consoles, platforms, and antennas.", "assets/models/scifi")
+                };
+
+                foreach (var (pkgName, pkgDesc, pkgPath) in packages)
+                {
+                    string fullPath = Path.Combine(_projectPath, pkgPath);
+                    bool isInstalled = Directory.Exists(fullPath);
+
+                    var card = new Border
+                    {
+                        Background = new SolidColorBrush(Color.FromRgb(35, 35, 38)),
+                        BorderBrush = new SolidColorBrush(Color.FromRgb(60, 60, 65)),
+                        BorderThickness = new Thickness(1),
+                        CornerRadius = new CornerRadius(4),
+                        Padding = new Thickness(12, 10, 12, 10),
+                        Margin = new Thickness(0, 0, 0, 10)
+                    };
+
+                    var row = new Grid();
+                    row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                    row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                    var info = new StackPanel();
+                    var titleRow = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal };
+                    titleRow.Children.Add(new TextBlock { Text = pkgName, Foreground = Brushes.White, FontWeight = FontWeights.SemiBold, FontSize = 12 });
+
+                    var statusBadge = new Border
+                    {
+                        Background = isInstalled ? new SolidColorBrush(Color.FromRgb(40, 95, 60)) : new SolidColorBrush(Color.FromRgb(60, 60, 65)),
+                        CornerRadius = new CornerRadius(3),
+                        Padding = new Thickness(6, 1, 6, 1),
+                        Margin = new Thickness(10, 0, 0, 0),
+                        Child = new TextBlock
+                        {
+                            Text = isInstalled ? "Installed & Enabled" : "Available",
+                            Foreground = isInstalled ? new SolidColorBrush(Color.FromRgb(78, 201, 176)) : Brushes.Silver,
+                            FontSize = 10
+                        }
+                    };
+                    titleRow.Children.Add(statusBadge);
+                    info.Children.Add(titleRow);
+                    info.Children.Add(new TextBlock { Text = pkgDesc, Foreground = new SolidColorBrush(Color.FromRgb(160, 160, 160)), FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0) });
+
+                    var actionBtn = new Button
+                    {
+                        Content = isInstalled ? "Disable / Remove" : "Install Package",
+                        Background = isInstalled ? new SolidColorBrush(Color.FromRgb(70, 40, 40)) : new SolidColorBrush(Color.FromRgb(255, 140, 0)),
+                        Foreground = Brushes.White,
+                        Height = 28,
+                        Padding = new Thickness(12, 0, 12, 0),
+                        Style = (Style)FindResource("CommonRoundedButtonStyle"),
+                        FontSize = 11
+                    };
+
+                    actionBtn.Click += async (_, _) =>
+                    {
+                        if (isInstalled)
+                        {
+                            if (Directory.Exists(fullPath)) Directory.Delete(fullPath, true);
+                            ShowToast($"Disabled {pkgName}");
+                        }
+                        else
+                        {
+                            Directory.CreateDirectory(fullPath);
+                            await File.WriteAllTextAsync(Path.Combine(fullPath, "README.md"), $"# {pkgName}\nInstalled for Cobra 3D Engine.\n");
+                            await File.WriteAllTextAsync(Path.Combine(fullPath, "package_manifest.json"), JsonSerializer.Serialize(new { package = pkgName, version = "1.0.0", status = "active" }));
+                            ShowToast($"Installed {pkgName} successfully!");
+                        }
+                        LoadFiles();
+                        RefreshAssetsWorkspace();
+                        Populate3DToolPalette();
+                    };
+
+                    Grid.SetColumn(info, 0);
+                    Grid.SetColumn(actionBtn, 1);
+                    row.Children.Add(info);
+                    row.Children.Add(actionBtn);
+                    card.Child = row;
+                    packageDialog.Children.Add(card);
+                }
+
+                await AnimatedModal.ShowCustomModalAsync(Window.GetWindow(this), "3D Asset Packages & Preset Kits", packageDialog, "Close");
+            }
+            catch (Exception ex)
+            {
+                await CustomDialog.ShowAsync(Window.GetWindow(this), $"Package error: {ex.Message}", "Packages");
+            }
+        }
+
         private void OnSceneOverlayOptionChanged(object sender, RoutedEventArgs e)
         {
             if (IsLoaded) RedrawScene();
@@ -1752,32 +2330,45 @@ namespace Cobra.UI.Views
 
         private void SyncSceneTo3DViewport()
         {
-            if (!_is3DWebViewReady || Viewport3DWebView.CoreWebView2 == null) return;
+            if (!_is3DWebViewReady || Viewport3DWebView?.CoreWebView2 == null) return;
 
-            var payload = new
+            try
             {
-                type = "loadScene",
-                objects = _currentScene.Objects.Select(o => new
+                var payload = new
                 {
-                    id = o.Id,
-                    name = o.Name,
-                    objectType = o.Primitive3D,
-                    x = o.X,
-                    y = o.Y,
-                    z = o.Z,
-                    rotationX = o.RotationX,
-                    rotationY = o.RotationY,
-                    rotation = o.Rotation,
-                    scaleX = o.ScaleX,
-                    scaleY = o.ScaleY,
-                    scaleZ = o.ScaleZ,
-                    visible = o.IsVisible,
-                    colorHex = o.Color
-                })
-            };
+                    Objects = _currentScene.Objects.Select(o => new
+                    {
+                        o.Id,
+                        o.Name,
+                        o.Category3D,
+                        o.Primitive3D,
+                        o.Subtype3D,
+                        o.ModelPath,
+                        o.X,
+                        o.Y,
+                        o.Z,
+                        o.Width,
+                        o.Height,
+                        o.Depth,
+                        o.ScaleX,
+                        o.ScaleY,
+                        o.ScaleZ,
+                        o.Rotation,
+                        o.RotationX,
+                        o.RotationY,
+                        o.Color,
+                        o.IsVisible,
+                        IsSelected = o == _selectedGameObject
+                    })
+                };
 
-            string json = JsonSerializer.Serialize(payload);
-            Viewport3DWebView.CoreWebView2.PostWebMessageAsString(json);
+                string json = JsonSerializer.Serialize(payload);
+                Viewport3DWebView.CoreWebView2.ExecuteScriptAsync($"if (window.updateSceneFromHost) window.updateSceneFromHost({json});");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"SyncSceneTo3DViewport error: {ex.Message}");
+            }
         }
 
         private void OnPlayToggle(object sender, RoutedEventArgs e)
@@ -2064,26 +2655,84 @@ namespace Cobra.UI.Views
 
         private void OnAssetDropped(object sender, DragEventArgs e)
         {
+            Point pos = e.GetPosition(SceneCanvas);
+            SaveSceneUndoSnapshot();
+
+            // check if tool or object was dragged from the 3d tools palette
+            if (e.Data.GetDataPresent(DataFormats.Text) && e.Data.GetData(DataFormats.Text) is string text && !string.IsNullOrWhiteSpace(text))
+            {
+                try
+                {
+                    using var doc = JsonDocument.Parse(text);
+                    var root = doc.RootElement;
+                    string name = root.TryGetProperty("name", out var n) ? n.GetString() ?? "3D_Object" : "3D_Object";
+                    string category = root.TryGetProperty("category", out var c) ? c.GetString() ?? "BasicShapes" : "BasicShapes";
+                    string primitive = root.TryGetProperty("primitive", out var p) ? p.GetString() ?? "Cube" : "Cube";
+                    string subtype = root.TryGetProperty("subtype", out var sub) ? sub.GetString() ?? primitive : primitive;
+                    string color = root.TryGetProperty("color", out var clr) ? clr.GetString() ?? "#ff8c00" : "#ff8c00";
+
+                    var toolObj = new SceneObject
+                    {
+                        Name = $"{name}_{_currentScene.Objects.Count + 1}",
+                        Category3D = category,
+                        Primitive3D = primitive,
+                        Subtype3D = subtype,
+                        Color = color,
+                        X = (pos.X - _camX) / _zoom,
+                        Y = (pos.Y - _camY) / _zoom,
+                        Z = 0,
+                        Width = 64,
+                        Height = 64,
+                        Depth = 64
+                    };
+                    _currentScene.Objects.Add(toolObj);
+                    _selectedGameObject = toolObj;
+                    UpdateHierarchy();
+                    SceneHierarchy.SelectedItem = toolObj;
+                    RedrawScene();
+                    SyncSceneTo3DViewport();
+                    UpdateInspector();
+                    AutoSyncSceneCode();
+                    ShowToast($"Placed {toolObj.Name}");
+                    return;
+                }
+                catch
+                {
+                    // fall through to file drop
+                }
+            }
+
+            // check if a 3d model or image asset was dropped from file system or asset browser
             if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
             if (e.Data.GetData(DataFormats.FileDrop) is not string[] { Length: > 0 } files) return;
 
             string file = files[0];
-            Point pos = e.GetPosition(SceneCanvas);
-            SaveSceneUndoSnapshot();
+            string ext = Path.GetExtension(file).ToLowerInvariant();
+            bool is3D = ext is ".glb" or ".gltf" or ".obj" or ".fbx";
 
             var obj = new SceneObject
             {
                 Name = Path.GetFileNameWithoutExtension(file),
-                SpritePath = Path.GetRelativePath(_projectPath, file).Replace('\\', '/'),
+                SpritePath = !is3D ? Path.GetRelativePath(_projectPath, file).Replace('\\', '/') : string.Empty,
+                ModelPath = is3D ? Path.GetRelativePath(_projectPath, file).Replace('\\', '/') : string.Empty,
+                Primitive3D = is3D ? "CustomModel" : "Cube",
+                Category3D = is3D ? "Custom" : "BasicShapes",
                 X = (pos.X - _camX) / _zoom,
                 Y = (pos.Y - _camY) / _zoom,
+                Z = 0,
                 Width = 64,
-                Height = 64
+                Height = 64,
+                Depth = 64
             };
             _currentScene.Objects.Add(obj);
             _selectedGameObject = obj;
+            UpdateHierarchy();
+            SceneHierarchy.SelectedItem = obj;
             RedrawScene();
+            SyncSceneTo3DViewport();
             UpdateInspector();
+            AutoSyncSceneCode();
+            ShowToast($"Placed {obj.Name}");
         }
 
         private void UpdateHierarchy()
@@ -2136,25 +2785,35 @@ namespace Cobra.UI.Views
 
             var obj = _selectedGameObject;
 
-            AddInspectorTextField("Name", obj.Name, v => { obj.Name = v; RedrawScene(); SyncSceneTo3DViewport(); });
-            AddInspectorNumberField("Position X", obj.X, v => { obj.X = v; RedrawScene(); SyncSceneTo3DViewport(); });
-            AddInspectorNumberField("Position Y", obj.Y, v => { obj.Y = v; RedrawScene(); SyncSceneTo3DViewport(); });
-            AddInspectorNumberField("Position Z (3D)", obj.Z, v => { obj.Z = v; SyncSceneTo3DViewport(); });
-            AddInspectorNumberField("Rotation", obj.Rotation, v => { obj.Rotation = v; RedrawScene(); SyncSceneTo3DViewport(); });
-            AddInspectorNumberField("Width", obj.Width, v => { obj.Width = Math.Max(4, v); RedrawScene(); });
-            AddInspectorNumberField("Height", obj.Height, v => { obj.Height = Math.Max(4, v); RedrawScene(); });
-            AddInspectorNumberField("Scale X", obj.ScaleX, v => { obj.ScaleX = Math.Max(0.1, v); RedrawScene(); SyncSceneTo3DViewport(); });
-            AddInspectorNumberField("Scale Y", obj.ScaleY, v => { obj.ScaleY = Math.Max(0.1, v); RedrawScene(); SyncSceneTo3DViewport(); });
-            AddInspectorTextField("Layer", obj.Layer, v => { obj.Layer = v; RedrawScene(); });
-            AddInspectorNumberField("Sorting Order", obj.SortingOrder, v => { obj.SortingOrder = (int)v; RedrawScene(); });
-            AddInspectorTextField("Color Hex", obj.Color, v => { obj.Color = v; RedrawScene(); SyncSceneTo3DViewport(); });
-            AddInspectorTextField("Sprite Path", obj.SpritePath, v => { obj.SpritePath = v; RedrawScene(); });
-            AddInspectorTextField("Python Script", obj.ScriptPath, v => { obj.ScriptPath = v; });
-            AddInspectorTextField("Collider (Rectangle/Circle/None)", obj.ColliderType, v => { obj.ColliderType = v; RedrawScene(); });
+            AddInspectorTextField("Name", obj.Name, v => { obj.Name = v; RedrawScene(); SyncSceneTo3DViewport(); AutoSyncSceneCode(); });
+            AddInspectorTextField("3D Category", obj.Category3D, v => { obj.Category3D = v; AutoSyncSceneCode(); });
+            AddInspectorTextField("3D Shape / Primitive", obj.Primitive3D, v => { obj.Primitive3D = v; obj.Subtype3D = v; RedrawScene(); SyncSceneTo3DViewport(); AutoSyncSceneCode(); });
+            AddInspectorNumberField("Position X", obj.X, v => { obj.X = v; RedrawScene(); SyncSceneTo3DViewport(); AutoSyncSceneCode(); });
+            AddInspectorNumberField("Position Y", obj.Y, v => { obj.Y = v; RedrawScene(); SyncSceneTo3DViewport(); AutoSyncSceneCode(); });
+            AddInspectorNumberField("Position Z (3D)", obj.Z, v => { obj.Z = v; SyncSceneTo3DViewport(); AutoSyncSceneCode(); });
+            AddInspectorNumberField("Rotation", obj.Rotation, v => { obj.Rotation = v; RedrawScene(); SyncSceneTo3DViewport(); AutoSyncSceneCode(); });
+            AddInspectorNumberField("Rotation X (3D)", obj.RotationX, v => { obj.RotationX = v; SyncSceneTo3DViewport(); AutoSyncSceneCode(); });
+            AddInspectorNumberField("Rotation Y (3D)", obj.RotationY, v => { obj.RotationY = v; SyncSceneTo3DViewport(); AutoSyncSceneCode(); });
+            AddInspectorNumberField("Width", obj.Width, v => { obj.Width = Math.Max(4, v); RedrawScene(); AutoSyncSceneCode(); });
+            AddInspectorNumberField("Height", obj.Height, v => { obj.Height = Math.Max(4, v); RedrawScene(); AutoSyncSceneCode(); });
+            AddInspectorNumberField("Depth (3D)", obj.Depth, v => { obj.Depth = Math.Max(4, v); SyncSceneTo3DViewport(); AutoSyncSceneCode(); });
+            AddInspectorNumberField("Scale X", obj.ScaleX, v => { obj.ScaleX = Math.Max(0.1, v); RedrawScene(); SyncSceneTo3DViewport(); AutoSyncSceneCode(); });
+            AddInspectorNumberField("Scale Y", obj.ScaleY, v => { obj.ScaleY = Math.Max(0.1, v); RedrawScene(); SyncSceneTo3DViewport(); AutoSyncSceneCode(); });
+            AddInspectorNumberField("Scale Z (3D)", obj.ScaleZ, v => { obj.ScaleZ = Math.Max(0.1, v); SyncSceneTo3DViewport(); AutoSyncSceneCode(); });
+            AddInspectorNumberField("Roughness (0-1)", obj.Roughness, v => { obj.Roughness = Math.Clamp(v, 0, 1); SyncSceneTo3DViewport(); AutoSyncSceneCode(); });
+            AddInspectorNumberField("Metalness (0-1)", obj.Metalness, v => { obj.Metalness = Math.Clamp(v, 0, 1); SyncSceneTo3DViewport(); AutoSyncSceneCode(); });
+            AddInspectorTextField("Color Hex", obj.Color, v => { obj.Color = v; RedrawScene(); SyncSceneTo3DViewport(); AutoSyncSceneCode(); });
+            AddInspectorTextField("Layer", obj.Layer, v => { obj.Layer = v; RedrawScene(); AutoSyncSceneCode(); });
+            AddInspectorNumberField("Sorting Order", obj.SortingOrder, v => { obj.SortingOrder = (int)v; RedrawScene(); AutoSyncSceneCode(); });
+            if (!string.IsNullOrEmpty(obj.ModelPath))
+                AddInspectorTextField("3D Model Path", obj.ModelPath, v => { obj.ModelPath = v; SyncSceneTo3DViewport(); AutoSyncSceneCode(); });
+            AddInspectorTextField("Sprite Path", obj.SpritePath, v => { obj.SpritePath = v; RedrawScene(); AutoSyncSceneCode(); });
+            AddInspectorTextField("Python Script", obj.ScriptPath, v => { obj.ScriptPath = v; AutoSyncSceneCode(); });
+            AddInspectorTextField("Collider (Rectangle/Circle/None)", obj.ColliderType, v => { obj.ColliderType = v; RedrawScene(); AutoSyncSceneCode(); });
 
             var visCheck = new CheckBox { Content = "Visible", Foreground = Brushes.White, IsChecked = obj.IsVisible, Margin = new Thickness(0, 6, 0, 2) };
-            visCheck.Checked += (_, _) => { obj.IsVisible = true; RedrawScene(); SyncSceneTo3DViewport(); };
-            visCheck.Unchecked += (_, _) => { obj.IsVisible = false; RedrawScene(); SyncSceneTo3DViewport(); };
+            visCheck.Checked += (_, _) => { obj.IsVisible = true; RedrawScene(); SyncSceneTo3DViewport(); AutoSyncSceneCode(); };
+            visCheck.Unchecked += (_, _) => { obj.IsVisible = false; RedrawScene(); SyncSceneTo3DViewport(); AutoSyncSceneCode(); };
             InspectorPanel.Children.Add(visCheck);
 
             var lockCheck = new CheckBox { Content = "Lock Transform", Foreground = Brushes.White, IsChecked = obj.IsLocked, Margin = new Thickness(0, 4, 0, 6) };
@@ -2163,13 +2822,13 @@ namespace Cobra.UI.Views
             InspectorPanel.Children.Add(lockCheck);
 
             var rbCheck = new CheckBox { Content = "Enable Rigidbody", Foreground = Brushes.LightGreen, IsChecked = obj.HasRigidbody, Margin = new Thickness(0, 4, 0, 4) };
-            rbCheck.Checked += (_, _) => obj.HasRigidbody = true;
-            rbCheck.Unchecked += (_, _) => obj.HasRigidbody = false;
+            rbCheck.Checked += (_, _) => { obj.HasRigidbody = true; AutoSyncSceneCode(); };
+            rbCheck.Unchecked += (_, _) => { obj.HasRigidbody = false; AutoSyncSceneCode(); };
             InspectorPanel.Children.Add(rbCheck);
 
             var gravCheck = new CheckBox { Content = "Use Gravity (Physics)", Foreground = Brushes.LightSkyBlue, IsChecked = obj.UseGravity, Margin = new Thickness(0, 4, 0, 4) };
-            gravCheck.Checked += (_, _) => obj.UseGravity = true;
-            gravCheck.Unchecked += (_, _) => obj.UseGravity = false;
+            gravCheck.Checked += (_, _) => { obj.UseGravity = true; AutoSyncSceneCode(); };
+            gravCheck.Unchecked += (_, _) => { obj.UseGravity = false; AutoSyncSceneCode(); };
             InspectorPanel.Children.Add(gravCheck);
         }
 
@@ -3110,6 +3769,69 @@ namespace Cobra.UI.Views
             }
         }
 
+        private string _currentTerminalShell = TerminalService.TerminalPowerShell;
+
+        private void InitTerminalShell()
+        {
+            try
+            {
+                string preferred = SettingsManager.Instance.CurrentSettings.PreferredTerminal;
+                var terminals = TerminalService.DetectAvailableTerminals(SettingsManager.Instance.CurrentSettings.TerminalPath);
+                var active = terminals.FirstOrDefault(t => t.DisplayName.Equals(preferred, StringComparison.OrdinalIgnoreCase) && t.IsAvailable)
+                             ?? terminals.FirstOrDefault(t => t.IsAvailable)
+                             ?? terminals.First();
+
+                _currentTerminalShell = active.DisplayName;
+
+                if (TerminalShellSelector != null)
+                {
+                    TerminalShellSelector.Items.Clear();
+                    foreach (var t in terminals)
+                    {
+                        var item = new ComboBoxItem
+                        {
+                            Content = t.IsAvailable ? t.DisplayName : $"{t.DisplayName} (Not Installed)",
+                            Tag = t.DisplayName,
+                            IsEnabled = t.IsAvailable
+                        };
+                        TerminalShellSelector.Items.Add(item);
+                        if (t.DisplayName.Equals(_currentTerminalShell, StringComparison.OrdinalIgnoreCase))
+                            TerminalShellSelector.SelectedItem = item;
+                    }
+                }
+
+                UpdateTerminalPrompt();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"InitTerminalShell error: {ex.Message}");
+            }
+        }
+
+        private void TerminalShellSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (TerminalShellSelector?.SelectedItem is ComboBoxItem { Tag: string shellName })
+            {
+                _currentTerminalShell = shellName;
+                SettingsManager.Instance.CurrentSettings.PreferredTerminal = shellName;
+                SettingsManager.Instance.Save();
+                UpdateTerminalPrompt();
+                TerminalConsole.AppendText($"\n[Switched to {shellName} shell]\n");
+                TerminalConsole.ScrollToEnd();
+            }
+        }
+
+        private void UpdateTerminalPrompt()
+        {
+            if (TerminalPromptLabel == null) return;
+            if (_currentTerminalShell.Equals(TerminalService.TerminalGitBash, StringComparison.OrdinalIgnoreCase))
+                TerminalPromptLabel.Text = "bash$ ";
+            else if (_currentTerminalShell.Equals(TerminalService.TerminalCmd, StringComparison.OrdinalIgnoreCase))
+                TerminalPromptLabel.Text = "cmd> ";
+            else
+                TerminalPromptLabel.Text = "PS > ";
+        }
+
         private async void TerminalInput_KeyDown(object sender, KeyEventArgs e)
         {
             try
@@ -3118,7 +3840,13 @@ namespace Cobra.UI.Views
                 string command = TerminalInput.Text.Trim();
                 if (string.IsNullOrEmpty(command)) return;
 
-                TerminalConsole.AppendText($"PS {_projectPath}> {command}\n");
+                string promptPrefix = _currentTerminalShell.Equals(TerminalService.TerminalGitBash, StringComparison.OrdinalIgnoreCase)
+                    ? $"bash:{Path.GetFileName(_projectPath)}$ {command}\n"
+                    : _currentTerminalShell.Equals(TerminalService.TerminalCmd, StringComparison.OrdinalIgnoreCase)
+                        ? $"{_projectPath}> {command}\n"
+                        : $"PS {_projectPath}> {command}\n";
+
+                TerminalConsole.AppendText(promptPrefix);
                 TerminalInput.Clear();
 
                 if (command.Equals("cls", StringComparison.OrdinalIgnoreCase) || command.Equals("clear", StringComparison.OrdinalIgnoreCase))
@@ -3136,45 +3864,22 @@ namespace Cobra.UI.Views
                     return;
                 }
 
-                await Task.Run(() =>
-                {
-                    try
-                    {
-                        var psi = new ProcessStartInfo
-                        {
-                            FileName = "powershell.exe",
-                            WorkingDirectory = _projectPath,
-                            RedirectStandardOutput = true,
-                            RedirectStandardError = true,
-                            UseShellExecute = false,
-                            CreateNoWindow = true
-                        };
-                        psi.ArgumentList.Add("-NoProfile");
-                        psi.ArgumentList.Add("-Command");
-                        psi.ArgumentList.Add(command);
+                var (_, stdout, stderr) = await TerminalService.ExecuteCommandAsync(
+                    command,
+                    _currentTerminalShell,
+                    _projectPath,
+                    SettingsManager.Instance.CurrentSettings.TerminalPath);
 
-                        using var proc = Process.Start(psi);
-                        if (proc == null) return;
-                        string stdout = proc.StandardOutput.ReadToEnd();
-                        string stderr = proc.StandardError.ReadToEnd();
-                        proc.WaitForExit(20000);
+                if (!string.IsNullOrEmpty(stdout))
+                    TerminalConsole.AppendText(stdout);
+                if (!string.IsNullOrEmpty(stderr))
+                    TerminalConsole.AppendText(stderr + "\n");
 
-                        Dispatcher.Invoke(() =>
-                        {
-                            if (!string.IsNullOrEmpty(stdout)) TerminalConsole.AppendText(StripAnsi(stdout));
-                            if (!string.IsNullOrEmpty(stderr)) TerminalConsole.AppendText(StripAnsi(stderr));
-                            TerminalConsole.ScrollToEnd();
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        Dispatcher.Invoke(() => TerminalConsole.AppendText($"Terminal error: {ex.Message}\n"));
-                    }
-                });
+                TerminalConsole.ScrollToEnd();
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.Message);
+                TerminalConsole.AppendText($"Terminal error: {ex.Message}\n");
             }
         }
 

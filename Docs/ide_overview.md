@@ -37,7 +37,7 @@ Cobra IDE is a workspace built for creating Python games on Windows. It combines
 - **Top Bar:** Quick access to New, Open, Save, Run, Debug, and Settings.
 - **Side Panel:** Switch between Code Editor, Scene Designer, Visual Scripting, Assets, Python Tools, Git, and Settings.
 - **Monaco Editor:** Syntax highlighting, code navigation, search, and error markers.
-- **Bottom Panel:** Tabs for Output, Terminal, Debug Console, Problems, Tests, Build Output, and Game Logs.
+- **Bottom Panel:** Tabs for Output, Terminal (supporting Windows PowerShell, Git Bash, and Command Prompt), Debug Console, Problems, Tests, Build Output, and Game Logs.
 
 ### 2. Python Environment Tools
 
@@ -49,12 +49,15 @@ Cobra IDE is a workspace built for creating Python games on Windows. It combines
 
 - 7 templates for 2D Pygame games (Starter, Platformer, Top-Down, RPG, Arcade, Puzzle, Multiplayer).
 - 2 templates for 3D Python games (Panda3D Starter, Ursina Starter).
+- Category tabs to quickly filter between 2D and 3D templates.
 
 ### 4. Scene Designers
 
 - **2D Canvas:** Place sprites, set grid snap, adjust layers, and add box or circle colliders.
-- **3D Viewport:** View 3D objects, rotate the camera, and adjust lighting.
-- **Python Sync:** Export any scene to a Python file (`scene_data.py`) with one click.
+- **3D Viewport:** Complete 3D WebGL renderer supporting 28 tools and objects across Basic Shapes, Buildings, Vehicles, Environments, and Furniture.
+- **Drag-and-Drop:** Drag 3D tools or custom model files directly into the 3D scene to place objects.
+- **3D Asset Packages:** Import `.glb`, `.gltf`, and `.obj` models, and install ready-to-use 3D asset packages.
+- **Bidirectional Python Sync:** Automatically generates clean Python scene code and synchronises changes both ways between visual objects and code.
 
 ### 5. Debugger & Profiler
 

@@ -50,30 +50,30 @@ namespace Cobra.UI.Views
                 Button1 = { Content = button1Text }
             };
 
-            // Set icon based on type using PackIconMaterialKind
+            // set icon based on type using packiconmaterialkind
             if (dialog.TitleIcon != null)
             {
                 switch (icon)
                 {
                     case DialogIcon.Info:
                         dialog.TitleIcon.Kind = PackIconMaterialKind.Information;
-                        dialog.TitleIcon.Foreground = new SolidColorBrush(MediaColor.FromRgb(255, 140, 0)); // #e67e00
+                        dialog.TitleIcon.Foreground = new SolidColorBrush(MediaColor.FromRgb(255, 140, 0));
                         break;
                     case DialogIcon.Success:
                         dialog.TitleIcon.Kind = PackIconMaterialKind.CheckCircle;
-                        dialog.TitleIcon.Foreground = new SolidColorBrush(MediaColor.FromRgb(78, 201, 176)); // #4ec9b0
+                        dialog.TitleIcon.Foreground = new SolidColorBrush(MediaColor.FromRgb(78, 201, 176));
                         break;
                     case DialogIcon.Warning:
                         dialog.TitleIcon.Kind = PackIconMaterialKind.Alert;
-                        dialog.TitleIcon.Foreground = new SolidColorBrush(MediaColor.FromRgb(255, 193, 7)); // #ffc107
+                        dialog.TitleIcon.Foreground = new SolidColorBrush(MediaColor.FromRgb(255, 193, 7));
                         break;
                     case DialogIcon.Error:
                         dialog.TitleIcon.Kind = PackIconMaterialKind.CloseCircle;
-                        dialog.TitleIcon.Foreground = new SolidColorBrush(MediaColor.FromRgb(220, 53, 69)); // #dc3545
+                        dialog.TitleIcon.Foreground = new SolidColorBrush(MediaColor.FromRgb(220, 53, 69));
                         break;
                     case DialogIcon.Question:
                         dialog.TitleIcon.Kind = PackIconMaterialKind.HelpCircle;
-                        dialog.TitleIcon.Foreground = new SolidColorBrush(MediaColor.FromRgb(255, 140, 0)); // #e67e00
+                        dialog.TitleIcon.Foreground = new SolidColorBrush(MediaColor.FromRgb(255, 140, 0));
                         break;
                 }
             }
@@ -86,7 +86,7 @@ namespace Cobra.UI.Views
 
             dialog.ShowDialog();
 
-            // Wait for result
+            // wait for result
             await Task.Delay(10);
             return dialog._result;
         }

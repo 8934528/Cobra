@@ -1,9 +1,11 @@
 using System.Diagnostics;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using Cobra.Core.Environment;
 using Cobra.Core.Settings;
 
 using MediaColor = System.Windows.Media.Color;
@@ -25,6 +27,7 @@ namespace Cobra.UI.Views
 
             _originalSettings = LoadCurrentSettings(SettingsManager.Instance.CurrentSettings);
             DataContext = SettingsManager.Instance.CurrentSettings;
+            Loaded += (_, _) => UpdateTerminalDetectionSummary();
         }
 
         public SettingsView(FolderSettings folderSettings)
@@ -35,11 +38,33 @@ namespace Cobra.UI.Views
             _folderSettings = folderSettings;
             _originalSettings = LoadCurrentSettings(folderSettings.Settings);
             DataContext = folderSettings.Settings;
+            Loaded += (_, _) => UpdateTerminalDetectionSummary();
 
             if (FindName("MainHeader") is TextBlock mainHeader)
                 mainHeader.Text = "Project Settings";
             if (FindName("SubHeader") is TextBlock subHeader)
                 subHeader.Text = "Customize settings for this project only";
+        }
+
+        private void UpdateTerminalDetectionSummary()
+        {
+            if (TerminalDetectionSummary == null) return;
+            try
+            {
+                var active = _folderSettings?.Settings ?? SettingsManager.Instance.CurrentSettings;
+                var terminals = TerminalService.DetectAvailableTerminals(active.TerminalPath);
+                var sb = new StringBuilder();
+                foreach (var t in terminals)
+                {
+                    string status = t.IsAvailable ? "✓ Detected" : "✗ Not Found";
+                    sb.AppendLine($"• {t.DisplayName}: {status} ({t.ExecutablePath})");
+                }
+                TerminalDetectionSummary.Text = sb.ToString().TrimEnd();
+            }
+            catch (Exception ex)
+            {
+                TerminalDetectionSummary.Text = $"Detection note: {ex.Message}";
+            }
         }
 
         private static SettingsModel LoadCurrentSettings(SettingsModel current)
@@ -77,6 +102,7 @@ namespace Cobra.UI.Views
                 ShowCollisionGizmos = current.ShowCollisionGizmos,
                 EnableGridSnap = current.EnableGridSnap,
                 GridSnapSize = current.GridSnapSize,
+                PreferredTerminal = current.PreferredTerminal,
                 TerminalPath = current.TerminalPath,
                 ExternalEditor = current.ExternalEditor,
                 BuildTool = current.BuildTool,
@@ -120,6 +146,7 @@ namespace Cobra.UI.Views
             target.ShowCollisionGizmos = source.ShowCollisionGizmos;
             target.EnableGridSnap = source.EnableGridSnap;
             target.GridSnapSize = Math.Clamp(source.GridSnapSize, 4, 128);
+            target.PreferredTerminal = source.PreferredTerminal;
             target.TerminalPath = source.TerminalPath;
             target.ExternalEditor = source.ExternalEditor;
             target.BuildTool = source.BuildTool;
@@ -415,7 +442,8 @@ namespace Cobra.UI.Views
             if (!IsLoaded) return;
             if (sender is Border { Tag: string colorName })
             {
-                SettingsManager.Instance.CurrentSettings.AccentColor = colorName;
+                var active = _folderSettings?.Settings ?? SettingsManager.Instance.CurrentSettings;
+                active.AccentColor = colorName;
             }
         }
 
@@ -428,7 +456,14 @@ namespace Cobra.UI.Views
         private void WordWrapToggle_Unchecked(object sender, RoutedEventArgs e) { }
         private void LineNumbersToggle_Checked(object sender, RoutedEventArgs e) { }
         private void LineNumbersToggle_Unchecked(object sender, RoutedEventArgs e) { }
-        private void GenericSetting_Changed(object sender, RoutedEventArgs e) { }
+
+        private void GenericSetting_Changed(object sender, RoutedEventArgs e)
+        {
+            if (IsLoaded)
+            {
+                UpdateTerminalDetectionSummary();
+            }
+        }
 
         private void BrowseTerminalButton_Click(object sender, RoutedEventArgs e)
         {
@@ -440,7 +475,9 @@ namespace Cobra.UI.Views
 
             if (openFileDialog.ShowDialog() == true)
             {
-                SettingsManager.Instance.CurrentSettings.TerminalPath = openFileDialog.FileName;
+                var active = _folderSettings?.Settings ?? SettingsManager.Instance.CurrentSettings;
+                active.TerminalPath = openFileDialog.FileName;
+                UpdateTerminalDetectionSummary();
             }
         }
 
@@ -454,7 +491,8 @@ namespace Cobra.UI.Views
 
             if (openFileDialog.ShowDialog() == true)
             {
-                SettingsManager.Instance.CurrentSettings.ExternalEditor = openFileDialog.FileName;
+                var active = _folderSettings?.Settings ?? SettingsManager.Instance.CurrentSettings;
+                active.ExternalEditor = openFileDialog.FileName;
             }
         }
     }

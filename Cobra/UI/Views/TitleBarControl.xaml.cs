@@ -14,6 +14,8 @@ namespace Cobra.UI.Views
         public event EventHandler<RoutedEventArgs> RecentProjectsClicked = delegate { };
         public event EventHandler<RoutedEventArgs> ProjectSettingsClicked = delegate { };
         public event EventHandler<RoutedEventArgs> BuildClicked = delegate { };
+        public event EventHandler<RoutedEventArgs> RunGameClicked = delegate { };
+        public event EventHandler<RoutedEventArgs> DebugGameClicked = delegate { };
         public event EventHandler<RoutedEventArgs> ExportClicked = delegate { };
         public event EventHandler<RoutedEventArgs> PackageManagerClicked = delegate { };
         public event EventHandler<RoutedEventArgs> ExtensionsClicked = delegate { };
@@ -87,6 +89,12 @@ namespace Cobra.UI.Views
 
         private void OnBuildClicked(object sender, RoutedEventArgs e)
             => BuildClicked.Invoke(sender, e);
+
+        private void OnRunGameClicked(object sender, RoutedEventArgs e)
+            => RunGameClicked.Invoke(sender, e);
+
+        private void OnDebugGameClicked(object sender, RoutedEventArgs e)
+            => DebugGameClicked.Invoke(sender, e);
 
         private void OnExportClicked(object sender, RoutedEventArgs e)
             => ExportClicked.Invoke(sender, e);

@@ -45,7 +45,7 @@ namespace Cobra.Engine.Plugins
                 return;
             }
 
-            // Discover JSON manifests first for controlled plugin validation
+            // discover json manifests first for controlled plugin validation
             foreach (var manifestFile in Directory.GetFiles(fullFolder, "*.plugin.json"))
             {
                 try
@@ -64,7 +64,7 @@ namespace Cobra.Engine.Plugins
                 }
             }
 
-            // Only load DLL plugins that have a matching enabled & validated manifest
+            // only load dll plugins that have a matching enabled and validated manifest
             foreach (var file in Directory.GetFiles(fullFolder, "*.dll"))
             {
                 try

@@ -11,7 +11,7 @@ namespace Cobra.Engine.ECS.Systems
                 if (string.IsNullOrWhiteSpace(script.ScriptPath))
                     continue;
 
-                // Apply lightweight editor simulation step without spawning processes per frame.
+                // apply lightweight editor simulation step without spawning processes per frame
                 transform.X += 0.0 * deltaTime;
                 transform.Y += 0.0 * deltaTime;
             }

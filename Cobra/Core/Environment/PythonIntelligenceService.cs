@@ -164,7 +164,7 @@ print(json.dumps({'diagnostics': diagnostics, 'symbols': symbols}))
 
         public static async Task<(bool Formatted, string Code)> FormatPythonCodeAsync(string pythonExe, string filePath, string sourceCode, CancellationToken cancellationToken = default)
         {
-            // Try ruff format first if installed, otherwise normalize indentation & trailing whitespace cleanly
+            // try ruff format first if installed, otherwise normalize indentation and trailing whitespace cleanly
             try
             {
                 ProcessStartInfo psi = new()
@@ -203,7 +203,7 @@ print(json.dumps({'diagnostics': diagnostics, 'symbols': symbols}))
                 Debug.WriteLine(ex.Message);
             }
 
-            // Built-in fallback PEP-8 clean formatter (normalizes tabs to 4 spaces and trims trailing whitespace)
+            // built-in fallback pep-8 clean formatter (normalizes tabs to 4 spaces and trims trailing whitespace)
             var lines = sourceCode.Replace("\r\n", "\n").Split('\n');
             for (int i = 0; i < lines.Length; i++)
             {

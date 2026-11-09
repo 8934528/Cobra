@@ -231,6 +231,13 @@ namespace Cobra.Core.Settings
             set { int clamped = Math.Clamp(value, 4, 128); if (_gridSnapSize != clamped) { _gridSnapSize = clamped; OnPropertyChanged(); } }
         }
 
+        private string _preferredTerminal = "Windows PowerShell";
+        public string PreferredTerminal
+        {
+            get => _preferredTerminal;
+            set { if (_preferredTerminal != value) { _preferredTerminal = value; OnPropertyChanged(); } }
+        }
+
         private string _terminalPath = "cmd.exe";
         public string TerminalPath
         {

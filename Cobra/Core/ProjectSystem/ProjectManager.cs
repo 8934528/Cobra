@@ -5,6 +5,13 @@ namespace Cobra.Core.ProjectSystem
     public class ProjectManager
     {
         private readonly string _basePath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
+        private readonly HashSet<string> _hiddenProjects = new(StringComparer.OrdinalIgnoreCase);
+
+        public void HideProject(string path)
+        {
+            if (!string.IsNullOrWhiteSpace(path))
+                _hiddenProjects.Add(path);
+        }
 
         public string GetProjectsPath()
         {
@@ -22,7 +29,7 @@ namespace Cobra.Core.ProjectSystem
             var dirs = Directory.GetDirectories(projectsPath);
             foreach (var dir in dirs)
             {
-                if (IsValidProjectDirectory(dir))
+                if (IsValidProjectDirectory(dir) && !_hiddenProjects.Contains(dir))
                 {
                     projects.Add(ProjectModel.LoadFromDirectory(dir));
                 }

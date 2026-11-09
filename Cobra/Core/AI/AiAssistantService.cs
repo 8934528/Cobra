@@ -39,7 +39,7 @@ namespace Cobra.Core.AI
                     return externalReply;
             }
 
-            // Local offline Python Game Dev Assistant fallback (never sends code externally)
+            // local offline python game dev assistant fallback (never sends code externally)
             return GenerateLocalPythonGameResponse(task, contextCodeOrInput, framework);
         }
 
@@ -202,7 +202,7 @@ class TestGameMechanics(unittest.TestCase):
         self.assertEqual(clamped_y, 600)
 
     def test_aabb_overlap(self):
-        # Simple rectangle intersection check (x, y, w, h)
+        # simple rectangle intersection check (x, y, w, h)
         a = (10, 10, 50, 50)
         b = (40, 40, 50, 50)
         overlaps = (a[0] < b[0] + b[2] and a[0] + a[2] > b[0] and

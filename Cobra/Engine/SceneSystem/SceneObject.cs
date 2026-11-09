@@ -27,12 +27,16 @@ namespace Cobra.Engine.SceneSystem
         private string _texturePath = string.Empty;
         private string _modelPath = string.Empty;
         private string _primitive3D = "Cube";
+        private string _category3D = "BasicShapes";
+        private string _subtype3D = "Cube";
+        private double _roughness = 0.5;
+        private double _metalness = 0.1;
         private string _color = "#ff8c00";
         private string _layer = "Default";
         private int _sortingOrder;
         private string _scriptPath = string.Empty;
 
-        // Collision & Physics Properties
+        // collision and physics properties
         private string _colliderType = "Rectangle";
         private int _collisionLayer = 1;
         private bool _isTrigger;
@@ -44,7 +48,7 @@ namespace Cobra.Engine.SceneSystem
         private double _bounciness = 0.2;
         private double _friction = 0.4;
 
-        // Animation Properties
+        // animation properties
         private string _animationClip = string.Empty;
         private int _frameCount = 1;
         private double _frameDurationMs = 100;
@@ -78,6 +82,10 @@ namespace Cobra.Engine.SceneSystem
         public string TexturePath { get => _texturePath; set { _texturePath = value; OnPropertyChanged(); } }
         public string ModelPath { get => _modelPath; set { _modelPath = value; OnPropertyChanged(); } }
         public string Primitive3D { get => _primitive3D; set { _primitive3D = value; OnPropertyChanged(); } }
+        public string Category3D { get => _category3D; set { _category3D = value; OnPropertyChanged(); } }
+        public string Subtype3D { get => _subtype3D; set { _subtype3D = value; OnPropertyChanged(); } }
+        public double Roughness { get => _roughness; set { _roughness = Math.Clamp(value, 0, 1); OnPropertyChanged(); } }
+        public double Metalness { get => _metalness; set { _metalness = Math.Clamp(value, 0, 1); OnPropertyChanged(); } }
         public string Color { get => _color; set { _color = value; OnPropertyChanged(); } }
         public string Layer { get => _layer; set { _layer = value; OnPropertyChanged(); } }
         public int SortingOrder { get => _sortingOrder; set { _sortingOrder = value; OnPropertyChanged(); } }
@@ -135,6 +143,10 @@ namespace Cobra.Engine.SceneSystem
                 TexturePath = TexturePath,
                 ModelPath = ModelPath,
                 Primitive3D = Primitive3D,
+                Category3D = Category3D,
+                Subtype3D = Subtype3D,
+                Roughness = Roughness,
+                Metalness = Metalness,
                 Color = Color,
                 Layer = Layer,
                 SortingOrder = SortingOrder,

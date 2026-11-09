@@ -62,6 +62,7 @@ namespace Cobra.UI.Views
             {
                 PopulateTemplateShowcase();
                 CheckPythonStatus();
+                UpdateTerminalStatus();
                 LoadProjects();
                 await CheckPython();
             }
@@ -71,24 +72,85 @@ namespace Cobra.UI.Views
             }
         }
 
-        private void PopulateTemplateShowcase()
+        private void UpdateTerminalStatus()
+        {
+            if (TerminalStatusText == null) return;
+            try
+            {
+                string preferred = SettingsManager.Instance.CurrentSettings.PreferredTerminal;
+                var terminals = TerminalService.DetectAvailableTerminals(SettingsManager.Instance.CurrentSettings.TerminalPath);
+                var active = terminals.FirstOrDefault(t => t.DisplayName.Equals(preferred, StringComparison.OrdinalIgnoreCase) && t.IsAvailable)
+                             ?? terminals.FirstOrDefault(t => t.IsAvailable);
+
+                TerminalStatusText.Text = active != null
+                    ? $"Terminal: {active.DisplayName} (Active)"
+                    : "Terminal: Windows PowerShell / Git Bash";
+            }
+            catch
+            {
+                TerminalStatusText.Text = "Terminal: PowerShell / Git Bash";
+            }
+        }
+
+        private void OnTemplateCategoryClicked(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button { Tag: string cat })
+            {
+                if (TabAllTemplates != null)
+                {
+                    TabAllTemplates.Background = cat == "All" ? new SolidColorBrush(Color.FromRgb(255, 140, 0)) : new SolidColorBrush(Color.FromRgb(45, 45, 48));
+                    TabAllTemplates.Foreground = cat == "All" ? Brushes.White : new SolidColorBrush(Color.FromRgb(170, 170, 170));
+                }
+                if (Tab2DTemplates != null)
+                {
+                    Tab2DTemplates.Background = cat == "2D" ? new SolidColorBrush(Color.FromRgb(255, 140, 0)) : new SolidColorBrush(Color.FromRgb(45, 45, 48));
+                    Tab2DTemplates.Foreground = cat == "2D" ? Brushes.White : new SolidColorBrush(Color.FromRgb(170, 170, 170));
+                }
+                if (Tab3DTemplates != null)
+                {
+                    Tab3DTemplates.Background = cat == "3D" ? new SolidColorBrush(Color.FromRgb(255, 140, 0)) : new SolidColorBrush(Color.FromRgb(45, 45, 48));
+                    Tab3DTemplates.Foreground = cat == "3D" ? Brushes.White : new SolidColorBrush(Color.FromRgb(170, 170, 170));
+                }
+
+                PopulateTemplateShowcase(cat);
+            }
+        }
+
+        private void PopulateTemplateShowcase(string categoryFilter = "All")
         {
             if (TemplateShowcasePanel == null) return;
             TemplateShowcasePanel.Children.Clear();
 
-            foreach (var tmpl in ProjectTemplate.GetAvailableTemplates())
+            var templates = ProjectTemplate.GetAvailableTemplates();
+            if (categoryFilter == "2D")
+                templates = [.. templates.Where(t => t.Category == "2D")];
+            else if (categoryFilter == "3D")
+                templates = [.. templates.Where(t => t.Category == "3D")];
+
+            foreach (var tmpl in templates)
             {
                 var card = new Border
                 {
-                    Width = 225,
+                    HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch,
                     Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
-                    BorderBrush = new SolidColorBrush(Color.FromRgb(60, 60, 60)),
+                    BorderBrush = new SolidColorBrush(Color.FromRgb(55, 55, 55)),
                     BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(4),
-                    Padding = new Thickness(12),
-                    Margin = new Thickness(0, 0, 10, 10),
+                    Padding = new Thickness(12, 10, 12, 10),
+                    Margin = new Thickness(0, 0, 0, 8),
                     Cursor = System.Windows.Input.Cursors.Hand,
                     ToolTip = $"Click to create a new '{tmpl.Name}' project"
+                };
+
+                card.MouseEnter += (_, _) =>
+                {
+                    card.Background = new SolidColorBrush(Color.FromRgb(38, 38, 42));
+                    card.BorderBrush = new SolidColorBrush(Color.FromRgb(255, 140, 0));
+                };
+                card.MouseLeave += (_, _) =>
+                {
+                    card.Background = new SolidColorBrush(Color.FromRgb(30, 30, 30));
+                    card.BorderBrush = new SolidColorBrush(Color.FromRgb(55, 55, 55));
                 };
 
                 var stack = new StackPanel();
@@ -110,12 +172,13 @@ namespace Cobra.UI.Views
                         ? new SolidColorBrush(Color.FromRgb(78, 110, 180))
                         : new SolidColorBrush(Color.FromRgb(45, 90, 65)),
                     CornerRadius = new CornerRadius(3),
-                    Padding = new Thickness(5, 1, 5, 1),
+                    Padding = new Thickness(6, 2, 6, 2),
                     Child = new TextBlock
                     {
                         Text = $"{tmpl.Category} • {tmpl.Framework}",
                         Foreground = Brushes.White,
-                        FontSize = 10
+                        FontSize = 10,
+                        FontWeight = FontWeights.SemiBold
                     }
                 };
                 Grid.SetColumn(titleText, 0);
@@ -129,8 +192,7 @@ namespace Cobra.UI.Views
                     Foreground = new SolidColorBrush(Color.FromRgb(160, 160, 160)),
                     FontSize = 11,
                     TextWrapping = TextWrapping.Wrap,
-                    Margin = new Thickness(0, 6, 0, 0),
-                    Height = 34
+                    Margin = new Thickness(0, 4, 0, 0)
                 };
 
                 stack.Children.Add(headerRow);
@@ -150,6 +212,60 @@ namespace Cobra.UI.Views
                     }
                 };
                 TemplateShowcasePanel.Children.Add(card);
+            }
+        }
+
+        private void RecentProjectsFilterText_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (RecentProjectsWatermark != null)
+                RecentProjectsWatermark.Visibility = string.IsNullOrEmpty(RecentProjectsFilterText?.Text) ? Visibility.Visible : Visibility.Collapsed;
+
+            string filter = RecentProjectsFilterText?.Text.Trim() ?? "";
+            var projects = _projectManager.GetAllProjects();
+            _recentProjects.Clear();
+            foreach (var project in projects)
+            {
+                if (string.IsNullOrEmpty(filter) ||
+                    project.Name.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+                    project.Framework.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+                    project.Path.Contains(filter, StringComparison.OrdinalIgnoreCase))
+                {
+                    _recentProjects.Add(project);
+                }
+            }
+            if (ProjectCountText != null)
+                ProjectCountText.Text = _recentProjects.Count.ToString();
+        }
+
+        private async void OnRemoveRecentProjectClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (RecentProjectsList.SelectedItem is ProjectModel project)
+                {
+                    bool confirm = await CustomDialog.ShowAsync(
+                        this,
+                        $"Remove '{project.Name}' from the recent projects list?\n(Project files on disk will not be deleted)",
+                        "Remove From List",
+                        DialogIcon.Warning,
+                        "Remove",
+                        "Cancel");
+
+                    if (confirm)
+                    {
+                        _projectManager.HideProject(project.Path);
+                        LoadProjects();
+                        ShowToast("Project removed from recent list");
+                    }
+                }
+                else
+                {
+                    await CustomDialog.ShowAsync(this, "Please select a project to remove from the recent list.", "No Project Selected");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
             }
         }
 
@@ -221,7 +337,7 @@ namespace Cobra.UI.Views
             for (int i = 0; i < 8; i++)
                 mainContentGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-            // Template Picker
+            // template picker
             var tmplLabel = new TextBlock
             {
                 Text = "Game Project Template:",
@@ -273,7 +389,7 @@ namespace Cobra.UI.Views
             templateCombo.SelectionChanged += (_, _) => UpdateTemplateDescription();
             UpdateTemplateDescription();
 
-            // Project Name
+            // project name
             var nameLabel = new TextBlock
             {
                 Text = "Project Name:",
@@ -301,7 +417,7 @@ namespace Cobra.UI.Views
             Grid.SetRow(textBox, 4);
             mainContentGrid.Children.Add(textBox);
 
-            // Location
+            // location
             var locationLabel = new TextBlock
             {
                 Text = "Project Location:",
@@ -602,11 +718,127 @@ namespace Cobra.UI.Views
             }
         }
 
-        private void OnExportClicked(object sender, RoutedEventArgs e) => OnBuildClicked(sender, e);
-        private void OnPackageManagerClicked(object sender, RoutedEventArgs e) => OnBuildClicked(sender, e);
-        private void OnExtensionsClicked(object sender, RoutedEventArgs e) => OnSettingsIconClicked(sender, e);
-        private void OnOpenTerminalClicked(object sender, RoutedEventArgs e) => OnBuildClicked(sender, e);
-        private void OnRunCommandClicked(object sender, RoutedEventArgs e) => OnBuildClicked(sender, e);
+        private void OnRunGameClicked(object sender, RoutedEventArgs e)
+        {
+            if (RecentProjectsList.SelectedItem is ProjectModel project)
+                OpenProjectEditor(project.Path, project.Name);
+            else
+                OnBuildClicked(sender, e);
+        }
+
+        private void OnDebugGameClicked(object sender, RoutedEventArgs e)
+        {
+            if (RecentProjectsList.SelectedItem is ProjectModel project)
+                OpenProjectEditor(project.Path, project.Name);
+            else
+                OnBuildClicked(sender, e);
+        }
+
+        private async void OnExportClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (RecentProjectsList.SelectedItem is ProjectModel project)
+                {
+                    OpenProjectEditor(project.Path, project.Name);
+                }
+                else
+                {
+                    await CustomDialog.ShowAsync(this, "Select a project from the recent list to export as a Windows executable.", "Export Game");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async void OnPackageManagerClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (RecentProjectsList.SelectedItem is ProjectModel project)
+                {
+                    OpenProjectEditor(project.Path, project.Name);
+                }
+                else
+                {
+                    string configuredPython = SettingsManager.Instance.CurrentSettings.PythonInterpreter;
+                    var installed = await PipPackageService.GetInstalledPackagesAsync(configuredPython);
+                    string packageSummary = installed.Count > 0
+                        ? string.Join(", ", installed.Take(8).Select(p => $"{p.Name} ({p.Version})")) + (installed.Count > 8 ? $" ...and {installed.Count - 8} more" : "")
+                        : "No pip packages detected.";
+
+                    await CustomDialog.ShowAsync(this,
+                        $"Python Interpreter: {configuredPython}\n\nInstalled Packages ({installed.Count}):\n{packageSummary}\n\nOpen a project to install or manage project-specific packages.",
+                        "Python Packages Overview");
+                }
+            }
+            catch (Exception ex)
+            {
+                await CustomDialog.ShowAsync(this, $"Failed to inspect packages: {ex.Message}", "Package Manager");
+            }
+        }
+
+        private void OnExtensionsClicked(object sender, RoutedEventArgs e)
+        {
+            OnSettingsIconClicked(sender, e);
+        }
+
+        private async void OnOpenTerminalClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string targetDir = RecentProjectsList.SelectedItem is ProjectModel project && Directory.Exists(project.Path)
+                    ? project.Path
+                    : ProjectsPath;
+
+                if (!Directory.Exists(targetDir))
+                    Directory.CreateDirectory(targetDir);
+
+                string preferred = SettingsManager.Instance.CurrentSettings.PreferredTerminal;
+                string exe;
+                string args;
+
+                if (preferred.Equals(TerminalService.TerminalGitBash, StringComparison.OrdinalIgnoreCase))
+                {
+                    exe = TerminalService.FindGitBash();
+                    if (!File.Exists(exe))
+                    {
+                        await CustomDialog.ShowAsync(this, "Git Bash executable was not found. Please install Git for Windows or switch to Windows PowerShell in Settings.", "Terminal Error", DialogIcon.Error);
+                        return;
+                    }
+                    args = "--cd=\"" + targetDir.Replace('\\', '/') + "\"";
+                }
+                else if (preferred.Equals(TerminalService.TerminalCmd, StringComparison.OrdinalIgnoreCase))
+                {
+                    exe = TerminalService.FindCmd();
+                    args = $"/k cd /d \"{targetDir}\"";
+                }
+                else
+                {
+                    exe = TerminalService.FindPowerShell();
+                    args = $"-NoExit -Command Set-Location -LiteralPath '{targetDir.Replace("'", "''")}'";
+                }
+
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = exe,
+                    Arguments = args,
+                    WorkingDirectory = targetDir,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                await CustomDialog.ShowAsync(this, $"Failed to launch terminal: {ex.Message}", "Terminal Error", DialogIcon.Error);
+            }
+        }
+
+        private void OnRunCommandClicked(object sender, RoutedEventArgs e)
+        {
+            OnOpenTerminalClicked(sender, e);
+        }
 
         private void OnSettingsIconClicked(object sender, RoutedEventArgs e)
         {

@@ -69,12 +69,15 @@ This is an editor for making Python games on Windows. It brings together code ed
 
 ## Features
 
-1. **Workspace:** Monaco code editor, file tree, scene hierarchy, Git tools, and a 7-tab bottom panel.
-2. **Python Tools:** Auto-detects Python, creates virtual environments (`.venv`), and installs packages.
-3. **Game Templates:** 9 starter projects for 2D and 3D games.
-4. **Scene Designers:** 2D grid canvas and 3D viewport with Three.js.
-5. **Debugger & Profiler:** Breakpoints, variable inspection, call stack, and real-time CPU and FPS graphs.
-6. **Executable Export:** Package your game into a single `.exe` file with PyInstaller.
+1. **Responsive Workspace:** Monaco code editor, file tree, scene hierarchy, Git tools, and an edge-to-edge layout that fits any screen resolution.
+2. **Built-in Multi-Terminal:** Detects installed terminals like Windows PowerShell, Git Bash, and Command Prompt. Easily switch between them with live command execution and saved preferences.
+3. **Full 3D Tool Palette:** Includes 28 tools for Basic Shapes (cubes, spheres, cylinders, cones, planes, toruses, capsules), Buildings (houses, offices, walls, doors, windows, roofs), Vehicles (cars, trucks, buses, drones), Environments (roads, terrain, mountains, trees, water), and Objects (furniture, lamps, crates, barrels).
+4. **3D Asset Packages & Import:** Import your own `.glb`, `.gltf`, and `.obj` 3D models, or install ready-to-use 3D asset packages.
+5. **Drag-and-Drop & Code Sync:** Drag tools and 3D objects straight into the visual scene. The editor generates editable Python scene code automatically and keeps code and visual objects synchronised both ways.
+6. **Python Tools:** Auto-detects Python, creates virtual environments (`.venv`), and installs packages.
+7. **Game Templates:** 9 starter projects for 2D and 3D games with category filtering.
+8. **Debugger & Profiler:** Breakpoints, variable inspection, call stack, and real-time CPU and FPS graphs.
+9. **Executable Export:** Package your game into a single `.exe` file with PyInstaller.
 
 ## Requirements
 

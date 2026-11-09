@@ -9,7 +9,7 @@
       d:DesignHeight="900" d:DesignWidth="1400">
 
     <Page.Resources>
-        <!-- Section Header Style -->
+        <!-- section header style -->
         <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
             <Setter Property="Foreground" Value="#4ec9b0"/>
             <Setter Property="FontSize" Value="12"/>
@@ -17,7 +17,7 @@
             <Setter Property="Margin" Value="0,20,0,15"/>
         </Style>
 
-        <!-- Card Style -->
+        <!-- card style -->
         <Style x:Key="SettingsCardStyle" TargetType="Border">
             <Setter Property="Background" Value="#252526"/>
             <Setter Property="CornerRadius" Value="3"/>
@@ -25,19 +25,19 @@
             <Setter Property="Padding" Value="20,15"/>
         </Style>
 
-        <!-- Setting Row Style -->
+        <!-- setting row style -->
         <Style x:Key="SettingRowStyle" TargetType="Grid">
             <Setter Property="Margin" Value="0,0,0,15"/>
         </Style>
 
-        <!-- Label Style -->
+        <!-- label style -->
         <Style x:Key="SettingLabelStyle" TargetType="TextBlock">
             <Setter Property="Foreground" Value="#e0e0e0"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
 
-        <!-- Description Style -->
+        <!-- description style -->
         <Style x:Key="SettingDescriptionStyle" TargetType="TextBlock">
             <Setter Property="Foreground" Value="#888888"/>
             <Setter Property="FontSize" Value="12"/>
@@ -45,7 +45,7 @@
             <Setter Property="TextWrapping" Value="Wrap"/>
         </Style>
 
-        <!-- TextBox Style -->
+        <!-- textbox style -->
         <Style x:Key="ModernTextBoxStyle" TargetType="TextBox">
             <Setter Property="Background" Value="#1e1e1e"/>
             <Setter Property="Foreground" Value="#e0e0e0"/>
@@ -58,7 +58,7 @@
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
 
-        <!-- Consistent ComboBox Style with fixed width -->
+        <!-- consistent combobox style with fixed width -->
         <Style x:Key="ModernComboBoxStyle" TargetType="ComboBox">
             <Setter Property="Background" Value="#1e1e1e"/>
             <Setter Property="Foreground" Value="#e0e0e0"/>
@@ -134,7 +134,7 @@
             </Setter>
         </Style>
 
-        <!-- CheckBox Style -->
+        <!-- checkbox style -->
         <Style x:Key="ModernCheckBoxStyle" TargetType="CheckBox">
             <Setter Property="Foreground" Value="#e0e0e0"/>
             <Setter Property="FontSize" Value="12"/>
@@ -175,7 +175,7 @@
             </Setter>
         </Style>
 
-        <!-- Button Style -->
+        <!-- button style -->
         <Style x:Key="PrimaryButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="#ff8c00"/>
             <Setter Property="Foreground" Value="White"/>
@@ -234,7 +234,7 @@
             </Setter>
         </Style>
 
-        <!-- Slider Style -->
+        <!-- slider style -->
         <Style x:Key="ModernSliderStyle" TargetType="Slider">
             <Setter Property="Foreground" Value="#ff8c00"/>
             <Setter Property="Background" Value="#3c3c3c"/>
@@ -242,7 +242,7 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
 
-        <!-- ToggleSwitch Style -->
+        <!-- toggleswitch style -->
         <Style x:Key="ToggleSwitchStyle" TargetType="ToggleButton">
             <Setter Property="Template">
                 <Setter.Value>
@@ -297,13 +297,13 @@
             </Setter>
         </Style>
 
-        <!-- ScrollViewer Style -->
+        <!-- scrollviewer style -->
         <Style x:Key="ModernScrollViewerStyle" TargetType="ScrollViewer">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
         </Style>
 
-        <!-- Navigation Button Style -->
+        <!-- navigation button style -->
         <Style x:Key="NavButtonStyle" TargetType="Border">
             <Setter Property="Margin" Value="20,0,20,5"/>
             <Setter Property="Padding" Value="12,10"/>
@@ -323,10 +323,10 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Title Bar -->
+        <!-- title bar -->
         <local:TitleBarControl Grid.Row="0"/>
 
-        <!-- Main Content -->
+        <!-- main content -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="280"/>
@@ -334,7 +334,7 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-        <!-- Sidebar Navigation -->
+        <!-- sidebar navigation -->
         <Border Grid.Column="0" Background="#252526">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="0,20,0,20">
@@ -348,7 +348,7 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Navigation Items -->
+                    <!-- navigation items -->
                     <Border x:Name="NavGeneral" Style="{StaticResource NavButtonStyle}" Background="#2d2d30" MouseLeftButtonDown="NavItem_Click" Tag="General">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -442,14 +442,14 @@
             </ScrollViewer>
         </Border>
 
-        <!-- Separator -->
+        <!-- separator -->
         <Border Grid.Column="1" Background="#3c3c3c"/>
 
-        <!-- Main Content Area -->
+        <!-- main content area -->
         <ScrollViewer Grid.Column="2" Style="{StaticResource ModernScrollViewerStyle}" x:Name="MainScrollViewer">
             <StackPanel Margin="30,20,30,30">
 
-                <!-- Header -->
+                <!-- header -->
                 <TextBlock x:Name="MainHeader" 
                            FontSize="12" 
                            Foreground="White" 
@@ -465,21 +465,21 @@
                            Foreground="#888888"
                            Margin="0,0,0,30"/>
 
-                <!-- Content Container -->
+                <!-- content container -->
                 <Grid x:Name="ContentContainer" RenderTransformOrigin="0.5,0.5">
                     <Grid.RenderTransform>
                         <ScaleTransform ScaleX="1" ScaleY="1"/>
                     </Grid.RenderTransform>
 
-                    <!-- GENERAL SECTION -->
+                    <!-- general section -->
                     <StackPanel x:Name="GeneralSection" Visibility="Visible">
 
                         <TextBlock Text="General" Style="{StaticResource SectionHeaderStyle}"/>
 
-                        <!-- General Settings Card -->
+                        <!-- general settings card -->
                         <Border Style="{StaticResource SettingsCardStyle}">
                             <StackPanel>
-                                <!-- Language Setting -->
+                                <!-- language setting -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -502,7 +502,7 @@
                                     </ComboBox>
                                 </Grid>
 
-                                <!-- Startup Behavior -->
+                                <!-- startup behavior -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -523,7 +523,7 @@
                                     </ComboBox>
                                 </Grid>
 
-                                <!-- Auto Save -->
+                                <!-- auto save -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -546,7 +546,7 @@
                                     </ComboBox>
                                 </Grid>
 
-                                <!-- Check for Updates -->
+                                <!-- check for updates -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -565,7 +565,7 @@
                                             Style="{StaticResource SeCobraryButtonStyle}" HorizontalAlignment="Left" Click="CheckNowButton_Click"/>
                                 </Grid>
 
-                                <!-- Telemetry -->
+                                <!-- telemetry -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -581,7 +581,7 @@
                                     <ToggleButton Grid.Column="1" Style="{StaticResource ToggleSwitchStyle}" IsChecked="{Binding Telemetry, Mode=TwoWay}"/>
                                 </Grid>
                                 
-                                <!-- Translation API Key -->
+                                <!-- translation api key -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -600,13 +600,13 @@
                         </Border>
                     </StackPanel>
 
-                    <!-- THEME & EDITOR SECTION -->
+                    <!-- theme and editor section -->
                     <StackPanel x:Name="ThemeSection" Visibility="Collapsed">
                         <TextBlock Text="Theme and Editor" Style="{StaticResource SectionHeaderStyle}"/>
 
                         <Border Style="{StaticResource SettingsCardStyle}">
                             <StackPanel>
-                                <!-- Theme Selection -->
+                                <!-- theme selection -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -628,7 +628,7 @@
                                     </ComboBox>
                                 </Grid>
 
-                                <!-- Accent Color -->
+                                <!-- accent color -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -670,7 +670,7 @@
                                     </StackPanel>
                                 </Grid>
 
-                                <!-- Font Family -->
+                                <!-- font family -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -694,7 +694,7 @@
                                     </ComboBox>
                                 </Grid>
 
-                                <!-- Font Size -->
+                                <!-- font size -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -713,7 +713,7 @@
                                     </StackPanel>
                                 </Grid>
 
-                                <!-- Line Spacing -->
+                                <!-- line spacing -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -732,7 +732,7 @@
                                     </StackPanel>
                                 </Grid>
 
-                                <!-- Minimap -->
+                                <!-- minimap -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -748,7 +748,7 @@
                                     <ToggleButton Grid.Column="1" x:Name="MinimapToggle" Style="{StaticResource ToggleSwitchStyle}" IsChecked="{Binding ShowMinimap, Mode=TwoWay}" Checked="MinimapToggle_Checked" Unchecked="MinimapToggle_Unchecked"/>
                                 </Grid>
 
-                                <!-- Word Wrap -->
+                                <!-- word wrap -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -764,7 +764,7 @@
                                     <ToggleButton Grid.Column="1" x:Name="WordWrapToggle" Style="{StaticResource ToggleSwitchStyle}" IsChecked="{Binding WordWrap, Mode=TwoWay}" Checked="WordWrapToggle_Checked" Unchecked="WordWrapToggle_Unchecked"/>
                                 </Grid>
 
-                                <!-- Line Numbers -->
+                                <!-- line numbers -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -783,13 +783,13 @@
                         </Border>
                     </StackPanel>
 
-                    <!-- PYTHON SECTION -->
+                    <!-- python section -->
                     <StackPanel x:Name="PythonSection" Visibility="Collapsed">
                         <TextBlock Text="Python" Style="{StaticResource SectionHeaderStyle}"/>
 
                         <Border Style="{StaticResource SettingsCardStyle}">
                             <StackPanel>
-                                <!-- Python Interpreter -->
+                                <!-- python interpreter -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -807,7 +807,7 @@
                                     <Button Grid.Column="2" x:Name="BrowsePythonButton" Content="Browse..." Style="{StaticResource SeCobraryButtonStyle}" Width="90" Click="BrowsePythonButton_Click"/>
                                 </Grid>
 
-                                <!-- Default Virtual Environment -->
+                                <!-- default virtual environment -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -823,7 +823,7 @@
                                     <ToggleButton Grid.Column="1" Style="{StaticResource ToggleSwitchStyle}" IsChecked="{Binding AutoCreateVenv, Mode=TwoWay}"/>
                                 </Grid>
 
-                                <!-- Pip Index -->
+                                <!-- pip index -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -839,7 +839,7 @@
                                     <TextBox Grid.Column="1" Text="{Binding PipIndexUrl, Mode=TwoWay}" Style="{StaticResource ModernTextBoxStyle}"/>
                                 </Grid>
 
-                                <!-- Default Packages -->
+                                <!-- default packages -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -860,7 +860,7 @@
                         </Border>
                     </StackPanel>
 
-                    <!-- EDITOR SECTION -->
+                    <!-- editor section -->
                     <StackPanel x:Name="EditorSection" Visibility="Collapsed">
                         <TextBlock Text="Editor" Style="{StaticResource SectionHeaderStyle}"/>
 
@@ -934,13 +934,13 @@
                         </Border>
                     </StackPanel>
 
-                    <!-- GAME ENGINE SECTION -->
+                    <!-- game engine section -->
                     <StackPanel x:Name="GameEngineSection" Visibility="Collapsed">
                         <TextBlock Text="Game Engine" Style="{StaticResource SectionHeaderStyle}"/>
 
                         <Border Style="{StaticResource SettingsCardStyle}">
                             <StackPanel>
-                                <!-- Default Resolution -->
+                                <!-- default resolution -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -961,7 +961,7 @@
                                     </ComboBox>
                                 </Grid>
 
-                                <!-- Fullscreen by default -->
+                                <!-- fullscreen by default -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -977,7 +977,7 @@
                                     <ToggleButton Grid.Column="1" x:Name="FullscreenToggle" Style="{StaticResource ToggleSwitchStyle}" IsChecked="{Binding FullscreenDefault, Mode=TwoWay}" Checked="GenericSetting_Changed" Unchecked="GenericSetting_Changed"/>
                                 </Grid>
 
-                                <!-- VSync -->
+                                <!-- vsync -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -993,7 +993,7 @@
                                     <ToggleButton Grid.Column="1" x:Name="VSyncToggle" Style="{StaticResource ToggleSwitchStyle}" IsChecked="{Binding VSync, Mode=TwoWay}" Checked="GenericSetting_Changed" Unchecked="GenericSetting_Changed"/>
                                 </Grid>
 
-                                <!-- Frame Rate -->
+                                <!-- frame rate -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -1012,7 +1012,7 @@
                                     </StackPanel>
                                 </Grid>
 
-                                <!-- Physics Engine -->
+                                <!-- physics engine -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -1035,13 +1035,42 @@
                         </Border>
                     </StackPanel>
 
-                    <!-- TOOLS SECTION -->
+                    <!-- tools section -->
                     <StackPanel x:Name="ToolsSection" Visibility="Collapsed">
                         <TextBlock Text="Tools" Style="{StaticResource SectionHeaderStyle}"/>
 
                         <Border Style="{StaticResource SettingsCardStyle}">
                             <StackPanel>
-                                <!-- Terminal Path -->
+                                <!-- preferred terminal selector -->
+                                <Grid Style="{StaticResource SettingRowStyle}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="200"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <iconPacks:PackIconMaterial Kind="ConsoleLine" Width="14" Height="14" Foreground="#4ec9b0" Margin="0,0,5,0"/>
+                                            <TextBlock Text="Preferred Terminal" Style="{StaticResource SettingLabelStyle}"/>
+                                        </StackPanel>
+                                        <TextBlock Text="Select default terminal shell (Git Bash or PowerShell)" Style="{StaticResource SettingDescriptionStyle}"/>
+                                    </StackPanel>
+                                    <ComboBox Grid.Column="1" x:Name="PreferredTerminalCombo" Style="{StaticResource ModernComboBoxStyle}" SelectedValue="{Binding PreferredTerminal, Mode=TwoWay}" SelectedValuePath="Content" SelectionChanged="GenericSetting_Changed">
+                                        <ComboBoxItem Content="Windows PowerShell"/>
+                                        <ComboBoxItem Content="Git Bash"/>
+                                        <ComboBoxItem Content="Command Prompt"/>
+                                        <ComboBoxItem Content="Custom"/>
+                                    </ComboBox>
+                                </Grid>
+
+                                <!-- terminal detection status -->
+                                <Border Background="#1e1e1e" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="3" Padding="12,10" Margin="0,0,0,15">
+                                    <StackPanel>
+                                        <TextBlock Text="Installed Terminal Detection" Foreground="#bbbbbb" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                        <TextBlock x:Name="TerminalDetectionSummary" Text="Checking installed terminals..." Foreground="#888888" FontSize="11" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- terminal path -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -1051,15 +1080,15 @@
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal">
                                             <iconPacks:PackIconMaterial Kind="Console" Width="14" Height="14" Foreground="#888888" Margin="0,0,5,0"/>
-                                            <TextBlock Text="Terminal Path" Style="{StaticResource SettingLabelStyle}"/>
+                                            <TextBlock Text="Custom Terminal Path" Style="{StaticResource SettingLabelStyle}"/>
                                         </StackPanel>
-                                        <TextBlock Text="Path to terminal emulator" Style="{StaticResource SettingDescriptionStyle}"/>
+                                        <TextBlock Text="Path to custom terminal emulator executable" Style="{StaticResource SettingDescriptionStyle}"/>
                                     </StackPanel>
                                     <TextBox Grid.Column="1" x:Name="TerminalPathText" Text="{Binding TerminalPath, Mode=TwoWay}" Style="{StaticResource ModernTextBoxStyle}" Margin="0,0,10,0" TextChanged="GenericSetting_Changed"/>
                                     <Button Grid.Column="2" x:Name="BrowseTerminalButton" Content="Browse..." Style="{StaticResource SeCobraryButtonStyle}" Width="90" Click="BrowseTerminalButton_Click"/>
                                 </Grid>
 
-                                <!-- External Editor -->
+                                <!-- external editor -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -1077,7 +1106,7 @@
                                     <Button Grid.Column="2" x:Name="BrowseExternalEditorButton" Content="Browse..." Style="{StaticResource SeCobraryButtonStyle}" Width="90" Click="BrowseExternalEditorButton_Click"/>
                                 </Grid>
 
-                                <!-- Build Tool -->
+                                <!-- build tool -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -1101,13 +1130,13 @@
                         </Border>
                     </StackPanel>
 
-                    <!-- EXTENSIONS SECTION -->
+                    <!-- extensions section -->
                     <StackPanel x:Name="ExtensionsSection" Visibility="Collapsed">
                         <TextBlock Text="Extensions" Style="{StaticResource SectionHeaderStyle}"/>
 
                         <Border Style="{StaticResource SettingsCardStyle}">
                             <StackPanel>
-                                <!-- Installed Extensions -->
+                                <!-- installed extensions -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -1123,7 +1152,7 @@
                                     <Button Grid.Column="1" Content="Open Extension Manager" Style="{StaticResource PrimaryButtonStyle}" Width="160" Click="OpenExtensionManagerButton_Click"/>
                                 </Grid>
 
-                                <!-- Installed Extensions List -->
+                                <!-- installed extensions list -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -1149,13 +1178,13 @@
                         </Border>
                     </StackPanel>
 
-                    <!-- KEYMAP SECTION -->
+                    <!-- keymap section -->
                     <StackPanel x:Name="KeymapSection" Visibility="Collapsed">
                         <TextBlock Text="Keymap" Style="{StaticResource SectionHeaderStyle}"/>
 
                         <Border Style="{StaticResource SettingsCardStyle}">
                             <StackPanel>
-                                <!-- Keymap Preset -->
+                                <!-- keymap preset -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -1178,7 +1207,7 @@
                                     </ComboBox>
                                 </Grid>
 
-                                <!-- Custom Keybindings -->
+                                <!-- custom keybindings -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -1197,13 +1226,13 @@
                         </Border>
                     </StackPanel>
 
-                    <!-- ABOUT SECTION -->
+                    <!-- about section -->
                     <StackPanel x:Name="AboutSection" Visibility="Collapsed">
                         <TextBlock Text="About" Style="{StaticResource SectionHeaderStyle}"/>
 
                         <Border Style="{StaticResource SettingsCardStyle}">
                             <StackPanel>
-                                <!-- Version Info -->
+                                <!-- version info -->
                                 <Grid Style="{StaticResource SettingRowStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200"/>
@@ -1228,7 +1257,7 @@
                                     <TextBlock Grid.Column="1" Text="2026" Foreground="#e0e0e0" FontSize="12"/>
                                 </Grid>
 
-                                <!-- Action Buttons -->
+                                <!-- action buttons -->
                                 <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
                                     <Button Content="Check for Updates" Style="{StaticResource PrimaryButtonStyle}" Width="140" Margin="0,0,10,0" Click="CheckNowButton_Click"/>
                                     <Button Content="View License" Style="{StaticResource SeCobraryButtonStyle}" Width="120" Margin="0,0,10,0" Click="ViewLicenseButton_Click"/>
@@ -1239,7 +1268,7 @@
                     </StackPanel>
                 </Grid>
 
-                <!-- Bottom Action Buttons -->
+                <!-- bottom action buttons -->
                 <Border Background="#252526" CornerRadius="3" Padding="20,15" Margin="0,30,0,0">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button x:Name="ResetButton" Content="Reset to Defaults" Style="{StaticResource SeCobraryButtonStyle}" Width="130" Margin="0,0,10,0" Click="ResetButton_Click"/>

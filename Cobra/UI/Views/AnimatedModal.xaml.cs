@@ -43,14 +43,14 @@ namespace Cobra.UI.Views
             modal.ContentPanel.Children.Clear();
             modal.ContentPanel.Children.Add(content);
 
-            // Add buttons
+            // add buttons
             var confirmButton = new System.Windows.Controls.Button
             {
                 Content = confirmText,
                 Width = 100,
                 Height = 32,
                 Margin = new Thickness(5, 0, 0, 0),
-                Background = new SolidColorBrush(Color.FromRgb(255, 140, 0)), // DarkOrange
+                Background = new SolidColorBrush(Color.FromRgb(255, 140, 0)),
                 Foreground = Brushes.White,
                 FontSize = 13,
                 Cursor = System.Windows.Input.Cursors.Hand
@@ -107,7 +107,7 @@ namespace Cobra.UI.Views
             };
             stack.Children.Add(textBox);
 
-            // Focus the textbox when loaded
+            // focus the textbox when loaded
             textBox.Loaded += (_, _) =>
             {
                 textBox.Focus();

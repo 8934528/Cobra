@@ -18,10 +18,10 @@
     </Window.RenderTransform>
 
     <Grid>
-        <!-- Overlay background -->
+        <!-- overlay background -->
         <Border Background="#252526" Opacity="0.5"/>
 
-        <!-- Modal content -->
+        <!-- modal content -->
         <Border Background="#2d2d30" 
                 CornerRadius="3,3,0,0"
                 BorderBrush="#3c3c3c" 
@@ -43,7 +43,7 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Title Bar -->
+                <!-- title bar -->
                 <Border Grid.Row="0" 
                         Background="#252526" 
                         CornerRadius="3,3,0,0"
@@ -95,14 +95,14 @@
                     </Grid>
                 </Border>
 
-                <!-- Content Area -->
+                <!-- content area -->
                 <Border Grid.Row="1" Background="#2d2d30" Padding="15">
                     <StackPanel x:Name="ContentPanel">
                         <!-- content will be added here -->
                     </StackPanel>
                 </Border>
 
-                <!-- Button Area -->
+                <!-- button area -->
                 <Border Grid.Row="2" 
                         Background="#252526" 
                         CornerRadius="3"

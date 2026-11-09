@@ -40,6 +40,8 @@ namespace Cobra.Tests
             await RunTestAsync("PluginLoader: Metadata Inspection & Untrusted DLL Blocking", TestPluginLoaderSecurity);
             await RunTestAsync("SettingsModel & AiAssistantService: Settings Validation & Offline Local Assistant", TestSettingsAndAiAssistant);
             await RunTestAsync("ECS World & ScriptSystem: Non-Blocking Editor Simulation", TestEcsScriptSystem);
+            await RunTestAsync("TerminalService: Dynamic Shell Detection & Command Execution", TestTerminalService);
+            await RunTestAsync("Scene3D & Python Synchronizer: 3D Tools, Object Cloning & Bidirectional Code Export", TestScene3DAndCodeSync);
 
             Console.WriteLine($"\nTest Summary: {_passedCount} passed, {_failedCount} failed.");
             return _failedCount == 0 ? 0 : 1;
@@ -433,6 +435,112 @@ namespace Cobra.Tests
 
             ScriptSystem.Update(world);
             Assert(true, "ScriptSystem.Update should complete non-blocking without spawning processes.");
+            return Task.CompletedTask;
+        }
+
+        private static async Task TestTerminalService()
+        {
+            var detected = TerminalService.DetectAvailableTerminals();
+            Assert(detected != null && detected.Count >= 3, "DetectAvailableTerminals must return at least PowerShell, Git Bash, and CMD entries.");
+            
+            var ps = detected!.FirstOrDefault(t => t.DisplayName == TerminalService.TerminalPowerShell);
+            Assert(ps != null, "Windows PowerShell must be registered in terminal list.");
+            Assert(!string.IsNullOrWhiteSpace(ps!.ExecutablePath), "PowerShell executable path must be resolved.");
+
+            var bash = detected!.FirstOrDefault(t => t.DisplayName == TerminalService.TerminalGitBash);
+            Assert(bash != null, "Git Bash must be registered in terminal list.");
+
+            var cmd = detected!.FirstOrDefault(t => t.DisplayName == TerminalService.TerminalCmd);
+            Assert(cmd != null && cmd.IsAvailable, "Command Prompt (CMD) must be available on Windows.");
+
+            // test execution with available shell
+            var activeShell = ps.IsAvailable ? TerminalService.TerminalPowerShell : TerminalService.TerminalCmd;
+            string testEcho = ps.IsAvailable ? "Write-Output 'CobraTerminalOnline'" : "echo CobraTerminalOnline";
+            var result = await TerminalService.ExecuteCommandAsync(testEcho, activeShell, Directory.GetCurrentDirectory(), timeoutMs: 10000);
+            Assert(result.ExitCode == 0, $"Terminal execution should succeed with exit code 0. Error: {result.StdErr}");
+            Assert(result.StdOut.Contains("CobraTerminalOnline"), "Terminal output should capture stdout from executed command.");
+
+            // test settingsmodel preferredterminal property
+            var settings = new SettingsModel();
+            Assert(!string.IsNullOrWhiteSpace(settings.PreferredTerminal), "Default PreferredTerminal must not be empty.");
+            settings.PreferredTerminal = TerminalService.TerminalGitBash;
+            Assert(settings.PreferredTerminal == TerminalService.TerminalGitBash, "PreferredTerminal must update cleanly.");
+        }
+
+        private static Task TestScene3DAndCodeSync()
+        {
+            string tempRoot = Path.Combine(Path.GetTempPath(), "CobraTest_Scene3D_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempRoot);
+            try
+            {
+                var scene = new Scene { SceneName = "World3D", Is3D = true };
+                var building = new SceneObject
+                {
+                    Name = "OfficeTower",
+                    Category3D = "Buildings",
+                    Subtype3D = "Office",
+                    Primitive3D = "Cube",
+                    X = 50,
+                    Y = 0,
+                    Z = 120,
+                    Width = 100,
+                    Height = 200,
+                    Depth = 80,
+                    RotationX = 10,
+                    RotationY = 45,
+                    Rotation = 0,
+                    Roughness = 0.85,
+                    Metalness = 0.15,
+                    Color = "#dcdcaa"
+                };
+                scene.Objects.Add(building);
+
+                var vehicle = new SceneObject
+                {
+                    Name = "PlayerCar",
+                    Category3D = "Vehicles",
+                    Subtype3D = "Car",
+                    Primitive3D = "Cube",
+                    X = 200,
+                    Y = 5,
+                    Z = 50,
+                    Width = 60,
+                    Height = 40,
+                    Depth = 110,
+                    Roughness = 0.3,
+                    Metalness = 0.9,
+                    Color = "#4ec9b0"
+                };
+                scene.Objects.Add(vehicle);
+
+                // clone testing
+                var clonedCar = vehicle.Clone();
+                Assert(clonedCar.Id != vehicle.Id, "Cloned 3D object must have unique ID.");
+                Assert(clonedCar.Category3D == "Vehicles" && clonedCar.Subtype3D == "Car", "Cloned object must preserve Category3D and Subtype3D.");
+                Assert(clonedCar.Roughness == 0.3 && clonedCar.Metalness == 0.9, "Cloned object must preserve PBR properties.");
+                Assert(clonedCar.Depth == 110, "Cloned object must preserve 3D Depth.");
+
+                // python code generation testing
+                string pythonCode = scene.ExportToPythonModule();
+                Assert(pythonCode.Contains("'category_3d': 'Buildings'") && pythonCode.Contains("'subtype_3d': 'Office'"), "Python scene code must serialize Category3D and Subtype3D.");
+                Assert(pythonCode.Contains("'depth': 80.0") && pythonCode.Contains("'roughness': 0.85") && pythonCode.Contains("'metalness': 0.15"), "Python scene code must serialize depth, roughness, and metalness.");
+                Assert(pythonCode.Contains("'rotation_x': 10.0") && pythonCode.Contains("'rotation_y': 45.0"), "Python scene code must serialize 3D rotation Euler angles.");
+
+                // save and reload scene file
+                string scenePath = Path.Combine(tempRoot, "test_3d.scene");
+                scene.Save(scenePath);
+                Assert(File.Exists(scenePath), "Scene file with 3D objects must persist to disk.");
+
+                var loaded = Scene.Load(scenePath);
+                Assert(loaded.Objects.Count == 2, "Loaded 3D scene must restore all objects.");
+                var loadedBuilding = loaded.Objects.First(o => o.Name == "OfficeTower");
+                Assert(loadedBuilding.Category3D == "Buildings" && loadedBuilding.Subtype3D == "Office", "Loaded building must retain Category3D and Subtype3D.");
+                Assert(loadedBuilding.Depth == 80 && loadedBuilding.Roughness == 0.85, "Loaded building must retain Depth and Roughness.");
+            }
+            finally
+            {
+                if (Directory.Exists(tempRoot)) Directory.Delete(tempRoot, true);
+            }
             return Task.CompletedTask;
         }
     }

@@ -5,7 +5,7 @@ import math
 
 pygame.init()
 
-# ================= SETTINGS =================
+# settings
 WIDTH, HEIGHT = 800, 600
 GRID_SIZE = 30
 ROWS = WIDTH // GRID_SIZE
@@ -16,7 +16,7 @@ pygame.display.set_caption("Cobra - Wraparound Edition")
 
 clock = pygame.time.Clock()
 
-# Colors
+# colors
 BLACK = (20, 20, 20)
 GREEN = (0, 255, 100)
 DARK_GREEN = (0, 200, 80)
@@ -27,34 +27,34 @@ BLUE = (50, 150, 255)
 PURPLE = (150, 50, 255)
 ORANGE = (255, 140, 50)
 
-# ================= GAME VARIABLES =================
+# game variables
 snake = [[ROWS // 2, COLS // 2]]
-dx, dy = 1, 0  # Start moving right
+dx, dy = 1, 0  # start moving right
 
 food = [random.randint(0, ROWS - 1), random.randint(0, COLS - 1)]
 score = 0
 high_score = 0
 game_speed = 10
-speed_increase_score = 5  # Increase speed every 5 points
+speed_increase_score = 5  # increase speed every 5 points
 
 core_pos = (WIDTH // 2, HEIGHT // 2)
 pulse = 0
 
-# Game states
+# game states
 MENU = 0
 PLAYING = 1
 GAME_OVER = 2
 game_state = MENU
 
-# ================= HELPER FUNCTIONS =================
+# helper functions
 def get_random_empty_position():
-    """Get a random position that's not occupied by the snake"""
+    """get a random position that is not occupied by the snake"""
     while True:
         pos = [random.randint(0, ROWS - 1), random.randint(0, COLS - 1)]
         if pos not in snake:
             return pos
 
-# ================= DRAW FUNCTIONS =================
+# draw functions
 def draw_grid():
     for x in range(0, WIDTH, GRID_SIZE):
         for y in range(0, HEIGHT, GRID_SIZE):
@@ -63,7 +63,7 @@ def draw_grid():
 def draw_snake():
     for i, segment in enumerate(snake):
         x, y = segment
-        # Gradient effect - head is brighter
+        # gradient effect, head is brighter
         color = GREEN if i == 0 else DARK_GREEN
         rect = pygame.Rect(x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE - 1, GRID_SIZE - 1)
         pygame.draw.rect(screen, color, rect)
@@ -80,7 +80,7 @@ def draw_core():
     pulse += 0.1
     radius = 50 + int(8 * math.sin(pulse))
     
-    # Draw pulsing glow effect
+    # draw pulsing glow effect
     for r in range(radius, radius - 20, -5):
         alpha = 255 - (radius - r) * 15
         color = (min(255, BLUE[0] + alpha // 3), 
@@ -104,7 +104,7 @@ def draw_score():
         screen.blit(speed_text, (10, 90))
 
 def draw_menu():
-    # Semi-transparent overlay
+    # semi-transparent overlay
     overlay = pygame.Surface((WIDTH, HEIGHT))
     overlay.set_alpha(128)
     overlay.fill(BLACK)
@@ -144,7 +144,7 @@ def draw_menu():
         y_offset += 25
 
 def draw_game_over():
-    # Semi-transparent overlay
+    # semi-transparent overlay
     overlay = pygame.Surface((WIDTH, HEIGHT))
     overlay.set_alpha(180)
     overlay.fill(BLACK)
@@ -169,9 +169,9 @@ def draw_game_over():
     restart_rect = restart_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 120))
     screen.blit(restart_text, restart_rect)
 
-# ================= GAME LOGIC =================
+# game logic
 def distance_to_core(pos):
-    """Calculate distance from a position to the core"""
+    """calculate distance from a position to the core"""
     px = pos[0] * GRID_SIZE + GRID_SIZE // 2
     py = pos[1] * GRID_SIZE + GRID_SIZE // 2
     return math.sqrt((px - core_pos[0])**2 + (py - core_pos[1])**2)
@@ -182,26 +182,26 @@ def move_snake():
     head = snake[0]
     new_head = [head[0] + dx, head[1] + dy]
     
-    # Wraparound logic - no walls!
+    # wraparound logic without walls
     new_head[0] = new_head[0] % ROWS
     new_head[1] = new_head[1] % COLS
     
     snake.insert(0, new_head)
     
     if new_head == food:
-        # Score depends on distance to core
+        # score depends on distance to core
         dist = distance_to_core(new_head)
         points_earned = max(1, int(100 / (dist + 1)) + random.randint(0, 5))
         score += points_earned
         
-        # Update high score
+        # update high score
         if score > high_score:
             high_score = score
         
-        # Increase speed every speed_increase_score points
+        # increase speed every speed_increase_score points
         game_speed = min(25, 10 + (score // speed_increase_score))
         
-        # Spawn new food at empty position
+        # spawn new food at empty position
         food = get_random_empty_position()
     else:
         snake.pop()
@@ -209,7 +209,7 @@ def move_snake():
 def check_collision():
     head = snake[0]
     
-    # Self collision (now without wall collision)
+    # self collision without wall collision
     if head in snake[1:]:
         return True
     
@@ -224,7 +224,7 @@ def reset_game():
     food = get_random_empty_position()
     game_state = PLAYING
 
-# ================= GAME LOOP =================
+# game loop
 while True:
     clock.tick(game_speed)
     
@@ -242,7 +242,7 @@ while True:
                 reset_game()
             
             elif game_state == PLAYING:
-                # Prevent 180-degree turns
+                # prevent 180-degree turns
                 if event.key == pygame.K_UP and dy != 1:
                     dx, dy = 0, -1
                 elif event.key == pygame.K_DOWN and dy != -1:
@@ -262,7 +262,7 @@ while True:
         if check_collision():
             game_state = GAME_OVER
         
-        # Draw game
+        # draw game
         screen.fill(BLACK)
         draw_grid()
         draw_core()
