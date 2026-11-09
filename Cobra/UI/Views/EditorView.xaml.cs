@@ -1210,7 +1210,7 @@ namespace Cobra.UI.Views
                     await SaveTabAsync(tab);
                 }
                 PopulateStartupFiles();
-                ShowToast("All modified files saved");
+                ShowToast("Saved all files");
             }
             catch (Exception ex)
             {
@@ -1301,7 +1301,7 @@ namespace Cobra.UI.Views
                     string escaped = JsonSerializer.Serialize(formatted);
                     await CodeWebView.CoreWebView2.ExecuteScriptAsync($"if (window.setEditorContent) window.setEditorContent({escaped}, 'python');");
                 }
-                ShowToast("Formatted Python code");
+                ShowToast("Code formatted");
             }
             catch (Exception ex)
             {
@@ -1395,7 +1395,7 @@ namespace Cobra.UI.Views
                 if (started)
                 {
                     StatusRightText.Text = $"Debugging {config.StartupFile}";
-                    ShowToast("Python Debugger attached");
+                    ShowToast("Debugger started");
                 }
             }
             catch (Exception ex)
@@ -1409,7 +1409,7 @@ namespace Cobra.UI.Views
             _isDebuggingSession = false;
             _gameRunner.StopGame();
             StatusRightText.Text = "Ready";
-            ShowToast("Game process stopped");
+            ShowToast("Game stopped");
         }
 
         private async void OnRestartGameClicked(object sender, RoutedEventArgs e)
@@ -1509,7 +1509,7 @@ namespace Cobra.UI.Views
                     }
                     _projectConfig.SaveManifest();
                     PopulateStartupFiles();
-                    ShowToast("Saved run configuration");
+                    ShowToast("Run settings saved");
                 }
             }
             catch (Exception ex)
@@ -1635,7 +1635,7 @@ namespace Cobra.UI.Views
                 File.WriteAllText(pyScenePath, _currentScene.ExportToPythonModule());
 
                 LoadFiles();
-                ShowToast($"Saved {Path.GetFileName(_currentScenePath)} & synced Python module");
+                ShowToast($"Saved {Path.GetFileName(_currentScenePath)} and synced Python");
             }
             catch (Exception ex)
             {
@@ -1783,7 +1783,7 @@ namespace Cobra.UI.Views
         private void OnPlayToggle(object sender, RoutedEventArgs e)
         {
             _isPlaying = PlayToggle.IsChecked == true;
-            ShowToast(_isPlaying ? "Scene physics simulation started" : "Scene simulation stopped");
+            ShowToast(_isPlaying ? "Physics simulation started" : "Physics simulation stopped");
         }
 
         private void UpdateSceneSimulation(double dt)
@@ -2254,8 +2254,8 @@ namespace Cobra.UI.Views
             try
             {
                 var (isValid, errors) = _currentGraph.ValidateGraph();
-                string msg = isValid ? "Visual Scripting Graph is valid and ready to generate Python code." : string.Join("\n", errors);
-                await CustomDialog.ShowAsync(Window.GetWindow(this), msg, "Visual Graph Validation", isValid ? DialogIcon.Success : DialogIcon.Warning);
+                string msg = isValid ? "Graph is valid and ready to generate Python code." : string.Join("\n", errors);
+                await CustomDialog.ShowAsync(Window.GetWindow(this), msg, "Graph Validation", isValid ? DialogIcon.Success : DialogIcon.Warning);
             }
             catch (Exception ex)
             {
@@ -2271,7 +2271,7 @@ namespace Cobra.UI.Views
             File.WriteAllText(outPath, _currentGraph.GeneratePythonCode());
             LoadFiles();
             OpenFileInTab(outPath);
-            ShowToast("Compiled Visual Graph to scripts/visual_logic.py");
+            ShowToast("Generated scripts/visual_logic.py");
         }
 
         private void OnSaveNodeGraphClicked(object sender, RoutedEventArgs e)
@@ -2281,7 +2281,7 @@ namespace Cobra.UI.Views
             string path = Path.Combine(scriptsDir, $"{_currentGraph.GraphName}.graph.json");
             _currentGraph.Save(path);
             LoadFiles();
-            ShowToast($"Saved node graph: {Path.GetFileName(path)}");
+            ShowToast($"Saved {Path.GetFileName(path)}");
         }
 
         private void OnLoadNodeGraphClicked(object sender, RoutedEventArgs e)
@@ -2414,11 +2414,11 @@ namespace Cobra.UI.Views
                 NodePropertiesPanel.Children.Add(paramBox);
             }
 
-            var connectBtn = new Button { Content = "Connect Output To Next Clicked Node", Padding = new Thickness(8, 5, 8, 5), Background = Brushes.DarkOrange, Foreground = Brushes.White, BorderThickness = new Thickness(0), Cursor = Cursors.Hand };
+            var connectBtn = new Button { Content = "Connect to Another Node", Padding = new Thickness(8, 5, 8, 5), Background = Brushes.DarkOrange, Foreground = Brushes.White, BorderThickness = new Thickness(0), Cursor = Cursors.Hand };
             connectBtn.Click += (_, _) =>
             {
                 _pendingConnectionSource = node;
-                ShowToast("Click another node to complete connection");
+                ShowToast("Click another node to connect");
             };
             NodePropertiesPanel.Children.Add(connectBtn);
         }
@@ -2552,7 +2552,7 @@ namespace Cobra.UI.Views
         {
             if (_loadedSpriteSheet == null || _animPreviewTimer == null)
             {
-                ShowToast("Load a sprite sheet image first");
+                ShowToast("Load a sprite sheet first");
                 return;
             }
             if (int.TryParse(AnimFrameDurationBox.Text, out int ms) && ms >= 20)
@@ -3052,7 +3052,7 @@ namespace Cobra.UI.Views
             }
             else
             {
-                ShowToast("Packaged executable not found. Run 'Package Game Now' first.");
+                ShowToast("Executable not found. Click 'Package Game Now' first.");
             }
         }
 
@@ -3060,7 +3060,7 @@ namespace Cobra.UI.Views
         {
             OnBottomTabClicked(TabBuildBtn, e);
             BuildPackagingService.CleanBuildArtifacts(_projectPath);
-            BuildOutputBox.AppendText("Cleaned build/ and dist/ artifacts.\n");
+            BuildOutputBox.AppendText("Cleaned build folders.\n");
             LoadFiles();
         }
 
@@ -3368,7 +3368,7 @@ namespace Cobra.UI.Views
             if (FileTree.SelectedItem is FileNode node)
             {
                 Clipboard.SetText(node.FullPath);
-                ShowToast("Copied path to clipboard");
+                ShowToast("Path copied to clipboard");
             }
         }
 
@@ -3382,7 +3382,7 @@ namespace Cobra.UI.Views
         {
             LoadFiles();
             PopulateStartupFiles();
-            ShowToast("Project explorer refreshed");
+            ShowToast("Explorer refreshed");
         }
 
         private void OnTreeViewDragEnter(object sender, DragEventArgs e)
@@ -3493,7 +3493,7 @@ namespace Cobra.UI.Views
             BottomPanelRow.Height = new GridLength(230);
             BottomPanelBorder.Visibility = Visibility.Visible;
             _isBottomPanelCollapsed = false;
-            ShowToast("Workspace layout reset to default");
+            ShowToast("Layout reset to default");
         }
 
         private void OnRecentProjectsClicked(object sender, RoutedEventArgs e)
@@ -3525,13 +3525,13 @@ namespace Cobra.UI.Views
             try
             {
                 await CustomDialog.ShowAsync(Window.GetWindow(this),
-                    "Cobra IDE Documentation is available in the repository Docs/ folder:\n" +
-                    "• Docs/user_guide.md\n" +
-                    "• Docs/python_environment.md\n" +
-                    "• Docs/game_frameworks.md\n" +
-                    "• Docs/build_and_packaging.md\n" +
-                    "• Docs/security.md",
-                    "Cobra IDE Documentation");
+                    "Documentation files in the Docs folder:\n\n" +
+                    "• README.md — Quick Start Guide\n" +
+                    "• ARCHITECTURE.md — System Design\n" +
+                    "• Docs/user_guide.md — User Guide\n" +
+                    "• Docs/configuration.md — Settings Guide\n" +
+                    "• policies/data_protection.md — Privacy Policy",
+                    "Documentation");
             }
             catch (Exception ex)
             {
@@ -3544,7 +3544,11 @@ namespace Cobra.UI.Views
             try
             {
                 await CustomDialog.ShowAsync(Window.GetWindow(this),
-                    "Cobra IDE — Python Game Development Environment\nVersion 2.0 (.NET 8 / WPF / Monaco / Pygame / Panda3D / Ursina)",
+                    "Cobra IDE v2.0\nPython Game Development Environment\n\n" +
+                    "• Language: Python 3.10+\n" +
+                    "• 2D Engine: Pygame (pygame-ce)\n" +
+                    "• 3D Engines: Panda3D, Ursina\n" +
+                    "• Platform: .NET 8, WPF, WebView2",
                     "About Cobra IDE");
             }
             catch (Exception ex)

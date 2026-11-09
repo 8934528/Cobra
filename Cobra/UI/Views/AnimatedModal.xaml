@@ -58,7 +58,7 @@
                                                         VerticalAlignment="Center"
                                                         Foreground="#cccccc"/>
                             <TextBlock x:Name="TitleText" 
-                                    Text="Create New Project" 
+                                    Text="New Project" 
                                     Foreground="White" 
                                     FontSize="12" 
                                     Margin="4"

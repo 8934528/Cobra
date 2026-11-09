@@ -1,30 +1,28 @@
 # Build & Packaging Guide
 
-Cobra IDE includes an integrated build and distribution pipeline (`BuildPackagingService`) powered by **PyInstaller** so developers can package their Python games into standalone executables.
+Cobra IDE uses **PyInstaller** to turn your Python game into a standalone Windows program (`.exe`). Users do not need Python installed to play your game.
 
-## 1. Prerequisites
+## 1. Setup
 
-Ensure `pyinstaller` is installed in your project's Python environment. You can install it with one click from the **Python Environment & Packages** panel (`pyinstaller`).
+Make sure `pyinstaller` is installed in your project. If it is not installed:
 
-## 2. Build Modes
+1. Open the **Python & Packages** panel.
+2. Type `pyinstaller` in the package box.
+3. Click **Install Package**.
 
-Click **Build Game** on the Main Toolbar to select a packaging action:
+## 2. Packaging Options
 
-1. **Development Build (Console Window)**:
-   - Passes `--onedir` and `--console` to `PyInstaller`.
-   - Keeps the standard output console visible so runtime print statements and tracebacks can be inspected during testing.
-2. **Release Build (Windowed Executable)**:
-   - Passes `--onefile` (or `--onedir`) and `--noconsole` (`--windowed`) to `PyInstaller`.
-   - Produces a clean desktop game executable in `dist/<GameName>.exe` without a terminal window.
-3. **Clean Build Artifacts**:
-   - Safely removes the project's `build/`, `dist/`, and `*.spec` artifacts inside the project root.
-4. **Test Packaged Executable**:
-   - Launches the generated `.exe` inside `dist/` with its working directory set to the distribution folder so you can immediately verify asset paths in the packaged build.
+Click **Build & Package** in the left sidebar to open the build tool:
 
-## 3. Asset & Scene Bundling
+- **Release Build:** Creates a standalone `.exe` file without a terminal window. Best for finished games.
+- **Development Build:** Keeps the console window open so you can see errors and print statements. Best for testing.
+- **Clean Build Folder:** Deletes older files in `build/` and `dist/` before packaging.
+- **Test Packaged Game:** Runs the newly built `.exe` file so you can make sure everything works.
 
-During packaging, `BuildPackagingService` automatically detects project subdirectories (`assets/`, `scenes/`, `scripts/`) and passes `--add-data` arguments (`folder;folder` on Windows) so sprites, audio files, fonts, and `.scene` files are bundled alongside the executable.
+## 3. Bundling Assets
 
-## 4. Platform Scope
+Cobra automatically bundles your game folders (`assets/`, `scenes/`, and `scripts/`) into the build. Sprites, music, sounds, and scenes will be included with the executable.
 
-Because `PyInstaller` produces executables for the host operating system, running the build pipeline on Windows generates a **Windows executable (`.exe`)**. Building macOS or Linux binaries requires running the packaging step on those respective operating systems or inside a CI runner.
+## 4. Output Location
+
+Finished builds are placed in the `dist/` folder inside your project.

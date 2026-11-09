@@ -1,17 +1,17 @@
-# Cobra IDE — Python Game Development Environment
+# Cobra IDE
 
-desktop Integrated Development Environment (IDE) built for Python game developers. It combines a Monaco-powered code editor, Python virtual environment and `pip` package management, 2D and 3D scene editors, visual scripting, integrated debugging, and one-click executable packaging into a unified Windows desktop workspace.
+Cobra IDE is an editor for making Python games on Windows. It brings together code editing, scene design, debugging, package management, and game building in one simple tool.
 
-## Core Identity & Supported Frameworks
+## Key Facts
 
-- **Primary Language**: Python 3.10+
-- **Primary & Default Game Framework**: **Pygame (`pygame-ce`)** for 2D game development
-- **Optional 3D Python Frameworks**: **Panda3D** and **Ursina Engine** for 3D Python games
-- **Desktop Application Stack**: C# / .NET 8 (`net8.0-windows`), WPF, WebView2, Monaco Editor, and an embedded Three.js 3D viewport
+- **Language:** Python 3.10 or newer
+- **Main 2D Engine:** Pygame (`pygame-ce`)
+- **Supported 3D Engines:** Panda3D and Ursina Engine
+- **Platform:** Windows 10 and 11 (.NET 8 and WPF)
 
-## Technology Stack
+## Tech Stack
 
-### IDE Core & Desktop Architecture
+### Desktop App
 
 ![.NET 8](https://img.shields.io/badge/.NET-8.0-512bd4?style=for-the-badge&logo=dotnet&logoColor=white)
 ![C#](https://img.shields.io/badge/C%23-12.0-239120?style=for-the-badge&logo=c-sharp&logoColor=white)
@@ -22,7 +22,7 @@ desktop Integrated Development Environment (IDE) built for Python game developer
 ![MahApps.Metro](https://img.shields.io/badge/MahApps.Metro-IconPacks-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 ![DPAPI](https://img.shields.io/badge/Windows_DPAPI-Encryption-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 
-### Embedded Web & 3D Editor Viewports
+### Web & 3D Viewport
 
 ![WebView2](https://img.shields.io/badge/WebView2-1.0.3912-0078D7?style=for-the-badge&logo=microsoft-edge&logoColor=white)
 ![Monaco Editor](https://img.shields.io/badge/Monaco_Editor-Code_Engine-007ACC?style=for-the-badge&logo=visual-studio-code&logoColor=white)
@@ -31,7 +31,7 @@ desktop Integrated Development Environment (IDE) built for Python game developer
 ![HTML5](https://img.shields.io/badge/HTML5-Canvas_&_WebGL-E34F26?style=for-the-badge&logo=html5&logoColor=white)
 ![CSS3](https://img.shields.io/badge/CSS3-Styling-1572B6?style=for-the-badge&logo=css3&logoColor=white)
 
-### Game Development & Python Runtime Stack (For Game Developers)
+### Game Tools
 
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Pygame-CE](https://img.shields.io/badge/Pygame--CE-2D_Engine-FFBE00?style=for-the-badge&logo=python&logoColor=black)
@@ -42,7 +42,7 @@ desktop Integrated Development Environment (IDE) built for Python game developer
 ![Pillow](https://img.shields.io/badge/Pillow-Sprite_Imaging-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![OpenGL](https://img.shields.io/badge/OpenGL-GLSL_Shaders-5586A4?style=for-the-badge&logo=opengl&logoColor=white)
 
-### Infrastructure, Packaging & Developer Tooling
+### Build & Dev Tools
 
 ![pip & venv](https://img.shields.io/badge/pip_&_venv-Package_Isolation-3776AB?style=for-the-badge&logo=pypi&logoColor=white)
 ![PyInstaller](https://img.shields.io/badge/PyInstaller-Game_Packaging-3776AB?style=for-the-badge&logo=python&logoColor=white)
@@ -53,112 +53,66 @@ desktop Integrated Development Environment (IDE) built for Python game developer
 ![PowerShell](https://img.shields.io/badge/PowerShell-Integrated_Shell-5391FE?style=for-the-badge&logo=powershell&logoColor=white)
 ![Windows](https://img.shields.io/badge/Windows-10_%2F_11_Target-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 
-## Documentation Index
+## Documentation
 
-- **[IDE Overview](Docs/ide_overview.md)** — Core capabilities, workspace layout, and architecture summary.
-- **[User Guide](Docs/user_guide.md)** — Step-by-step workflows for creating projects, designing scenes, debugging, and packaging games.
-- **[System Architecture](ARCHITECTURE.md)** — Technical design, services, C# <-> WebView2 bridge, and scene serialization format.
-- **[Python Environment & Intelligence](Docs/python_environment.md)** — Interpreter detection, `venv` management, `pip` package manager, and AST/Ruff diagnostics.
-- **[Supported Game Frameworks](Docs/game_frameworks.md)** — Pygame 2D workflow, Panda3D/Ursina 3D workflows, and 2D/3D scene synchronization.
-- **[Build & Packaging Guide](Docs/build_and_packaging.md)** — Packaging standalone executables with `PyInstaller` and bundling game assets.
-- **[Configuration Guide](Docs/configuration.md)** — Editor, theme, Python, engine, and layout preferences.
-- **[AI Assistant Guide](Docs/ai_integration.md)** — Privacy-aware optional AI assistant configuration and DPAPI key encryption.
-- **[Security Architecture](Docs/security.md)** — Path traversal prevention, asset header validation, extension verification, and policy compliance.
-- **[Data Protection Policy](policies/data_protection.md)** — POPIA-aligned privacy and local data handling policy.
-- **[Access Control & Incident Policy](policies/access_incident.md)** — Access boundaries, extension controls, and incident response procedures.
+- **[IDE Overview](Docs/ide_overview.md)** — Main features and layout.
+- **[User Guide](Docs/user_guide.md)** — Steps to create, edit, run, and export games.
+- **[System Architecture](ARCHITECTURE.md)** — App structure, services, and scene format.
+- **[Python Environment](Docs/python_environment.md)** — Interpreters, virtual environments, and packages.
+- **[Game Frameworks](Docs/game_frameworks.md)** — Pygame, Panda3D, and Ursina guides.
+- **[Build & Packaging](Docs/build_and_packaging.md)** — Turn games into Windows executable files.
+- **[Configuration](Docs/configuration.md)** — User and project settings.
+- **[AI Assistant](Docs/ai_integration.md)** — Optional offline and online coding help.
+- **[Security](Docs/security.md)** — File safety and data protection rules.
+- **[Data Protection Policy](policies/data_protection.md)** — Local storage and privacy policy.
+- **[Access Control Policy](policies/access_incident.md)** — Security boundaries and incident handling.
 
-## Key Capabilities
+## Features
 
-1. **Professional IDE Workspace**:
-   - Main Toolbar with project actions, undo/redo, run, stop, debug, build, and run configuration.
-   - Activity Sidebar with Project Explorer, Asset Browser, Scene Hierarchy, Project Search, Git Source Control, Extensions, Debugger, and Project Settings.
-   - Multi-tab and split-view Monaco Editor with Python symbol navigation (`Ctrl+P`, `F12`), find/replace, and live syntax diagnostics.
-   - 7-Tab Resizable Bottom Panel: `Output`, `Terminal`, `Debug Console`, `Problems`, `Test Results`, `Build Output`, and `Game Logs`.
-2. **Python Environment & Package Management**:
-   - Automatic discovery of system Python installations (`PATH`, `py -0p`, standard Windows install paths) and project `.venv` environments.
-   - Integrated `pip` manager for installing, upgrading, uninstalling, and exporting `requirements.txt` strictly inside the project interpreter.
-   - Live Python AST syntax validation, symbol outline extraction, and optional `ruff` linting/formatting and `pyright` type checking.
-3. **9 Ready-to-Run Python Game Templates**:
-   - `Pygame 2D Starter`, `Pygame Platformer`, `Pygame Top-Down`, `Pygame RPG Starter`, `Pygame Arcade`, `Pygame Puzzle`, `Pygame Multiplayer Starter`, `Panda3D 3D Starter`, and `Ursina 3D Starter`.
-4. **2D & 3D Scene Editors**:
-   - Versioned `.scene` JSON format (`v2` with automatic `v1` migration) and one-click Python scene data generation (`scene_data.py`).
-   - 2D Canvas Viewport with configurable grid, grid snapping, zoom/pan, layers, camera preview, box/circle collider gizmos, and undo/redo history.
-   - Embedded Three.js 3D Viewport for Panda3D and Ursina projects with orbit camera, perspective/orthographic toggle, transform gizmos, lighting controls, and bidirectional C# synchronization.
-5. **Integrated Python Debugger & Performance Profiler**:
-   - Built-in `bdb` Python debugger harness supporting line breakpoints, conditional breakpoints, step over/into/out, continue, call stack inspection, local variables, and watch expression evaluation.
-   - Real-time Performance Profiler tracking CPU usage, IDE memory, game process memory, and estimated FPS.
+1. **Workspace:** Monaco code editor, file tree, scene hierarchy, Git tools, and a 7-tab bottom panel.
+2. **Python Tools:** Auto-detects Python, creates virtual environments (`.venv`), and installs packages.
+3. **Game Templates:** 9 starter projects for 2D and 3D games.
+4. **Scene Designers:** 2D grid canvas and 3D viewport with Three.js.
+5. **Debugger & Profiler:** Breakpoints, variable inspection, call stack, and real-time CPU and FPS graphs.
+6. **Executable Export:** Package your game into a single `.exe` file with PyInstaller.
 
-## Getting Started
+## Requirements
 
-### Prerequisites
+- Windows 10 or 11
+- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [Python 3.10+](https://www.python.org/downloads/)
+- [Microsoft Edge WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) (included with Windows 10/11)
 
-- [.NET 8.0 SDK (Windows Desktop)](https://dotnet.microsoft.com/download/dotnet/8.0)
-- [Python 3.10 or newer](https://www.python.org/downloads/)
-- [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) (pre-installed on Windows 10/11)
+## Quick Start
 
-### 1. Run from Bash (erminal Bash)
+### Option 1: Terminal (Bash or PowerShell)
 
-Open a **Bash** terminal in the root folder (`c:/Users/Mihlali/Desktop/Cobra`) and run:
+1. Open a terminal in the project folder.
+2. Restore packages:
 
-```bash
-# 1. Restore NuGet packages (only needed once)
-dotnet restore Cobra.sln
+   ```bash
+   dotnet restore Cobra.sln
+   ```
 
-# 2. Build and launch the Cobra IDE desktop app
-dotnet run --project Cobra/Cobra.csproj
-```
+3. Run the app:
 
-If you already restored packages and want a fast offline build & launch:
+   ```bash
+   dotnet run --project Cobra/Cobra.csproj
+   ```
 
-```bash
-dotnet run --project Cobra/Cobra.csproj --no-restore
-```
+4. Run tests:
 
-To run the automated verification test suite:
+   ```bash
+   dotnet run --project Cobra.Tests/Cobra.Tests.csproj
+   ```
 
-```bash
-dotnet run --project Cobra.Tests/Cobra.Tests.csproj
-```
+### Option 2: Visual Studio
 
-### 2. Run from PowerShell (Antigravity / VS Code Terminal)
+1. Open `Cobra.sln` in Visual Studio (2019, 2022, or 2026).
+2. Right-click the **Cobra** project and select **Set as Startup Project**.
+3. Press **F5** to build and run.
 
-```powershell
-# Build and launch Cobra IDE
-dotnet run --project .\Cobra\Cobra.csproj
+### Option 3: VS Code / Antigravity
 
-# Or run the compiled executable directly after building:
-dotnet build .\Cobra.sln
-.\Cobra\bin\Debug\net8.0-windows\Cobra.exe
-```
-
-### 3. Run with `F5` in VS Code / Antigravity IDE (Optional)
-
-If you want to press **`F5`** (`Run and Debug`) directly inside VS Code or Antigravity IDE:
-
-1. Install the **C#** (`ms-dotnettools.csharp`) or **C# Dev Kit** extension.
-2. Open the Command Palette (`Ctrl+Shift+P`), run **.NET: Generate Assets for Build and Debug**, or create `.vscode/launch.json` with:
-
-```json
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Launch Cobra IDE",
-      "type": "coreclr",
-      "request": "launch",
-      "preLaunchTask": "build",
-      "program": "${workspaceFolder}/Cobra/bin/Debug/net8.0-windows/Cobra.dll",
-      "args": [],
-      "cwd": "${workspaceFolder}/Cobra",
-      "stopAtEntry": false
-    }
-  ]
-}
-```
-
-### 4. Run in Visual Studio (2019 / 2022 / 2026)
-
-1. Ensure the **.NET desktop development** workload and **.NET 8.0 SDK** are installed via the Visual Studio Installer.
-2. Open `Cobra.sln` in **Visual Studio 2019 (v16.11+ with .NET 8 SDK)**, **Visual Studio 2022**, or **Visual Studio 2026**.
-3. In **Solution Explorer**, right-click the **`Cobra`** project and select **Set as Startup Project**.
-4. Press **`F5`** (Start Debugging) or **`Ctrl+F5`** (Start Without Debugging) to build and launch Cobra IDE.
+1. Install the C# extension.
+2. Press **F5** or run `dotnet run --project Cobra/Cobra.csproj`.

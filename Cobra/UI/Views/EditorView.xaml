@@ -156,7 +156,7 @@
                     <Button x:Name="SaveButton" Click="OnSaveClicked" Style="{StaticResource SceneToolButton}" ToolTip="Save File (Ctrl+S)">
                         <iconPacks:PackIconMaterial Kind="ContentSave" Width="13" Height="13"/>
                     </Button>
-                    <Button Click="OnSaveAllClicked" Style="{StaticResource SceneToolButton}" ToolTip="Save All Modified Files (Ctrl+Shift+S)">
+                    <Button Click="OnSaveAllClicked" Style="{StaticResource SceneToolButton}" ToolTip="Save All (Ctrl+Shift+S)">
                         <iconPacks:PackIconMaterial Kind="ContentSaveAll" Width="13" Height="13"/>
                     </Button>
 
@@ -168,7 +168,7 @@
                     <Button Click="OnRedoClicked" Style="{StaticResource SceneToolButton}" ToolTip="Redo (Ctrl+Y)">
                         <iconPacks:PackIconMaterial Kind="Redo" Width="13" Height="13"/>
                     </Button>
-                    <Button Click="OnFormatCodeClicked" Style="{StaticResource SceneToolButton}" ToolTip="Format Python Code (PEP-8 / Ruff)">
+                    <Button Click="OnFormatCodeClicked" Style="{StaticResource SceneToolButton}" ToolTip="Format Code (Ruff)">
                         <iconPacks:PackIconMaterial Kind="FormatIndentIncrease" Width="13" Height="13"/>
                     </Button>
 
@@ -176,7 +176,7 @@
 
                     <!-- Startup File Selector -->
                     <TextBlock Text="Startup:" Foreground="#999999" FontSize="11" VerticalAlignment="Center" Margin="4,0,4,0"/>
-                    <ComboBox x:Name="StartupFileCombo" Width="130" Height="24" FontSize="11" VerticalContentAlignment="Center" SelectionChanged="StartupFileCombo_SelectionChanged" ToolTip="Select Python startup file"/>
+                    <ComboBox x:Name="StartupFileCombo" Width="130" Height="24" FontSize="11" VerticalContentAlignment="Center" SelectionChanged="StartupFileCombo_SelectionChanged" ToolTip="Startup file"/>
 
                     <Button x:Name="RunButton" Click="OnRunClicked" Style="{StaticResource SceneToolButton}" Background="#28a745" Margin="6,0,2,0" ToolTip="Run Game (F5)">
                         <StackPanel Orientation="Horizontal">
@@ -184,13 +184,13 @@
                             <TextBlock Text="Run" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
-                    <Button x:Name="DebugButton" Click="OnDebugClicked" Style="{StaticResource SceneToolButton}" Background="#d97706" ToolTip="Debug Game with Breakpoints (F6)">
+                    <Button x:Name="DebugButton" Click="OnDebugClicked" Style="{StaticResource SceneToolButton}" Background="#d97706" ToolTip="Debug Game (F6)">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Bug" Width="12" Height="12" Margin="0,0,5,0" VerticalAlignment="Center"/>
                             <TextBlock Text="Debug" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
-                    <Button x:Name="StopButton" Click="OnStopClicked" Style="{StaticResource SceneToolButton}" Background="#c42b1c" ToolTip="Stop Running Game">
+                    <Button x:Name="StopButton" Click="OnStopClicked" Style="{StaticResource SceneToolButton}" Background="#c42b1c" ToolTip="Stop Game">
                         <iconPacks:PackIconMaterial Kind="Stop" Width="12" Height="12"/>
                     </Button>
                     <Button Click="OnRestartGameClicked" Style="{StaticResource SceneToolButton}" ToolTip="Restart Game">
@@ -199,13 +199,13 @@
 
                     <Border Width="1" Height="18" Background="#3c3c3c" Margin="6,0"/>
 
-                    <Button Click="OnBuildClicked" Style="{StaticResource SceneToolButton}" ToolTip="Build &amp; Package Game (F7)">
+                    <Button Click="OnBuildClicked" Style="{StaticResource SceneToolButton}" ToolTip="Build Game (F7)">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="PackageDown" Width="13" Height="13" Margin="0,0,5,0" VerticalAlignment="Center"/>
                             <TextBlock Text="Build" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
-                    <Button Click="OnProjectConfigModalClicked" Style="{StaticResource SceneToolButton}" ToolTip="Run &amp; Environment Configuration">
+                    <Button Click="OnProjectConfigModalClicked" Style="{StaticResource SceneToolButton}" ToolTip="Run Settings">
                         <iconPacks:PackIconMaterial Kind="TuneVariant" Width="13" Height="13"/>
                     </Button>
                 </StackPanel>
@@ -213,16 +213,16 @@
                 <!-- Right Toolbar Layout & Environment Controls -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="Layout:" Foreground="#999999" FontSize="11" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                    <ComboBox x:Name="LayoutPresetCombo" Width="115" Height="24" FontSize="11" VerticalContentAlignment="Center" SelectionChanged="LayoutPresetCombo_SelectionChanged" ToolTip="Switch Workspace Layout">
+                    <ComboBox x:Name="LayoutPresetCombo" Width="115" Height="24" FontSize="11" VerticalContentAlignment="Center" SelectionChanged="LayoutPresetCombo_SelectionChanged" ToolTip="Layout">
                         <ComboBoxItem Content="Default" IsSelected="True"/>
                         <ComboBoxItem Content="Coding Focus"/>
                         <ComboBoxItem Content="Scene Design"/>
                         <ComboBoxItem Content="Debugging"/>
                     </ComboBox>
-                    <Button Click="OnToggleBottomPanelClicked" Style="{StaticResource SceneToolButton}" Margin="6,0,2,0" ToolTip="Toggle Bottom Panel">
+                    <Button Click="OnToggleBottomPanelClicked" Style="{StaticResource SceneToolButton}" Margin="6,0,2,0" ToolTip="Bottom Panel">
                         <iconPacks:PackIconMaterial Kind="DockBottom" Width="13" Height="13"/>
                     </Button>
-                    <Button Click="OnSettingsIconClicked" Style="{StaticResource SceneToolButton}" ToolTip="IDE Settings">
+                    <Button Click="OnSettingsIconClicked" Style="{StaticResource SceneToolButton}" ToolTip="Settings">
                         <iconPacks:PackIconMaterial Kind="Cog" Width="13" Height="13"/>
                     </Button>
                 </StackPanel>
@@ -250,35 +250,35 @@
                     <StackPanel Margin="0,8,0,8">
                         <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="WORKSPACES"/>
 
-                        <Border x:Name="NavCodeEditor" Style="{StaticResource NavButtonStyle}" Background="#2d2d30" MouseLeftButtonDown="NavItem_Click" Tag="CodeEditor" ToolTip="Python Code Editor (Monaco)">
+                        <Border x:Name="NavCodeEditor" Style="{StaticResource NavButtonStyle}" Background="#2d2d30" MouseLeftButtonDown="NavItem_Click" Tag="CodeEditor" ToolTip="Code Editor">
                             <StackPanel Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="CodeBraces" Width="14" Height="14" Foreground="#ff8c00" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Code Editor" Foreground="White" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
 
-                        <Border x:Name="NavSceneEditor" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="SceneEditor" ToolTip="2D &amp; 3D Game Scene Designer">
+                        <Border x:Name="NavSceneEditor" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="SceneEditor" ToolTip="Scene Editor">
                             <StackPanel Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="Palette" Width="14" Height="14" Foreground="#4ec9b0" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Scene Editor" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
 
-                        <Border x:Name="NavVisualScripting" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="VisualScripting" ToolTip="Visual Scripting Node Graph">
+                        <Border x:Name="NavVisualScripting" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="VisualScripting" ToolTip="Visual Scripting">
                             <StackPanel Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="ShareVariant" Width="14" Height="14" Foreground="#e0e0e0" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Visual Scripting" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
 
-                        <Border x:Name="NavAssetBrowser" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="AssetBrowser" ToolTip="Game Asset Browser &amp; Importer">
+                        <Border x:Name="NavAssetBrowser" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="AssetBrowser" ToolTip="Asset Browser">
                             <StackPanel Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="FolderMultipleImage" Width="14" Height="14" Foreground="#e0e0e0" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Asset Browser" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
 
-                        <Border x:Name="NavAnimationTools" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="AnimationTools" ToolTip="2D Sprite Sheet &amp; 3D Animation Preview">
+                        <Border x:Name="NavAnimationTools" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="AnimationTools" ToolTip="Animation Tools">
                             <StackPanel Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="MovieOpenPlay" Width="14" Height="14" Foreground="#e0e0e0" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Animation Tools" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
@@ -287,56 +287,56 @@
 
                         <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="DEVELOPMENT" Margin="10,14,10,6"/>
 
-                        <Border x:Name="NavPythonEnv" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="PythonEnv" ToolTip="Python Interpreter, Venv &amp; Pip Package Manager">
+                        <Border x:Name="NavPythonEnv" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="PythonEnv" ToolTip="Python &amp; Packages">
                             <StackPanel Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="LanguagePython" Width="14" Height="14" Foreground="#ffd43b" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Python &amp; Packages" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
 
-                        <Border x:Name="NavDebugger" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="Debugger" ToolTip="Python Debugger, Watch &amp; Call Stack">
+                        <Border x:Name="NavDebugger" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="Debugger" ToolTip="Debugger">
                             <StackPanel Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="Bug" Width="14" Height="14" Foreground="#e0e0e0" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Debugger" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
 
-                        <Border x:Name="NavProfiler" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="Profiler" ToolTip="Performance Profiler (CPU, Memory, FPS)">
+                        <Border x:Name="NavProfiler" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="Profiler" ToolTip="Profiler">
                             <StackPanel Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="ChartAreaspline" Width="14" Height="14" Foreground="#e0e0e0" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Profiler" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
 
-                        <Border x:Name="NavSourceControl" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="SourceControl" ToolTip="Git Version Control">
+                        <Border x:Name="NavSourceControl" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="SourceControl" ToolTip="Source Control">
                             <StackPanel Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="SourceBranch" Width="14" Height="14" Foreground="#e0e0e0" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Source Control" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
 
-                        <Border x:Name="NavBuildPackage" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="BuildPackage" ToolTip="Build &amp; Package Game (PyInstaller)">
+                        <Border x:Name="NavBuildPackage" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="BuildPackage" ToolTip="Build &amp; Package">
                             <StackPanel Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="PackageVariantClosed" Width="14" Height="14" Foreground="#e0e0e0" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Build &amp; Package" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
 
-                        <Border x:Name="NavExtensions" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="Extensions" ToolTip="Installed Extensions &amp; Plugins">
+                        <Border x:Name="NavExtensions" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="Extensions" ToolTip="Extensions">
                             <StackPanel Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="PuzzleOutline" Width="14" Height="14" Foreground="#e0e0e0" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Extensions" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
 
-                        <Border x:Name="NavAiAssistant" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="AiAssistant" ToolTip="Optional AI Game Dev Assistant">
+                        <Border x:Name="NavAiAssistant" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="AiAssistant" ToolTip="AI Assistant">
                             <StackPanel Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="RobotOutline" Width="14" Height="14" Foreground="#4ec9b0" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="AI Assistant" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
 
-                        <Border x:Name="NavAddVenv" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="OnAddVenvClicked" Visibility="Collapsed" ToolTip="Create Python Virtual Environment">
+                        <Border x:Name="NavAddVenv" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="OnAddVenvClicked" Visibility="Collapsed" ToolTip="Create Venv">
                             <StackPanel Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="PlusCircleOutline" Width="14" Height="14" Foreground="#ff8c00" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Create Venv" Foreground="#ff8c00" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
@@ -388,14 +388,14 @@
                                 </TabControl>
 
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0,8,0">
-                                    <ComboBox x:Name="SymbolOutlineCombo" Width="155" Height="22" FontSize="11" Margin="0,0,6,0" SelectionChanged="SymbolOutlineCombo_SelectionChanged" ToolTip="Go to Symbol / Definition in File"/>
+                                    <ComboBox x:Name="SymbolOutlineCombo" Width="155" Height="22" FontSize="11" Margin="0,0,6,0" SelectionChanged="SymbolOutlineCombo_SelectionChanged" ToolTip="Go to Symbol"/>
                                     <Button Click="OnFindClicked" Style="{StaticResource SceneToolButton}" Height="22" ToolTip="Find in File (Ctrl+F)">
                                         <iconPacks:PackIconMaterial Kind="Magnify" Width="11" Height="11"/>
                                     </Button>
                                     <Button Click="OnReplaceClicked" Style="{StaticResource SceneToolButton}" Height="22" ToolTip="Replace in File (Ctrl+H)">
                                         <iconPacks:PackIconMaterial Kind="FindReplace" Width="11" Height="11"/>
                                     </Button>
-                                    <Button Click="OnSplitEditorToggleClicked" Style="{StaticResource SceneToolButton}" Height="22" ToolTip="Toggle Split Reference View">
+                                    <Button Click="OnSplitEditorToggleClicked" Style="{StaticResource SceneToolButton}" Height="22" ToolTip="Split View">
                                         <iconPacks:PackIconMaterial Kind="DockRight" Width="11" Height="11"/>
                                     </Button>
                                 </StackPanel>
@@ -414,7 +414,7 @@
                             <Border x:Name="SplitEditorBorder" Grid.Column="1" Background="#1a1a1c" BorderBrush="#3c3c3c" BorderThickness="1,0,0,0" Visibility="Collapsed">
                                 <DockPanel>
                                     <Border DockPanel.Dock="Top" Background="#252526" Padding="8,4">
-                                        <TextBlock Text="Split Reference Viewer (Read-Only)" Foreground="#aaaaaa" FontSize="11" FontWeight="SemiBold"/>
+                                        <TextBlock Text="Reference View" Foreground="#aaaaaa" FontSize="11" FontWeight="SemiBold"/>
                                     </Border>
                                     <TextBox x:Name="SplitPreviewTextBox" Background="#18181a" Foreground="#d4d4d4" FontFamily="Consolas" FontSize="12" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" BorderThickness="0" Padding="10"/>
                                 </DockPanel>
@@ -439,34 +439,34 @@
                             <Button Click="OnLoadScene" Style="{StaticResource SceneToolButton}" ToolTip="Open Scene (.Cobra)">
                                 <iconPacks:PackIconMaterial Kind="FolderOpen" Width="12" Height="12"/>
                             </Button>
-                            <Button Click="OnSaveScene" Style="{StaticResource SceneToolButton}" ToolTip="Save Scene &amp; Sync Python Scene Module">
+                            <Button Click="OnSaveScene" Style="{StaticResource SceneToolButton}" ToolTip="Save Scene">
                                 <iconPacks:PackIconMaterial Kind="ContentSave" Width="12" Height="12"/>
                             </Button>
-                            <Button Click="OnSceneUndoClicked" Style="{StaticResource SceneToolButton}" ToolTip="Undo Scene Action">
+                            <Button Click="OnSceneUndoClicked" Style="{StaticResource SceneToolButton}" ToolTip="Undo">
                                 <iconPacks:PackIconMaterial Kind="Undo" Width="12" Height="12"/>
                             </Button>
-                            <Button Click="OnSceneRedoClicked" Style="{StaticResource SceneToolButton}" ToolTip="Redo Scene Action">
+                            <Button Click="OnSceneRedoClicked" Style="{StaticResource SceneToolButton}" ToolTip="Redo">
                                 <iconPacks:PackIconMaterial Kind="Redo" Width="12" Height="12"/>
                             </Button>
 
                             <Border Width="1" Height="18" Background="#3c3c3c" Margin="6,0"/>
 
-                            <Button Click="OnAddGameObject" Style="{StaticResource SceneToolButton}" Background="#ff8c00" ToolTip="Add Game Object to Scene">
+                            <Button Click="OnAddGameObject" Style="{StaticResource SceneToolButton}" Background="#ff8c00" ToolTip="Add Object">
                                 <StackPanel Orientation="Horizontal">
                                     <iconPacks:PackIconMaterial Kind="Plus" Width="12" Height="12" Margin="0,0,4,0" VerticalAlignment="Center"/>
                                     <TextBlock Text="Add Object" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
-                            <Button Click="OnDuplicateSceneObject" Style="{StaticResource SceneToolButton}" ToolTip="Duplicate Selected Object">
+                            <Button Click="OnDuplicateSceneObject" Style="{StaticResource SceneToolButton}" ToolTip="Duplicate Object">
                                 <iconPacks:PackIconMaterial Kind="ContentCopy" Width="12" Height="12"/>
                             </Button>
-                            <Button Click="OnDeleteSceneObject" Style="{StaticResource SceneToolButton}" ToolTip="Delete Selected Object">
+                            <Button Click="OnDeleteSceneObject" Style="{StaticResource SceneToolButton}" ToolTip="Delete Object">
                                 <iconPacks:PackIconMaterial Kind="Delete" Width="12" Height="12"/>
                             </Button>
-                            <Button Click="OnSavePrefab" Style="{StaticResource SceneToolButton}" ToolTip="Save Selected Object as Prefab">
+                            <Button Click="OnSavePrefab" Style="{StaticResource SceneToolButton}" ToolTip="Save Prefab">
                                 <iconPacks:PackIconMaterial Kind="PackageUp" Width="12" Height="12"/>
                             </Button>
-                            <Button Click="OnLoadPrefab" Style="{StaticResource SceneToolButton}" ToolTip="Instantiate Prefab into Scene">
+                            <Button Click="OnLoadPrefab" Style="{StaticResource SceneToolButton}" ToolTip="Add Prefab">
                                 <iconPacks:PackIconMaterial Kind="PackageDown" Width="12" Height="12"/>
                             </Button>
 
@@ -481,17 +481,17 @@
                             <Button Click="OnSceneZoomOutClicked" Style="{StaticResource SceneToolButton}" ToolTip="Zoom Out">
                                 <iconPacks:PackIconMaterial Kind="MagnifyMinus" Width="12" Height="12"/>
                             </Button>
-                            <Button Click="OnSceneResetViewClicked" Style="{StaticResource SceneToolButton}" ToolTip="Reset Camera View">
+                            <Button Click="OnSceneResetViewClicked" Style="{StaticResource SceneToolButton}" ToolTip="Reset View">
                                 <iconPacks:PackIconMaterial Kind="ImageFilterCenterFocus" Width="12" Height="12"/>
                             </Button>
 
                             <Border Width="1" Height="18" Background="#3c3c3c" Margin="6,0"/>
 
-                            <Button x:Name="Toggle2D3DButton" Click="OnToggle2D3DViewportClicked" Style="{StaticResource SceneToolButton}" Background="#3b5998" ToolTip="Switch between 2D Canvas and 3D Three.js Viewport">
+                            <Button x:Name="Toggle2D3DButton" Click="OnToggle2D3DViewportClicked" Style="{StaticResource SceneToolButton}" Background="#3b5998" ToolTip="Switch 2D/3D View">
                                 <TextBlock x:Name="Toggle2D3DText" Text="Mode: 2D Canvas" FontWeight="SemiBold"/>
                             </Button>
 
-                            <ToggleButton x:Name="PlayToggle" Click="OnPlayToggle" Margin="6,0,0,0" Padding="10,4" Height="26" Background="#28a745" Foreground="White" BorderThickness="0" ToolTip="Simulate Scene Physics &amp; Scripts" Cursor="Hand">
+                            <ToggleButton x:Name="PlayToggle" Click="OnPlayToggle" Margin="6,0,0,0" Padding="10,4" Height="26" Background="#28a745" Foreground="White" BorderThickness="0" ToolTip="Simulate Physics" Cursor="Hand">
                                 <StackPanel Orientation="Horizontal">
                                     <iconPacks:PackIconMaterial Kind="Play" Width="12" Height="12" Margin="0,0,4,0" VerticalAlignment="Center"/>
                                     <TextBlock Text="Simulate" FontSize="11" FontWeight="SemiBold"/>
@@ -542,7 +542,7 @@
                                             <TextBlock x:Name="ActiveSceneNameLabel" Text="MainScene" Foreground="#ff8c00" FontSize="11" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                         </Grid>
                                     </Border>
-                                    <TextBox x:Name="SearchHierarchy" DockPanel.Dock="Top" Background="#1e1e1e" Foreground="White" BorderBrush="#3c3c3c" Margin="6,6,6,4" Padding="5,3" FontSize="11" TextChanged="SearchHierarchy_TextChanged" ToolTip="Filter scene objects by name"/>
+                                    <TextBox x:Name="SearchHierarchy" DockPanel.Dock="Top" Background="#1e1e1e" Foreground="White" BorderBrush="#3c3c3c" Margin="6,6,6,4" Padding="5,3" FontSize="11" TextChanged="SearchHierarchy_TextChanged" ToolTip="Filter objects"/>
                                     <ListBox x:Name="SceneHierarchy" Background="#1e1e1e" Foreground="White" BorderThickness="0" DisplayMemberPath="HierarchyDisplay" FontSize="11" Margin="6,0,6,6" SelectionChanged="OnHierarchySelectionChanged"/>
                                 </DockPanel>
 
@@ -574,31 +574,31 @@
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <TextBlock Text="Node Library:" Foreground="#cccccc" FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                 <ComboBox x:Name="NodeTemplateCombo" Width="210" Height="24" FontSize="11" VerticalContentAlignment="Center"/>
-                                <Button Click="OnAddVisualNodeClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" Margin="6,0,2,0" ToolTip="Add Selected Node to Graph">
+                                <Button Click="OnAddVisualNodeClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" Margin="6,0,2,0" ToolTip="Add Node">
                                     <StackPanel Orientation="Horizontal">
                                         <iconPacks:PackIconMaterial Kind="Plus" Width="12" Height="12" Margin="0,0,4,0" VerticalAlignment="Center"/>
                                         <TextBlock Text="Add Node"/>
                                     </StackPanel>
                                 </Button>
-                                <Button Click="OnDeleteVisualNodeClicked" Style="{StaticResource SceneToolButton}" ToolTip="Delete Selected Node">
+                                <Button Click="OnDeleteVisualNodeClicked" Style="{StaticResource SceneToolButton}" ToolTip="Delete Node">
                                     <iconPacks:PackIconMaterial Kind="Delete" Width="12" Height="12"/>
                                 </Button>
-                                <Button Click="OnValidateNodeGraphClicked" Style="{StaticResource SceneToolButton}" ToolTip="Validate Node Graph">
+                                <Button Click="OnValidateNodeGraphClicked" Style="{StaticResource SceneToolButton}" ToolTip="Validate Graph">
                                     <StackPanel Orientation="Horizontal">
                                         <iconPacks:PackIconMaterial Kind="CheckDecagram" Width="12" Height="12" Margin="0,0,4,0" VerticalAlignment="Center"/>
                                         <TextBlock Text="Validate"/>
                                     </StackPanel>
                                 </Button>
-                                <Button Click="OnGeneratePythonFromGraphClicked" Style="{StaticResource SceneToolButton}" Background="#28a745" ToolTip="Compile Node Graph to Python Script">
+                                <Button Click="OnGeneratePythonFromGraphClicked" Style="{StaticResource SceneToolButton}" Background="#28a745" ToolTip="Generate Python">
                                     <StackPanel Orientation="Horizontal">
                                         <iconPacks:PackIconMaterial Kind="LanguagePython" Width="12" Height="12" Margin="0,0,4,0" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Generate Python Script"/>
+                                        <TextBlock Text="Generate Python"/>
                                     </StackPanel>
                                 </Button>
-                                <Button Click="OnSaveNodeGraphClicked" Style="{StaticResource SceneToolButton}" ToolTip="Save Graph JSON">
+                                <Button Click="OnSaveNodeGraphClicked" Style="{StaticResource SceneToolButton}" ToolTip="Save Graph">
                                     <iconPacks:PackIconMaterial Kind="ContentSave" Width="12" Height="12"/>
                                 </Button>
-                                <Button Click="OnLoadNodeGraphClicked" Style="{StaticResource SceneToolButton}" ToolTip="Load Graph JSON">
+                                <Button Click="OnLoadNodeGraphClicked" Style="{StaticResource SceneToolButton}" ToolTip="Load Graph">
                                     <iconPacks:PackIconMaterial Kind="FolderOpen" Width="12" Height="12"/>
                                 </Button>
                             </StackPanel>
@@ -615,7 +615,7 @@
                             <Border Grid.Column="1" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1,0,0,0" Padding="10">
                                 <StackPanel x:Name="NodePropertiesPanel">
                                     <TextBlock Text="NODE PROPERTIES" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
-                                    <TextBlock Text="Click a node to inspect or click two nodes sequentially to connect them." Foreground="#888888" FontSize="11" TextWrapping="Wrap"/>
+                                    <TextBlock Text="Click a node to inspect. Click two nodes to connect them." Foreground="#888888" FontSize="11" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Border>
                         </Grid>
@@ -632,13 +632,13 @@
 
                         <Border Grid.Row="0" Background="#2d2d30" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1" Padding="8,0">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <Button Click="OnImportAssetClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" ToolTip="Import Validated Game Asset">
+                                <Button Click="OnImportAssetClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" ToolTip="Import Asset">
                                     <StackPanel Orientation="Horizontal">
                                         <iconPacks:PackIconMaterial Kind="Import" Width="12" Height="12" Margin="0,0,5,0" VerticalAlignment="Center"/>
                                         <TextBlock Text="Import Asset"/>
                                     </StackPanel>
                                 </Button>
-                                <TextBox x:Name="AssetSearchBox" Width="180" Height="24" Margin="8,0" Background="#1e1e1e" Foreground="White" BorderBrush="#444" Padding="6,2" FontSize="11" TextChanged="AssetSearchBox_TextChanged" ToolTip="Search assets by name"/>
+                                <TextBox x:Name="AssetSearchBox" Width="180" Height="24" Margin="8,0" Background="#1e1e1e" Foreground="White" BorderBrush="#444" Padding="6,2" FontSize="11" TextChanged="AssetSearchBox_TextChanged" ToolTip="Search assets"/>
                                 <ComboBox x:Name="AssetCategoryCombo" Width="120" Height="24" FontSize="11" SelectionChanged="AssetCategoryCombo_SelectionChanged">
                                     <ComboBoxItem Content="All Assets" IsSelected="True"/>
                                     <ComboBoxItem Content="Image"/>
@@ -648,7 +648,7 @@
                                     <ComboBoxItem Content="Scene"/>
                                     <ComboBoxItem Content="Script"/>
                                 </ComboBox>
-                                <Button Click="OnCheckMissingAssetsClicked" Style="{StaticResource SceneToolButton}" Margin="8,0,2,0" ToolTip="Scan for Missing or Duplicate Assets">
+                                <Button Click="OnCheckMissingAssetsClicked" Style="{StaticResource SceneToolButton}" Margin="8,0,2,0" ToolTip="Audit Assets">
                                     <TextBlock Text="Audit Assets"/>
                                 </Button>
                                 <Button Click="OnRefreshAssetsClicked" Style="{StaticResource SceneToolButton}" ToolTip="Refresh Assets">
@@ -686,9 +686,9 @@
 
                             <Border Grid.Column="1" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1,0,0,0" Padding="12">
                                 <StackPanel x:Name="AssetPreviewPanel">
-                                    <TextBlock Text="ASSET PREVIEW &amp; METADATA" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
+                                    <TextBlock Text="ASSET PREVIEW" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
                                     <Image x:Name="AssetImagePreview" MaxHeight="160" Margin="0,0,0,10" Stretch="Uniform"/>
-                                    <TextBlock x:Name="AssetDetailsText" Text="Select an asset to inspect dimensions, usage count, or preview audio." Foreground="#aaaaaa" FontSize="11" TextWrapping="Wrap"/>
+                                    <TextBlock x:Name="AssetDetailsText" Text="Select an asset to preview." Foreground="#aaaaaa" FontSize="11" TextWrapping="Wrap"/>
                                     <StackPanel x:Name="AudioPreviewControls" Orientation="Horizontal" Margin="0,10,0,0" Visibility="Collapsed">
                                         <Button Click="OnPlayAudioAssetClicked" Style="{StaticResource SceneToolButton}" Background="#28a745">
                                             <TextBlock Text="Play Audio"/>
@@ -714,15 +714,15 @@
 
                         <Border Grid.Column="0" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="14">
                             <StackPanel>
-                                <TextBlock Text="2D SPRITE SHEET &amp; 3D ANIMATION CONFIG" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,12"/>
+                                <TextBlock Text="SPRITE ANIMATION SETTINGS" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,12"/>
                                 <Button Click="OnSelectSpriteSheetClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" HorizontalAlignment="Stretch" Margin="0,0,0,10">
-                                    <TextBlock Text="Load Sprite Sheet Image..."/>
+                                    <TextBlock Text="Load Sprite Sheet..."/>
                                 </Button>
-                                <TextBlock Text="Horizontal Frame Count:" Foreground="#cccccc" FontSize="11" Margin="0,4,0,2"/>
+                                <TextBlock Text="Frame Count:" Foreground="#cccccc" FontSize="11" Margin="0,4,0,2"/>
                                 <TextBox x:Name="AnimFrameCountBox" Text="4" Background="#1e1e1e" Foreground="White" BorderBrush="#444" Padding="5,3" FontSize="12"/>
-                                <TextBlock Text="Frame Duration (ms):" Foreground="#cccccc" FontSize="11" Margin="0,8,0,2"/>
+                                <TextBlock Text="Frame Time (ms):" Foreground="#cccccc" FontSize="11" Margin="0,8,0,2"/>
                                 <TextBox x:Name="AnimFrameDurationBox" Text="120" Background="#1e1e1e" Foreground="White" BorderBrush="#444" Padding="5,3" FontSize="12"/>
-                                <CheckBox x:Name="AnimLoopCheck" Content="Loop Animation Sequence" Foreground="White" IsChecked="True" Margin="0,10,0,10"/>
+                                <CheckBox x:Name="AnimLoopCheck" Content="Loop Animation" Foreground="White" IsChecked="True" Margin="0,10,0,10"/>
 
                                 <StackPanel Orientation="Horizontal">
                                     <Button Click="OnStartAnimPreviewClicked" Style="{StaticResource SceneToolButton}" Background="#28a745">
@@ -737,7 +737,7 @@
 
                         <Border Grid.Column="2" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="14">
                             <DockPanel>
-                                <TextBlock DockPanel.Dock="Top" x:Name="AnimStatusLabel" Text="Animation Playback Preview" Foreground="White" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,10"/>
+                                <TextBlock DockPanel.Dock="Top" x:Name="AnimStatusLabel" Text="Animation Preview" Foreground="White" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,10"/>
                                 <Border Background="#18181b" BorderBrush="#3c3c3c" BorderThickness="1">
                                     <Image x:Name="AnimPreviewImage" Width="192" Height="192" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
@@ -761,11 +761,11 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="PROJECT PYTHON INTERPRETER &amp; VIRTUAL ENVIRONMENT" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <TextBlock Text="PYTHON INTERPRETER &amp; VENV" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
                                     <StackPanel Orientation="Horizontal">
                                         <ComboBox x:Name="ProjectInterpreterCombo" Width="420" Height="28" FontSize="11" SelectionChanged="ProjectInterpreterCombo_SelectionChanged"/>
                                         <Button Click="OnBrowseInterpreterClicked" Style="{StaticResource SceneToolButton}" Height="28" Margin="6,0,0,0" Content="Browse..."/>
-                                        <Button Click="OnCreateOrValidateVenvClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" Height="28" Margin="6,0,0,0" Content="Create / Validate Venv"/>
+                                        <Button Click="OnCreateOrValidateVenvClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" Height="28" Margin="6,0,0,0" Content="Create / Check Venv"/>
                                     </StackPanel>
                                     <TextBlock x:Name="EnvValidationStatusText" Text="Environment status: Ready" Foreground="#4ec9b0" FontSize="11" Margin="0,6,0,0"/>
                                 </StackPanel>
@@ -781,7 +781,7 @@
 
                             <Border Grid.Column="0" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12">
                                 <DockPanel>
-                                    <TextBlock DockPanel.Dock="Top" Text="INSTALLED PACKAGES (pip list)" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <TextBlock DockPanel.Dock="Top" Text="INSTALLED PACKAGES" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
                                     <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
                                         <Button Click="OnUpdateSelectedPackageClicked" Style="{StaticResource SceneToolButton}" Content="Update Selected"/>
                                         <Button Click="OnUninstallSelectedPackageClicked" Style="{StaticResource SceneToolButton}" Background="#c42b1c" Margin="6,0,0,0" Content="Uninstall Selected"/>
@@ -793,9 +793,9 @@
 
                             <Border Grid.Column="2" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12">
                                 <DockPanel>
-                                    <TextBlock DockPanel.Dock="Top" Text="INSTALL PACKAGES &amp; GAME FRAMEWORKS" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <TextBlock DockPanel.Dock="Top" Text="INSTALL PACKAGES" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
                                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
-                                        <TextBox x:Name="PackageInstallInput" Width="210" Height="26" Background="#1e1e1e" Foreground="White" BorderBrush="#444" Padding="6,3" FontSize="11" ToolTip="Enter package name (e.g. pygame-ce, pymunk, panda3d, ursina)"/>
+                                        <TextBox x:Name="PackageInstallInput" Width="210" Height="26" Background="#1e1e1e" Foreground="White" BorderBrush="#444" Padding="6,3" FontSize="11" ToolTip="Enter package name"/>
                                         <Button Click="OnInstallTypedPackageClicked" Style="{StaticResource SceneToolButton}" Background="#28a745" Margin="6,0,0,0" Content="Install Package"/>
                                         <Button Click="OnInstallAllRequirementsClicked" Style="{StaticResource SceneToolButton}" Margin="6,0,0,0" Content="Sync requirements.txt"/>
                                     </StackPanel>
@@ -821,7 +821,7 @@
                                 <Button Click="OnDebugStepIntoClicked" Style="{StaticResource SceneToolButton}" Content="Step Into (F11)"/>
                                 <Button Click="OnDebugStepOutClicked" Style="{StaticResource SceneToolButton}" Content="Step Out (Shift+F11)"/>
                                 <Button Click="OnStopClicked" Style="{StaticResource SceneToolButton}" Background="#c42b1c" Content="Stop Debugger"/>
-                                <TextBlock x:Name="DebuggerStatusLabel" Text="Status: Idle (Click line numbers in Monaco Editor to toggle breakpoints)" Foreground="#ff8c00" FontSize="11" VerticalAlignment="Center" Margin="14,0,0,0"/>
+                                <TextBlock x:Name="DebuggerStatusLabel" Text="Status: Ready (Click line numbers to set breakpoints)" Foreground="#ff8c00" FontSize="11" VerticalAlignment="Center" Margin="14,0,0,0"/>
                             </StackPanel>
                         </Border>
 
@@ -834,17 +834,17 @@
 
                             <Border Grid.Column="0" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12">
                                 <DockPanel>
-                                    <TextBlock DockPanel.Dock="Top" Text="CALL STACK &amp; ACTIVE BREAKPOINTS" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <TextBlock DockPanel.Dock="Top" Text="CALL STACK &amp; BREAKPOINTS" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
                                     <ListBox x:Name="DebugCallStackList" Background="#1e1e1e" Foreground="White" BorderBrush="#3c3c3c" FontSize="11"/>
                                 </DockPanel>
                             </Border>
 
                             <Border Grid.Column="2" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12">
                                 <DockPanel>
-                                    <TextBlock DockPanel.Dock="Top" Text="LOCAL VARIABLES &amp; WATCH EVALUATOR" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <TextBlock DockPanel.Dock="Top" Text="VARIABLES &amp; WATCH" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
                                     <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
-                                        <TextBox x:Name="DebugWatchInput" Width="220" Height="26" Background="#1e1e1e" Foreground="White" BorderBrush="#444" Padding="5,3" FontSize="11" ToolTip="Evaluate Python expression in paused frame"/>
-                                        <Button Click="OnEvaluateWatchClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" Margin="6,0,0,0" Content="Evaluate Expression"/>
+                                        <TextBox x:Name="DebugWatchInput" Width="220" Height="26" Background="#1e1e1e" Foreground="White" BorderBrush="#444" Padding="5,3" FontSize="11" ToolTip="Evaluate expression"/>
+                                        <Button Click="OnEvaluateWatchClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" Margin="6,0,0,0" Content="Evaluate"/>
                                     </StackPanel>
                                     <ListBox x:Name="DebugLocalsList" Background="#1e1e1e" Foreground="#4ec9b0" BorderBrush="#3c3c3c" FontFamily="Consolas" FontSize="11"/>
                                 </DockPanel>
@@ -864,25 +864,25 @@
                         <UniformGrid Grid.Row="0" Columns="4" Margin="0,0,0,12">
                             <Border Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,8,0">
                                 <StackPanel>
-                                    <TextBlock Text="IDE CPU USAGE" Foreground="#888888" FontSize="10" FontWeight="Bold"/>
+                                    <TextBlock Text="IDE CPU" Foreground="#888888" FontSize="10" FontWeight="Bold"/>
                                     <TextBlock x:Name="ProfCpuText" Text="0.0 %" Foreground="#ff8c00" FontSize="20" FontWeight="Bold" Margin="0,4,0,0"/>
                                 </StackPanel>
                             </Border>
                             <Border Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12" Margin="4,0">
                                 <StackPanel>
-                                    <TextBlock Text="IDE WORKING MEMORY" Foreground="#888888" FontSize="10" FontWeight="Bold"/>
+                                    <TextBlock Text="IDE MEMORY" Foreground="#888888" FontSize="10" FontWeight="Bold"/>
                                     <TextBlock x:Name="ProfIdeMemText" Text="0.0 MB" Foreground="#4ec9b0" FontSize="20" FontWeight="Bold" Margin="0,4,0,0"/>
                                 </StackPanel>
                             </Border>
                             <Border Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12" Margin="4,0">
                                 <StackPanel>
-                                    <TextBlock Text="GAME PROCESS MEMORY" Foreground="#888888" FontSize="10" FontWeight="Bold"/>
+                                    <TextBlock Text="GAME MEMORY" Foreground="#888888" FontSize="10" FontWeight="Bold"/>
                                     <TextBlock x:Name="ProfGameMemText" Text="Not Running" Foreground="White" FontSize="20" FontWeight="Bold" Margin="0,4,0,0"/>
                                 </StackPanel>
                             </Border>
                             <Border Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12" Margin="8,0,0,0">
                                 <StackPanel>
-                                    <TextBlock Text="SCENE FPS / FRAME TIME" Foreground="#888888" FontSize="10" FontWeight="Bold"/>
+                                    <TextBlock Text="FPS / FRAME TIME" Foreground="#888888" FontSize="10" FontWeight="Bold"/>
                                     <TextBlock x:Name="ProfFpsText" Text="60 FPS (16.6 ms)" Foreground="#28a745" FontSize="18" FontWeight="Bold" Margin="0,4,0,0"/>
                                 </StackPanel>
                             </Border>
@@ -890,7 +890,7 @@
 
                         <Border Grid.Row="1" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12">
                             <DockPanel>
-                                <TextBlock DockPanel.Dock="Top" Text="REAL-TIME PERFORMANCE HISTORY GRAPH &amp; TELEMETRY" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
+                                <TextBlock DockPanel.Dock="Top" Text="PERFORMANCE GRAPH" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
                                 <Canvas x:Name="ProfilerGraphCanvas" Background="#18181b" ClipToBounds="True" Height="220" DockPanel.Dock="Top" Margin="0,0,0,10"/>
                                 <ListBox x:Name="ProfilerHistoryLog" Background="#18181b" Foreground="#cccccc" BorderThickness="0" FontFamily="Consolas" FontSize="11"/>
                             </DockPanel>
@@ -928,11 +928,11 @@
 
                             <Border Grid.Column="0" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12">
                                 <DockPanel>
-                                    <TextBlock DockPanel.Dock="Top" Text="WORKING TREE CHANGES &amp; COMMIT" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <TextBlock DockPanel.Dock="Top" Text="CHANGES &amp; COMMIT" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
                                     <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
                                         <TextBox x:Name="GitCommitMessageBox" Height="28" Background="#1e1e1e" Foreground="White" BorderBrush="#444" Padding="6,4" FontSize="11" Margin="0,0,0,6" ToolTip="Enter commit message"/>
                                         <StackPanel Orientation="Horizontal">
-                                            <Button Click="OnGitCommitClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" Content="Commit Staged Changes"/>
+                                            <Button Click="OnGitCommitClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" Content="Commit Staged"/>
                                             <Button Click="OnGitStageSelectedClicked" Style="{StaticResource SceneToolButton}" Margin="6,0,0,0" Content="Stage Selected"/>
                                             <Button Click="OnGitUnstageSelectedClicked" Style="{StaticResource SceneToolButton}" Margin="6,0,0,0" Content="Unstage Selected"/>
                                         </StackPanel>
@@ -943,7 +943,7 @@
 
                             <Border Grid.Column="2" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12">
                                 <DockPanel>
-                                    <TextBlock DockPanel.Dock="Top" Text="DIFF VIEWER &amp; COMMIT HISTORY" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <TextBlock DockPanel.Dock="Top" Text="DIFF &amp; HISTORY" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
                                     <ListBox x:Name="GitHistoryList" DockPanel.Dock="Bottom" Height="120" Background="#1e1e1e" Foreground="#aaaaaa" BorderBrush="#3c3c3c" FontFamily="Consolas" FontSize="11" Margin="0,8,0,0"/>
                                     <TextBox x:Name="GitDiffTextBox" Background="#18181b" Foreground="#d4d4d4" FontFamily="Consolas" FontSize="11" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" BorderThickness="0" Padding="8"/>
                                 </DockPanel>
@@ -956,8 +956,8 @@
                 <Border x:Name="BuildPackageContainer" Background="#1e1e1e" Visibility="Collapsed" Padding="16">
                     <Border Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="18">
                         <StackPanel MaxWidth="680" HorizontalAlignment="Left">
-                            <TextBlock Text="GAME PACKAGING &amp; DISTRIBUTION (PyInstaller)" Foreground="#bbbbbb" FontSize="12" FontWeight="Bold" Margin="0,0,0,6"/>
-                            <TextBlock Text="Target Platform: Windows x64 (.exe) — Packages your Python game, virtual environment dependencies, assets/, and scenes/." Foreground="#4ec9b0" FontSize="11" Margin="0,0,0,16"/>
+                            <TextBlock Text="BUILD &amp; PACKAGE (PyInstaller)" Foreground="#bbbbbb" FontSize="12" FontWeight="Bold" Margin="0,0,0,6"/>
+                            <TextBlock Text="Packages your game, virtual environment, assets, and scenes into a Windows executable." Foreground="#4ec9b0" FontSize="11" Margin="0,0,0,16"/>
 
                             <Grid Margin="0,0,0,10">
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition Width="320"/></Grid.ColumnDefinitions>
@@ -981,12 +981,12 @@
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition Width="320"/></Grid.ColumnDefinitions>
                                 <TextBlock Text="Build Configuration:" Foreground="White" VerticalAlignment="Center"/>
                                 <ComboBox x:Name="BuildModeCombo" Grid.Column="1" Height="28">
-                                    <ComboBoxItem Content="Release Build (Windowed, Single-File Executable)" IsSelected="True"/>
-                                    <ComboBoxItem Content="Development Build (With Console Diagnostics)"/>
+                                    <ComboBoxItem Content="Release Build (Windowed .exe)" IsSelected="True"/>
+                                    <ComboBoxItem Content="Development Build (With Console)"/>
                                 </ComboBox>
                             </Grid>
 
-                            <CheckBox x:Name="BuildCleanCheck" Content="Clean previous build/ and dist/ artifacts before packaging" Foreground="White" IsChecked="True" Margin="0,0,0,16"/>
+                            <CheckBox x:Name="BuildCleanCheck" Content="Clean previous build files before packaging" Foreground="White" IsChecked="True" Margin="0,0,0,16"/>
 
                             <StackPanel Orientation="Horizontal">
                                 <Button Click="OnStartBuildPackageClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" Height="32" Padding="14,0" Content="Package Game Now"/>
@@ -1001,8 +1001,8 @@
                 <Border x:Name="ExtensionsWorkspaceContainer" Background="#1e1e1e" Visibility="Collapsed" Padding="16">
                     <Border Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="14">
                         <DockPanel>
-                            <TextBlock DockPanel.Dock="Top" Text="CONTROLLED EXTENSION &amp; PLUGIN REGISTRY" Foreground="#bbbbbb" FontSize="12" FontWeight="Bold" Margin="0,0,0,6"/>
-                            <TextBlock DockPanel.Dock="Top" Text="Third-party DLL extensions require a validated .plugin.json manifest and run with isolated error handling." Foreground="#888888" FontSize="11" Margin="0,0,0,12"/>
+                            <TextBlock DockPanel.Dock="Top" Text="EXTENSIONS &amp; PLUGINS" Foreground="#bbbbbb" FontSize="12" FontWeight="Bold" Margin="0,0,0,6"/>
+                            <TextBlock DockPanel.Dock="Top" Text="Manage installed extensions and plugins." Foreground="#888888" FontSize="11" Margin="0,0,0,12"/>
                             <ListBox x:Name="ExtensionsRegistryList" Background="#1e1e1e" BorderBrush="#3c3c3c" Foreground="White">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate DataType="{x:Type plugins:PluginMetadata}">
@@ -1037,8 +1037,8 @@
 
                         <Border Grid.Row="0" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,12">
                             <StackPanel>
-                                <TextBlock Text="OPTIONAL AI PYTHON GAME DEVELOPMENT ASSISTANT" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
-                                <CheckBox x:Name="AiConsentCheckBox" Content="I consent to sending the selected code/prompt to my configured AI API provider (When unchecked, runs 100% locally offline)" Foreground="#cccccc" FontSize="11" Margin="0,0,0,8"/>
+                                <TextBlock Text="AI GAME ASSISTANT (OPTIONAL)" Foreground="#bbbbbb" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                                <CheckBox x:Name="AiConsentCheckBox" Content="Allow external AI API (When unchecked, runs locally offline)" Foreground="#cccccc" FontSize="11" Margin="0,0,0,8"/>
                                 <WrapPanel>
                                     <Button Click="OnAiActionClicked" Tag="ExplainCode" Style="{StaticResource SceneToolButton}" Content="Explain Active Code"/>
                                     <Button Click="OnAiActionClicked" Tag="ExplainError" Style="{StaticResource SceneToolButton}" Content="Explain Last Error"/>
@@ -1074,7 +1074,7 @@
                                     <Button Click="OnNewFolderToolbarClick" Style="{StaticResource SceneToolButton}" Height="22" Padding="5,2" ToolTip="New Folder">
                                         <iconPacks:PackIconMaterial Kind="FolderPlus" Width="11" Height="11"/>
                                     </Button>
-                                    <Button Click="OnRefreshClicked" Style="{StaticResource SceneToolButton}" Height="22" Padding="5,2" ToolTip="Refresh Project Tree">
+                                    <Button Click="OnRefreshClicked" Style="{StaticResource SceneToolButton}" Height="22" Padding="5,2" ToolTip="Refresh">
                                         <iconPacks:PackIconMaterial Kind="Refresh" Width="11" Height="11"/>
                                     </Button>
                                 </StackPanel>
@@ -1088,8 +1088,8 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="72"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBox x:Name="ExplorerSearchBox" Grid.Column="0" Height="24" Background="#1e1e1e" Foreground="White" BorderBrush="#3c3c3c" Padding="5,2" FontSize="11" TextChanged="ExplorerSearchBox_TextChanged" ToolTip="Search project files"/>
-                                <ComboBox x:Name="ExplorerFilterCombo" Grid.Column="1" Height="24" Margin="4,0,0,0" FontSize="10" SelectionChanged="ExplorerFilterCombo_SelectionChanged" ToolTip="Filter by file extension">
+                                <TextBox x:Name="ExplorerSearchBox" Grid.Column="0" Height="24" Background="#1e1e1e" Foreground="White" BorderBrush="#3c3c3c" Padding="5,2" FontSize="11" TextChanged="ExplorerSearchBox_TextChanged" ToolTip="Search files"/>
+                                <ComboBox x:Name="ExplorerFilterCombo" Grid.Column="1" Height="24" Margin="4,0,0,0" FontSize="10" SelectionChanged="ExplorerFilterCombo_SelectionChanged" ToolTip="Filter extension">
                                     <ComboBoxItem Content="All" IsSelected="True"/>
                                     <ComboBoxItem Content=".py"/>
                                     <ComboBoxItem Content=".Cobra"/>
@@ -1167,10 +1167,10 @@
                                 <Button x:Name="InstallReqButton" Click="OnInstallRequirementsClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" Height="22" Visibility="Collapsed" Margin="0,0,6,0">
                                     <TextBlock Text="Install requirements.txt" FontSize="10"/>
                                 </Button>
-                                <Button Click="OnRunTestsClicked" Style="{StaticResource SceneToolButton}" Height="22" Margin="0,0,6,0" ToolTip="Run Python Unit Tests">
+                                <Button Click="OnRunTestsClicked" Style="{StaticResource SceneToolButton}" Height="22" Margin="0,0,6,0" ToolTip="Run Tests">
                                     <TextBlock Text="Run Tests" FontSize="10"/>
                                 </Button>
-                                <Button Click="OnClearConsoleClicked" Style="{StaticResource SceneToolButton}" Height="22" ToolTip="Clear Active Console">
+                                <Button Click="OnClearConsoleClicked" Style="{StaticResource SceneToolButton}" Height="22" ToolTip="Clear Console">
                                     <iconPacks:PackIconMaterial Kind="Eraser" Width="11" Height="11"/>
                                 </Button>
                             </StackPanel>

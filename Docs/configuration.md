@@ -1,47 +1,43 @@
 # Configuration Guide
 
-Cobra IDE stores user preferences in `settings.json` managed by `SettingsManager`, while per-project settings are stored in each project's `cobra.project.json` manifest.
+Cobra IDE lets you customize the editor and your projects. Settings are saved in simple JSON files.
 
-## 1. Global IDE Settings (`SettingsView`)
+## 1. Global Settings
 
-Open **Settings** from the gear icon on the Main Toolbar or Welcome Dashboard.
+Click the gear icon in the top toolbar to open **Settings**.
 
 ### General
 
-- **Language**: Interface language selection.
-- **Startup Behavior**: Open Dashboard, Reopen Last Project, or Create New Project.
-- **Auto Save & Interval**: Automatically save modified scripts at a configurable interval (`5` to `3600` seconds).
+- **Language:** Choose your interface language.
+- **Startup:** Open the welcome page or reopen your last project.
+- **Auto Save:** Automatically save changed files on a timer.
 
 ### Theme & Editor
 
-- **Theme**: `Dark` or `Light` workspace theme.
-- **Editor Font Family & Size**: Customize Monaco Editor typography (`8` to `48` pt).
-- **Minimap, Word Wrap & Line Numbers**: Toggle code editor visual aids.
+- **Theme:** Switch between Dark and Light mode.
+- **Font & Size:** Change the editor font family and text size.
+- **Minimap & Line Numbers:** Turn editor helpers on or off.
 
-### Python Integration
+### Python
 
-- **Python Interpreter Path**: Default system Python executable (`python` or full path to `python.exe`).
-- **Auto-Create Virtual Environments**: Automatically create `.venv` when initializing new projects.
-- **Pip Index URL**: Optional custom PyPI mirror URL (validated for `http://` or `https://`).
-- **Linting & Formatting**: Enable AST syntax checks, `ruff` formatting, and `pyright` type diagnostics.
+- **Default Python:** Set the default Python interpreter for new projects.
+- **Virtual Environments:** Automatically create a `.venv` for each new project.
+- **Code Tools:** Turn on code formatting and error checking.
 
-### Game Engine Defaults
+### Game Defaults
 
-- **Target FPS**: Default frame rate target (`15` to `360` FPS).
-- **Default Resolution**: Default game window width and height (`320x240` up to `7680x4320`).
-- **Physics Engine**: Default 2D physics backend (`Pymunk` or `Arcade`).
+- **Target FPS:** Set the default frame rate (such as 60 FPS).
+- **Resolution:** Set default game window width and height.
 
-### AI Assistant (Privacy-Aware Opt-In)
+### AI Assistant (Optional)
 
-- **Enable AI Assistant**: Explicitly opt in or out of external AI API calls.
-- **Provider & Endpoint**: Select `Local Offline Helper`, `Google Gemini`, `Groq Cloud`, or `OpenAI Compatible`.
-- **Encrypted API Key**: Stored using Windows DPAPI (`ProtectedData`) encryption at rest.
+- **Enable AI:** Turn external AI suggestions on or off. Disabled by default.
+- **API Key:** Encrypted securely using Windows DPAPI. Never saved in plain text.
 
-## 2. Per-Project Configuration (`cobra.project.json`)
+## 2. Project Settings
 
-Click the **Project Config** wrench button on the Main Toolbar inside the editor to configure:
+Click the wrench icon on the editor toolbar to open project settings:
 
-- **Startup Python File**: Entry-point script (default `main.py`).
-- **Command-Line Arguments**: Arguments passed to your Python script on launch.
-- **Environment Variables**: Key-value pairs injected into the game process environment.
-- **Workspace Layout Preset**: Saved layout mode (`Default`, `CodeFocus`, `SceneDesign`, `Debug`).
+- **Startup File:** The main script to run (default: `main.py`).
+- **Arguments:** Command-line flags passed to your game.
+- **Environment Variables:** Custom variables for your game process.

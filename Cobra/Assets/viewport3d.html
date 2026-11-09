@@ -55,13 +55,13 @@
 <body>
     <canvas id="viewport"></canvas>
     <div id="hud">
-        <div id="hud-title" style="font-weight:bold;color:#ff8c00;">Cobra 3D Scene Viewport (Python Panda3D / Ursina Sync)</div>
-        <div id="hud-info">LMB: Select / Gizmo Drag | RMB/Alt+LMB: Orbit | MMB: Pan | Wheel: Zoom</div>
+        <div id="hud-title" style="font-weight:bold;color:#ff8c00;">3D Viewport</div>
+        <div id="hud-info">Left Click: Select | Right Click: Orbit | Middle Click: Pan | Scroll: Zoom</div>
     </div>
     <div id="controls-bar">
         <button class="vp-btn active" id="btn-persp" onclick="setCameraMode('perspective')">Perspective</button>
         <button class="vp-btn" id="btn-ortho" onclick="setCameraMode('orthographic')">Orthographic</button>
-        <button class="vp-btn active" id="btn-translate" onclick="setGizmoMode('translate')">Translate</button>
+        <button class="vp-btn active" id="btn-translate" onclick="setGizmoMode('translate')">Move</button>
         <button class="vp-btn" id="btn-rotate" onclick="setGizmoMode('rotate')">Rotate</button>
         <button class="vp-btn" id="btn-scale" onclick="setGizmoMode('scale')">Scale</button>
     </div>

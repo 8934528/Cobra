@@ -1,20 +1,21 @@
 # AI Assistant Guide
 
-Cobra IDE includes an optional, privacy-aware **AI Assistant** designed specifically for Python game developers (`Pygame`, `Panda3D`, `Ursina`).
+Cobra IDE includes an optional AI assistant to help you write Python game code.
 
-## Privacy & Security Architecture
+## Privacy & Safety
 
-1. **Explicit Opt-In Consent**: External network calls are disabled by default. Cobra never transmits source code or prompts to an external AI provider unless you explicitly enable external AI in **Settings -> AI Assistant** or check the **Allow external AI API** consent box in the AI panel.
-2. **Offline Local Mode Always Available**: When external AI is disabled or no API key is configured, `AiAssistantService` provides instant, deterministic local Python game recipes, code explanations, bug checklists, and refactoring suggestions without any network activity.
-3. **DPAPI Key Encryption**: When you save an API key in Settings, Cobra encrypts the key at rest using Windows Data Protection API (`ProtectedData.Protect` with `DataProtectionScope.CurrentUser`) via `SecurityValidator.ProtectSecret`. Plaintext API keys are never written to `settings.json` or logs.
-4. **Secret Redaction**: Outbound prompts automatically redact inline `API_KEY` or `SECRET` assignments before transmission.
+1. **Off by Default:** No code or data is sent to external services unless you explicitly enable external AI in Settings.
+2. **Offline Mode:** If you do not configure an API key, Cobra uses built-in local templates to give code advice and examples without internet access.
+3. **Encrypted Keys:** Any API keys you save are encrypted on your machine using Windows DPAPI. Keys are never saved in plain text.
+4. **Secret Filtering:** Cobra automatically removes tokens or passwords from prompts before sending them.
 
-## Supported Actions in the Editor
+## Available Actions
 
-Open the **AI Assistant** panel or click the **AI Assistant** button in the bottom status bar to:
+Open the **AI Assistant** tab in the sidebar to use these tools:
 
-- **Explain Code**: Summarize the active Python script's classes, game loop, and state flow.
-- **Generate Python Game Snippet**: Generate ready-to-use `Pygame`, `Panda3D`, or `Ursina` code for movement, collisions, tilemaps, audio, or state machines.
-- **Fix Error / Diagnose Traceback**: Analyze Python tracebacks and common Pygame runtime issues.
-- **Refactor**: Get actionable modularity, delta-time, and surface-caching improvements.
-- **Insert Last Code Block into Editor**: Paste the generated Python snippet directly at your cursor in Monaco Editor.
+- **Explain Active Code:** Get a short summary of how the current script works.
+- **Explain Last Error:** View simple advice on how to fix a recent crash or error.
+- **Suggest Improvements:** Get ideas to make your game code cleaner or faster.
+- **Generate Game Object Script:** Create starter code for movement, collisions, or states.
+- **Game Mechanics Guide:** Read tips on common game design patterns.
+- **Generate Unit Tests:** Create basic tests to verify game logic.

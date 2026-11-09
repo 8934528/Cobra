@@ -1,42 +1,41 @@
-# Python Environment, Package Management & Intelligence
+# Python Environment & Packages
 
-Cobra IDE treats Python environment isolation and developer tooling as first-class citizens.
+Cobra IDE helps you manage Python interpreters, virtual environments, and packages easily.
 
-## 1. Python Interpreter Detection (`PythonService`)
+## 1. Finding Python
 
-Cobra automatically discovers installed Python interpreters across:
+Cobra looks for Python installations in:
 
-- Active `PATH` entries (`python.exe`)
-- The Windows Python Launcher (`py -0p`)
-- Standard per-user and system-wide directories (`%LOCALAPPDATA%\Programs\Python\Python*`, `C:\Python*`, `%ProgramFiles%\Python*`)
+- Your system `PATH`
+- The Windows Python launcher (`py.exe`)
+- Standard folders (`%LOCALAPPDATA%\Programs\Python` and `C:\Python3*`)
 
-When a project is opened, `PythonService.ResolveProjectPython` resolves the active interpreter in priority order:
+When you open a project, Cobra chooses the interpreter in this order:
 
-1. The project's isolated `.venv\Scripts\python.exe` if present and valid.
-2. The project's configured `PythonInterpreter` in `cobra.project.json`.
-3. The global interpreter configured in Cobra Settings.
+1. The project's `.venv` folder (recommended)
+2. The interpreter listed in `cobra.project.json`
+3. The default interpreter set in global Settings
 
-## 2. Virtual Environments (`VenvService`)
+## 2. Virtual Environments (.venv)
 
-Every Cobra project supports an isolated `.venv` directory:
+Each project can have its own isolated environment:
 
-- **Creation**: Runs `python -m venv .venv` inside the project root.
-- **Validation**: Verifies that `.venv\Scripts\python.exe`, `pyvenv.cfg`, and `pip` are intact and functional.
-- **Dependency Installation**: Installs `requirements.txt` into `.venv` during project creation or when clicking **Create / Validate .venv** in the Python sidebar.
+- **Create:** Click **Create / Validate Venv** in the Python sidebar.
+- **Check:** Cobra checks that `python.exe` and `pip` work correctly.
+- **Dependencies:** When you create a project, Cobra automatically installs requirements into this environment.
 
-## 3. Integrated Package Manager (`PipPackageService`)
+## 3. Package Management
 
-The **Python Environment & Packages** sidebar panel executes all `pip` operations strictly through the project's resolved Python interpreter (`python -m pip ...`), preventing accidental pollution of the global Python installation:
+Use the **Python & Packages** panel to manage project libraries:
 
-- **View Installed Packages**: Uses `python -m pip list --format=json`.
-- **Install / Upgrade Package**: Validates the package specifier via `SecurityValidator.IsValidPipPackageSpec` (allowing PEP 508 specifiers while blocking shell metacharacters) and streams installation output to the Output console.
-- **Uninstall Package**: Removes selected packages with `-y`.
-- **Sync `requirements.txt`**: Runs `python -m pip freeze` and writes deterministic dependencies to `requirements.txt`.
+- **View Installed:** See all installed packages and their version numbers.
+- **Install:** Type a package name (such as `pygame-ce` or `pymunk`) and click **Install Package**.
+- **Update:** Select a package and click **Update Selected**.
+- **Remove:** Select a package and click **Uninstall Selected**.
+- **Save List:** Click **Sync requirements.txt** to save all installed packages to your project.
 
-## 4. Python Intelligence (`PythonIntelligenceService`)
+## 4. Code Analysis & Formatting
 
-Cobra provides fast, safe static analysis for Python files:
-
-- **AST Syntax & Symbol Extraction**: Runs a read-only Python `ast.parse` pass to detect syntax errors (with exact line/column numbers) and extract top-level classes, methods, functions, and imports for the Symbol Outline and Go to Definition (`F12`).
-- **Ruff Integration**: When `ruff` is installed in the environment, Cobra runs `ruff check --output-format=json` for linting diagnostics and `ruff format` for one-click PEP 8 code formatting.
-- **Pyright Integration**: Optionally invokes `pyright --outputjson` for static type checking.
+- **Syntax Checking:** Cobra checks Python files for syntax errors as you type.
+- **Symbol Outline:** Lists classes, functions, and imports in the active file.
+- **Formatting (Ruff):** Click **Format Python Code** to clean up and format your code automatically.

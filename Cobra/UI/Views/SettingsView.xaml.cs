@@ -193,7 +193,7 @@ namespace Cobra.UI.Views
                 if (!string.IsNullOrWhiteSpace(active.PipIndexUrl) &&
                     !Uri.TryCreate(active.PipIndexUrl, UriKind.Absolute, out _))
                 {
-                    await CustomDialog.ShowAsync(owner, "Pip Index URL must be a valid HTTP/HTTPS URL.", "Validation Error", DialogIcon.Error);
+                    await CustomDialog.ShowAsync(owner, "Pip Index URL must start with http:// or https://", "Invalid URL", DialogIcon.Error);
                     return;
                 }
 
@@ -207,7 +207,7 @@ namespace Cobra.UI.Views
                     SettingsManager.Instance.NotifySettingsUpdated();
                 }
 
-                await CustomDialog.ShowAsync(owner, "Settings applied and persisted successfully!", "Settings Applied", DialogIcon.Success);
+                await CustomDialog.ShowAsync(owner, "Settings saved successfully.", "Settings Saved", DialogIcon.Success);
 
                 if (NavigationService is { CanGoBack: true })
                     NavigationService.GoBack();
@@ -223,7 +223,7 @@ namespace Cobra.UI.Views
             try
             {
                 var owner = Window.GetWindow(this);
-                bool discard = await CustomDialog.ShowAsync(owner, "Are you sure you want to discard unsaved changes?", "Discard Changes", DialogIcon.Warning, "Discard", "Cancel");
+                bool discard = await CustomDialog.ShowAsync(owner, "Discard unsaved changes?", "Discard Changes", DialogIcon.Warning, "Discard", "Cancel");
 
                 if (discard)
                 {
@@ -245,7 +245,7 @@ namespace Cobra.UI.Views
             try
             {
                 var owner = Window.GetWindow(this);
-                await CustomDialog.ShowAsync(owner, "Checking for updates...\n\nYou are running the latest version of Cobra IDE (v2.0.0).", "Update Check");
+                await CustomDialog.ShowAsync(owner, "You are using the latest version of Cobra IDE (v2.0.0).", "Update Check");
             }
             catch (Exception ex)
             {

@@ -395,7 +395,7 @@ namespace Cobra.UI.Views
 
             var statusLabel = new TextBlock
             {
-                Text = "Creating project files...",
+                Text = "Creating project...",
                 Foreground = Brushes.White,
                 FontSize = 12,
                 Margin = new Thickness(20)
@@ -437,12 +437,12 @@ namespace Cobra.UI.Views
 
             if (result.StartsWith("Error", StringComparison.OrdinalIgnoreCase))
             {
-                await CustomDialog.ShowAsync(this, result, "Project Creation Failed", DialogIcon.Error);
+                await CustomDialog.ShowAsync(this, result, "Creation Error", DialogIcon.Error);
             }
             else
             {
                 LoadProjects();
-                ShowToast("Project created! Opening workspace...");
+                ShowToast("Project created. Opening editor...");
                 OpenProjectEditor(projectPath, projectName);
             }
         }
@@ -513,7 +513,7 @@ namespace Cobra.UI.Views
                             }
                             else
                             {
-                                await CustomDialog.ShowAsync(this, "Selected folder does not contain a Python file (.py) or cobra.project.json.", "Invalid Project Folder", DialogIcon.Warning);
+                                await CustomDialog.ShowAsync(this, "This folder does not contain a Python file (.py) or project file.", "Invalid Folder", DialogIcon.Warning);
                             }
                         }
                     }
@@ -550,7 +550,7 @@ namespace Cobra.UI.Views
         {
             SettingsManager.Instance.CurrentSettings.WorkspaceLayout = "Default";
             SettingsManager.Instance.Save();
-            ShowToast("Default workspace layout restored.");
+            ShowToast("Workspace layout reset.");
         }
 
         private void OnRecentProjectsClicked(object sender, RoutedEventArgs e) => OnOpenProjectClicked(sender, e);
@@ -578,7 +578,7 @@ namespace Cobra.UI.Views
                 }
                 else
                 {
-                    await CustomDialog.ShowAsync(this, "Select a project from 'Your Game Projects' first to configure its settings.", "Select Project");
+                    await CustomDialog.ShowAsync(this, "Select a project from the list to change settings.", "Select Project");
                 }
             }
             catch (Exception ex)
@@ -594,7 +594,7 @@ namespace Cobra.UI.Views
                 if (RecentProjectsList.SelectedItem is ProjectModel project)
                     OpenProjectEditor(project.Path, project.Name);
                 else
-                    await CustomDialog.ShowAsync(this, "Open or select a project to build and package your game.", "Build Game");
+                    await CustomDialog.ShowAsync(this, "Select or open a project to build.", "Build Game");
             }
             catch (Exception ex)
             {
@@ -634,7 +634,7 @@ namespace Cobra.UI.Views
                 if (RecentProjectsList.SelectedItem is ProjectModel project)
                     OpenProjectEditor(project.Path, project.Name);
                 else
-                    await CustomDialog.ShowAsync(this, "Please select a project from the list to open.", "No Selection");
+                    await CustomDialog.ShowAsync(this, "Select a project from the list to open.", "Select Project");
             }
             catch (Exception ex)
             {
@@ -646,7 +646,7 @@ namespace Cobra.UI.Views
         {
             LoadProjects();
             CheckPythonStatus();
-            ShowToast("Projects and Python environment status refreshed.");
+            ShowToast("Projects and Python status refreshed.");
         }
 
         private async void OnCheckPythonClicked(object sender, RoutedEventArgs e)
@@ -659,8 +659,8 @@ namespace Cobra.UI.Views
                     : "No Python interpreters detected.";
 
                 await CustomDialog.ShowAsync(this,
-                    $"Detected Python Interpreters:\n\n• {list}",
-                    "Python Environment Detection");
+                    $"Installed Python Interpreters:\n\n• {list}",
+                    "Python Interpreters");
             }
             catch (Exception ex)
             {
@@ -673,13 +673,13 @@ namespace Cobra.UI.Views
             try
             {
                 await CustomDialog.ShowAsync(this,
-                    "Cobra IDE Documentation is available in the repository under Docs/:\n\n" +
-                    "• README.md — Getting Started & Overview\n" +
-                    "• ARCHITECTURE.md — System & Engine Design\n" +
-                    "• Docs/user_guide.md — Creating, Running, Debugging & Packaging Games\n" +
-                    "• Docs/configuration.md — Python & Workspace Configuration\n" +
-                    "• policies/data_protection.md — Privacy & POPIA Data Protection Policy",
-                    "Cobra IDE Documentation");
+                    "Documentation files in the Docs folder:\n\n" +
+                    "• README.md — Quick Start Guide\n" +
+                    "• ARCHITECTURE.md — System Design\n" +
+                    "• Docs/user_guide.md — User Guide\n" +
+                    "• Docs/configuration.md — Settings Guide\n" +
+                    "• policies/data_protection.md — Privacy Policy",
+                    "Documentation");
             }
             catch (Exception ex)
             {
@@ -692,11 +692,11 @@ namespace Cobra.UI.Views
             try
             {
                 await CustomDialog.ShowAsync(this,
-                    "Cobra IDE v2.0 — Python Game Development Environment\n\n" +
-                    "Primary Language: Python\n" +
-                    "Primary Framework: Pygame (pygame-ce)\n" +
-                    "Optional 3D Frameworks: Panda3D & Ursina Engine\n" +
-                    "Desktop Stack: .NET 8, WPF, WebView2 & Monaco Editor",
+                    "Cobra IDE v2.0\nPython Game Development Environment\n\n" +
+                    "• Language: Python 3.10+\n" +
+                    "• 2D Engine: Pygame (pygame-ce)\n" +
+                    "• 3D Engines: Panda3D, Ursina\n" +
+                    "• Platform: .NET 8, WPF, WebView2",
                     "About Cobra IDE");
             }
             catch (Exception ex)

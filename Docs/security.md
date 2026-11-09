@@ -1,38 +1,29 @@
-# Security Architecture & Policies
+# Security & Protection
 
-Cobra IDE implements defense-in-depth security controls across filesystem operations, external process execution, asset importing, secret storage, and plugin loading.
+Cobra IDE keeps your computer and projects safe by enforcing strong boundaries.
 
-## 1. Policy Documents
+## 1. File Safety
 
-- **[Data Protection & Privacy Policy](../policies/data_protection.md)** — Covers local data storage, POPIA compliance, data minimization, and explicit user consent for external services.
-- **[Access Control & Incident Response Policy](../policies/access_incident.md)** — Covers privilege boundaries, extension verification, vulnerability reporting, and incident response steps.
+- **Path Checks:** All file actions (creating, moving, deleting) stay inside your project folder. Cobra blocks path traversal attempts.
+- **Protected Files:** Important files like `main.py` and `cobra.project.json` are protected from accidental deletion.
+- **Asset Limits:** Imported assets are limited to 100 MB and must match approved image, sound, font, or 3D model formats.
 
-## 2. Technical Security Controls (`SecurityValidator`)
+## 2. Safe Process Execution
 
-### Path Traversal & Archive Slip Prevention
+- Tools like Python, pip, and Git are run with strict argument lists instead of raw shell commands.
+- Package names given to pip are checked to block dangerous shell symbols.
 
-- `SecurityValidator.TryResolveSafeChildPath` resolves canonical paths via `Path.GetFullPath` and enforces that every file or directory created, renamed, deleted, or imported stays strictly inside the project root directory.
-- `SecurityValidator.IsSafeRelativeArchivePath` rejects any relative path containing `..` segments or rooted drives.
-- Critical project files (`cobra.project.json`, `main.py`, `.git`, `.venv`) are protected against accidental deletion via `SecurityValidator.IsProtectedProjectEntry`.
+## 3. Secret Protection
 
-### Safe Process Execution & Command Validation
+- API keys are encrypted with Windows DPAPI under your user account.
+- Passwords and tokens are automatically removed from log files.
 
-- Python, `pip`, `git`, and `PyInstaller` commands are invoked directly via `ProcessStartInfo` with `UseShellExecute = false` rather than concatenating untrusted strings into a shell.
-- Package specifiers passed to `pip` are validated against `SecurityValidator.IsValidPipPackageSpec`, rejecting shell metacharacters (`;`, `|`, `&`, `` ` ``, `$`, newlines).
+## 4. Controlled Plugins
 
-### Validated Asset Importing
+- Plugin assemblies (`.dll` files) are not loaded unless explicitly enabled and verified.
+- Plugin errors are isolated so they cannot crash the main editor.
 
-- `SecurityValidator.ValidateAssetFile` inspects every imported asset before copying it into a project:
-  - Enforces an allowlist of supported game asset extensions.
-  - Enforces a 100 MB maximum file size limit to prevent memory exhaustion.
-  - Verifies binary magic-byte file headers (`PNG`, `JPEG`, `GIF`, `BMP`, `WEBP`, `WAV`, `OGG`, `MP3`, `TTF`, `OTF`, `GLB`) and validates UTF-8 text assets (`JSON`, `OBJ`, `GLTF`, `PY`).
+## Policy Documents
 
-### Secret Encryption at Rest (DPAPI)
-
-- API keys configured for the optional AI Assistant are encrypted using Windows Data Protection API (`ProtectedData.Protect` with `DataProtectionScope.CurrentUser`) before being saved to `settings.json`.
-- Sensitive environment variables and tokens are redacted from IDE logs via `SecurityValidator.RedactSecrets`.
-
-### Controlled Extension Loading (`PluginLoader`)
-
-- Cobra disables arbitrary unverified DLL execution by default.
-- Extensions in the `Plugins/` directory are inspected for SHA-256 hash and strong-name signature metadata (`PluginMetadata`), and binary `.dll` assemblies are only loaded when explicitly allowlisted by SHA-256 hash or when the user explicitly opts in via `AllowUnsignedPlugins`.
+- **[Data Protection Policy](../policies/data_protection.md)** — Privacy rules and local storage details.
+- **[Access Control Policy](../policies/access_incident.md)** — Access boundaries and how to report issues.

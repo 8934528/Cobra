@@ -92,12 +92,12 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Cobra IDE — Python Game Development Workspace" 
+                        <TextBlock Text="Cobra IDE" 
                                    FontSize="16" 
                                    Foreground="White" 
                                    FontWeight="Bold"
                                    Margin="0,0,0,6"/>
-                        <TextBlock Text="Create, design, debug, profile, and package 2D &amp; 3D Python games powered by Pygame, Panda3D, and Ursina." 
+                        <TextBlock Text="Create, run, and package Python games with Pygame, Panda3D, and Ursina." 
                                    FontSize="12" 
                                    Foreground="#aaaaaa"/>
                     </StackPanel>
@@ -110,11 +110,11 @@
                                 Padding="14,0"
                                 Margin="0,0,10,0"
                                 Style="{StaticResource CommonRoundedButtonStyle}"
-                                ToolTip="Create a new Python game project (Ctrl+N)"
+                                ToolTip="New project (Ctrl+N)"
                                 FontSize="12">
                             <StackPanel Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="FolderPlus" Width="14" Height="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="New Game Project" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <TextBlock Text="New Project" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
 
@@ -125,7 +125,7 @@
                                 Padding="14,0"
                                 Margin="0,0,10,0"
                                 Style="{StaticResource CommonRoundedButtonStyle}"
-                                ToolTip="Open an existing Python game project (Ctrl+O)"
+                                ToolTip="Open project (Ctrl+O)"
                                 FontSize="12">
                             <StackPanel Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="FolderOpen" Width="14" Height="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
@@ -142,7 +142,7 @@
                                 Height="34"
                                 Margin="0,0,8,0"
                                 Style="{StaticResource CommonRoundedButtonStyle}"
-                                ToolTip="Detect Python Interpreters">
+                                ToolTip="Check Python">
                             <iconPacks:PackIconMaterial Kind="LanguagePython" Width="15" Height="15" Foreground="#4ec9b0"/>
                         </Button>
 
@@ -154,7 +154,7 @@
                                 Width="34"
                                 Height="34"
                                 Style="{StaticResource CommonRoundedButtonStyle}"
-                                ToolTip="IDE Settings">
+                                ToolTip="Settings">
                             <iconPacks:PackIconMaterial Kind="Cog" Width="15" Height="15"/>
                         </Button>
                     </StackPanel>
@@ -163,7 +163,7 @@
                 <!-- Project Templates Showcase -->
                 <Border Style="{StaticResource DashboardCardStyle}">
                     <StackPanel>
-                        <TextBlock Text="Python Game Project Templates" 
+                        <TextBlock Text="Project Templates" 
                                    FontSize="13" 
                                    Foreground="White" 
                                    FontWeight="SemiBold"
@@ -180,7 +180,7 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Your Game Projects" 
+                            <TextBlock Text="Recent Projects" 
                                        FontSize="13" 
                                        Foreground="White" 
                                        FontWeight="SemiBold"
@@ -193,11 +193,11 @@
                                         Padding="12,0"
                                         Margin="0,0,8,0"
                                         Style="{StaticResource CommonRoundedButtonStyle}"
-                                        ToolTip="Open selected project in Cobra Editor"
+                                        ToolTip="Open project"
                                         FontSize="12">
                                     <StackPanel Orientation="Horizontal">
                                         <iconPacks:PackIconMaterial Kind="CodeBraces" Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Open in Editor" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Open Project" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
                                 <Button Click="OnProjectSettingsClicked"
@@ -207,7 +207,7 @@
                                         Padding="12,0"
                                         Margin="0,0,8,0"
                                         Style="{StaticResource CommonRoundedButtonStyle}"
-                                        ToolTip="Configure project-specific settings"
+                                        ToolTip="Project settings"
                                         FontSize="12">
                                     <StackPanel Orientation="Horizontal">
                                         <iconPacks:PackIconMaterial Kind="Tune" Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
@@ -220,7 +220,7 @@
                                         Width="28"
                                         Height="28"
                                         Style="{StaticResource CommonRoundedButtonStyle}"
-                                        ToolTip="Refresh projects list">
+                                        ToolTip="Refresh list">
                                     <iconPacks:PackIconMaterial Kind="Refresh" Width="13" Height="13"/>
                                 </Button>
                             </StackPanel>
@@ -274,7 +274,7 @@
 
                     <Border Grid.Column="0" Style="{StaticResource DashboardCardStyle}">
                         <StackPanel>
-                            <TextBlock Text="Python Environment Status" 
+                            <TextBlock Text="Python Status" 
                                        FontSize="13" 
                                        Foreground="White" 
                                        FontWeight="SemiBold"
@@ -292,16 +292,16 @@
                                     <RowDefinition Height="26"/>
                                 </Grid.RowDefinitions>
 
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Active Interpreter:" Foreground="#aaaaaa" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Python Version:" Foreground="#aaaaaa" VerticalAlignment="Center"/>
                                 <TextBlock x:Name="PythonStatusText" Grid.Row="0" Grid.Column="1" Text="Checking..." Foreground="White" VerticalAlignment="Center"/>
 
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Primary Framework:" Foreground="#aaaaaa" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="2D Framework:" Foreground="#aaaaaa" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Row="1" Grid.Column="1" Text="Pygame (pygame-ce)" Foreground="#4ec9b0" VerticalAlignment="Center"/>
 
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Optional 3D Engines:" Foreground="#aaaaaa" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="3D Engines:" Foreground="#aaaaaa" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Row="2" Grid.Column="1" Text="Panda3D, Ursina Engine" Foreground="#cccccc" VerticalAlignment="Center"/>
 
-                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Total Game Projects:" Foreground="#aaaaaa" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Total Projects:" Foreground="#aaaaaa" VerticalAlignment="Center"/>
                                 <TextBlock x:Name="ProjectCountText" Grid.Row="3" Grid.Column="1" Text="0" Foreground="White" VerticalAlignment="Center"/>
                             </Grid>
                         </StackPanel>
@@ -309,7 +309,7 @@
 
                     <Border Grid.Column="2" Style="{StaticResource DashboardCardStyle}">
                         <StackPanel>
-                            <TextBlock Text="Game Development Workflow" 
+                            <TextBlock Text="Quick Workflow" 
                                        FontSize="13" 
                                        Foreground="White" 
                                        FontWeight="SemiBold"
@@ -317,19 +317,19 @@
 
                             <StackPanel Margin="0,3" Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="LanguagePython" Width="14" Height="14" Foreground="#ff8c00" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="1. Create a Python game project from 9 starter templates (2D &amp; 3D)" Foreground="#cccccc" FontSize="12" VerticalAlignment="Center"/>
+                                <TextBlock Text="1. Create a project from a template" Foreground="#cccccc" FontSize="12" VerticalAlignment="Center"/>
                             </StackPanel>
                             <StackPanel Margin="0,3" Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="Palette" Width="14" Height="14" Foreground="#ff8c00" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="2. Design 2D/3D scenes, inspect properties, and preview animations" Foreground="#cccccc" FontSize="12" VerticalAlignment="Center"/>
+                                <TextBlock Text="2. Design scenes and edit Python code" Foreground="#cccccc" FontSize="12" VerticalAlignment="Center"/>
                             </StackPanel>
                             <StackPanel Margin="0,3" Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="Bug" Width="14" Height="14" Foreground="#ff8c00" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="3. Run, set breakpoints, step through code, and profile FPS &amp; memory" Foreground="#cccccc" FontSize="12" VerticalAlignment="Center"/>
+                                <TextBlock Text="3. Run and debug your game" Foreground="#cccccc" FontSize="12" VerticalAlignment="Center"/>
                             </StackPanel>
                             <StackPanel Margin="0,3" Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="PackageVariantClosed" Width="14" Height="14" Foreground="#ff8c00" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="4. Manage Git source control and package standalone builds with PyInstaller" Foreground="#cccccc" FontSize="12" VerticalAlignment="Center"/>
+                                <TextBlock Text="4. Package into a Windows executable" Foreground="#cccccc" FontSize="12" VerticalAlignment="Center"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -341,7 +341,7 @@
             <Border Background="#2d2d30" CornerRadius="4" Padding="18,10" BorderBrush="#ff8c00" BorderThickness="1" SnapsToDevicePixels="True">
                 <StackPanel Orientation="Horizontal">
                     <iconPacks:PackIconMaterial x:Name="ToastIcon" Kind="CheckCircle" Width="14" Height="14" Foreground="#4ec9b0" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="ToastMessage" Text="Project created successfully!" Foreground="White" FontSize="12" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="ToastMessage" Text="Project created!" Foreground="White" FontSize="12" VerticalAlignment="Center"/>
                 </StackPanel>
             </Border>
             <Grid.RenderTransform>
