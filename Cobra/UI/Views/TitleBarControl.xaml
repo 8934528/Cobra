@@ -25,7 +25,7 @@
                             <Grid>
                                 <ContentPresenter ContentSource="Header" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsSubmenuOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Fade">
-                                    <Border Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="3" Padding="2" Margin="0,2,0,0">
+                                    <Border Background="#202024" BorderBrush="#2e2e33" BorderThickness="1" CornerRadius="4" Padding="2" Margin="0,2,0,0">
                                         <ItemsPresenter />
                                     </Border>
                                 </Popup>
@@ -33,11 +33,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#3c3c3c"/>
+                                <Setter TargetName="Border" Property="Background" Value="#2b2b30"/>
                                 <Setter Property="Foreground" Value="White"/>
                             </Trigger>
                             <Trigger Property="IsSubmenuOpen" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#3c3c3c"/>
+                                <Setter TargetName="Border" Property="Background" Value="#2b2b30"/>
                                 <Setter Property="Foreground" Value="White"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -48,7 +48,7 @@
 
         <Style x:Key="ModernSubMenuItemStyle" TargetType="MenuItem">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#e0e0e0"/>
+            <Setter Property="Foreground" Value="#e4e4e7"/>
             <Setter Property="Padding" Value="12,8,12,8"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -65,7 +65,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#2d2d30"/>
+                                <Setter TargetName="Border" Property="Background" Value="#27272a"/>
                                 <Setter Property="Foreground" Value="#ff8c00"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -75,7 +75,7 @@
         </Style>
 
         <Style x:Key="ModernSeparatorStyle" TargetType="Separator">
-            <Setter Property="Background" Value="#3c3c3c"/>
+            <Setter Property="Background" Value="#2e2e33"/>
             <Setter Property="Height" Value="1"/>
             <Setter Property="Margin" Value="8,4,8,4"/>
         </Style>
@@ -83,7 +83,7 @@
         <Style x:Key="WindowButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Foreground" Value="#cccccc"/>
+            <Setter Property="Foreground" Value="#a1a1aa"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -92,7 +92,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#3c3c3c"/>
+                                <Setter TargetName="Border" Property="Background" Value="#2b2b30"/>
                                 <Setter Property="Foreground" Value="White"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -110,7 +110,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#e81123"/>
+                                <Setter TargetName="Border" Property="Background" Value="#dc2626"/>
                                 <Setter Property="Foreground" Value="White"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -120,7 +120,7 @@
         </Style>
     </UserControl.Resources>
 
-    <Border Background="#2d2d30" BorderBrush="#3c3c3c" BorderThickness="0,0,0,1">
+    <Border Background="#18181b" BorderBrush="#2e2e33" BorderThickness="0,0,0,1">
         <Grid Height="35">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>

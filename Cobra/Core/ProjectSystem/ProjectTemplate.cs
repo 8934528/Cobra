@@ -24,7 +24,7 @@ namespace Cobra.Core.ProjectSystem
                     Name = "Pygame 2D Starter",
                     Framework = "Pygame",
                     Category = "2D",
-                    Description = "Classic 2D Pygame starter with game loop, scenes, input handling, and HUD.",
+                    Description = "Classic 2D starter with game loop, scenes & HUD.",
                     Packages = ["pygame-ce"]
                 },
                 new ProjectTemplateDescriptor
@@ -33,7 +33,7 @@ namespace Cobra.Core.ProjectSystem
                     Name = "Pygame Platformer",
                     Framework = "Pygame",
                     Category = "2D",
-                    Description = "Side-scrolling platformer with gravity, jump physics, tile collisions, and camera follow.",
+                    Description = "Platformer with gravity, jump physics & camera.",
                     Packages = ["pygame-ce"]
                 },
                 new ProjectTemplateDescriptor
@@ -42,7 +42,7 @@ namespace Cobra.Core.ProjectSystem
                     Name = "Pygame Top-Down Game",
                     Framework = "Pygame",
                     Category = "2D",
-                    Description = "8-directional top-down adventure with smooth movement, obstacles, and collectibles.",
+                    Description = "Top-down adventure with movement & collectibles.",
                     Packages = ["pygame-ce"]
                 },
                 new ProjectTemplateDescriptor
@@ -51,7 +51,7 @@ namespace Cobra.Core.ProjectSystem
                     Name = "Pygame RPG Starter",
                     Framework = "Pygame",
                     Category = "2D",
-                    Description = "RPG foundation featuring player stats, inventory, NPC dialogue box, and tile world.",
+                    Description = "RPG starter with stats, inventory & dialogue.",
                     Packages = ["pygame-ce"]
                 },
                 new ProjectTemplateDescriptor
@@ -60,7 +60,7 @@ namespace Cobra.Core.ProjectSystem
                     Name = "Pygame Arcade Game",
                     Framework = "Pygame",
                     Category = "2D",
-                    Description = "Fast-paced space arcade shooter with enemy waves, projectiles, particles, and high scores.",
+                    Description = "Arcade space shooter with waves & particles.",
                     Packages = ["pygame-ce"]
                 },
                 new ProjectTemplateDescriptor
@@ -69,7 +69,7 @@ namespace Cobra.Core.ProjectSystem
                     Name = "Pygame Puzzle Game",
                     Framework = "Pygame",
                     Category = "2D",
-                    Description = "Grid-based block matching and sliding puzzle starter with move counter and level progression.",
+                    Description = "Grid-based block puzzle & level progression.",
                     Packages = ["pygame-ce"]
                 },
                 new ProjectTemplateDescriptor
@@ -78,7 +78,7 @@ namespace Cobra.Core.ProjectSystem
                     Name = "Pygame Multiplayer Starter",
                     Framework = "Pygame",
                     Category = "2D",
-                    Description = "Local & UDP/socket networked multiplayer arena starter with synchronized player states.",
+                    Description = "Multiplayer arena with synchronized state.",
                     Packages = ["pygame-ce"]
                 },
                 new ProjectTemplateDescriptor
@@ -87,7 +87,7 @@ namespace Cobra.Core.ProjectSystem
                     Name = "Panda3D 3D Starter",
                     Framework = "Panda3D",
                     Category = "3D",
-                    Description = "Python 3D game starter using Panda3D ShowBase with camera orbit, directional lighting, and 3D scene graph.",
+                    Description = "3D ShowBase with camera orbit & lighting.",
                     Packages = ["panda3d"]
                 },
                 new ProjectTemplateDescriptor
@@ -96,7 +96,7 @@ namespace Cobra.Core.ProjectSystem
                     Name = "Ursina 3D Starter",
                     Framework = "Ursina",
                     Category = "3D",
-                    Description = "Python 3D game starter using Ursina Engine with Entities, 3D controller, skybox, and lighting.",
+                    Description = "3D entities with controller & skybox.",
                     Packages = ["ursina"]
                 }
             ];

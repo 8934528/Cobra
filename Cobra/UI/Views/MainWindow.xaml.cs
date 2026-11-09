@@ -36,6 +36,9 @@ namespace Cobra.UI.Views
         public MainWindow()
         {
             InitializeComponent();
+            MaxHeight = SystemParameters.WorkArea.Height;
+            MaxWidth = SystemParameters.WorkArea.Width;
+            WindowState = WindowState.Maximized;
             _projectManager = new ProjectManager();
             _recentProjects = [];
             RecentProjectsList.ItemsSource = _recentProjects;
@@ -53,7 +56,7 @@ namespace Cobra.UI.Views
             var settings = SettingsManager.Instance.CurrentSettings;
             Background = settings.Theme == "Light"
                 ? new SolidColorBrush(Color.FromRgb(242, 242, 245))
-                : new SolidColorBrush(Color.FromRgb(30, 30, 30));
+                : new SolidColorBrush(Color.FromRgb(24, 24, 27));
         }
 
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -74,7 +77,6 @@ namespace Cobra.UI.Views
 
         private void UpdateTerminalStatus()
         {
-            if (TerminalStatusText == null) return;
             try
             {
                 string preferred = SettingsManager.Instance.CurrentSettings.PreferredTerminal;
@@ -82,13 +84,12 @@ namespace Cobra.UI.Views
                 var active = terminals.FirstOrDefault(t => t.DisplayName.Equals(preferred, StringComparison.OrdinalIgnoreCase) && t.IsAvailable)
                              ?? terminals.FirstOrDefault(t => t.IsAvailable);
 
-                TerminalStatusText.Text = active != null
-                    ? $"Terminal: {active.DisplayName} (Active)"
-                    : "Terminal: Windows PowerShell / Git Bash";
+                string displayName = active != null ? active.DisplayName : "PowerShell";
+                GlobalFooter?.SetTerminalStatus(displayName, active != null);
             }
             catch
             {
-                TerminalStatusText.Text = "Terminal: PowerShell / Git Bash";
+                GlobalFooter?.SetTerminalStatus("PowerShell");
             }
         }
 
@@ -96,27 +97,24 @@ namespace Cobra.UI.Views
         {
             if (sender is Button { Tag: string cat })
             {
-                if (TabAllTemplates != null)
-                {
-                    TabAllTemplates.Background = cat == "All" ? new SolidColorBrush(Color.FromRgb(255, 140, 0)) : new SolidColorBrush(Color.FromRgb(45, 45, 48));
-                    TabAllTemplates.Foreground = cat == "All" ? Brushes.White : new SolidColorBrush(Color.FromRgb(170, 170, 170));
-                }
                 if (Tab2DTemplates != null)
                 {
-                    Tab2DTemplates.Background = cat == "2D" ? new SolidColorBrush(Color.FromRgb(255, 140, 0)) : new SolidColorBrush(Color.FromRgb(45, 45, 48));
-                    Tab2DTemplates.Foreground = cat == "2D" ? Brushes.White : new SolidColorBrush(Color.FromRgb(170, 170, 170));
+                    Tab2DTemplates.Background = cat == "2D" ? new SolidColorBrush(Color.FromRgb(255, 140, 0)) : new SolidColorBrush(Color.FromRgb(43, 43, 48));
+                    Tab2DTemplates.Foreground = cat == "2D" ? Brushes.White : new SolidColorBrush(Color.FromRgb(161, 161, 170));
+                    Tab2DTemplates.BorderBrush = cat == "2D" ? new SolidColorBrush(Color.FromRgb(255, 140, 0)) : new SolidColorBrush(Color.FromRgb(56, 56, 64));
                 }
                 if (Tab3DTemplates != null)
                 {
-                    Tab3DTemplates.Background = cat == "3D" ? new SolidColorBrush(Color.FromRgb(255, 140, 0)) : new SolidColorBrush(Color.FromRgb(45, 45, 48));
-                    Tab3DTemplates.Foreground = cat == "3D" ? Brushes.White : new SolidColorBrush(Color.FromRgb(170, 170, 170));
+                    Tab3DTemplates.Background = cat == "3D" ? new SolidColorBrush(Color.FromRgb(255, 140, 0)) : new SolidColorBrush(Color.FromRgb(43, 43, 48));
+                    Tab3DTemplates.Foreground = cat == "3D" ? Brushes.White : new SolidColorBrush(Color.FromRgb(161, 161, 170));
+                    Tab3DTemplates.BorderBrush = cat == "3D" ? new SolidColorBrush(Color.FromRgb(255, 140, 0)) : new SolidColorBrush(Color.FromRgb(56, 56, 64));
                 }
 
                 PopulateTemplateShowcase(cat);
             }
         }
 
-        private void PopulateTemplateShowcase(string categoryFilter = "All")
+        private void PopulateTemplateShowcase(string categoryFilter = "2D")
         {
             if (TemplateShowcasePanel == null) return;
             TemplateShowcasePanel.Children.Clear();
@@ -132,25 +130,25 @@ namespace Cobra.UI.Views
                 var card = new Border
                 {
                     HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch,
-                    Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
-                    BorderBrush = new SolidColorBrush(Color.FromRgb(55, 55, 55)),
+                    Background = new SolidColorBrush(Color.FromRgb(26, 26, 30)),
+                    BorderBrush = new SolidColorBrush(Color.FromRgb(46, 46, 51)),
                     BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(4),
-                    Padding = new Thickness(12, 10, 12, 10),
-                    Margin = new Thickness(0, 0, 0, 8),
+                    CornerRadius = new CornerRadius(5),
+                    Padding = new Thickness(9, 5, 9, 5),
+                    Margin = new Thickness(0, 0, 0, 4),
                     Cursor = System.Windows.Input.Cursors.Hand,
                     ToolTip = $"Click to create a new '{tmpl.Name}' project"
                 };
 
                 card.MouseEnter += (_, _) =>
                 {
-                    card.Background = new SolidColorBrush(Color.FromRgb(38, 38, 42));
+                    card.Background = new SolidColorBrush(Color.FromRgb(34, 34, 39));
                     card.BorderBrush = new SolidColorBrush(Color.FromRgb(255, 140, 0));
                 };
                 card.MouseLeave += (_, _) =>
                 {
-                    card.Background = new SolidColorBrush(Color.FromRgb(30, 30, 30));
-                    card.BorderBrush = new SolidColorBrush(Color.FromRgb(55, 55, 55));
+                    card.Background = new SolidColorBrush(Color.FromRgb(26, 26, 30));
+                    card.BorderBrush = new SolidColorBrush(Color.FromRgb(46, 46, 51));
                 };
 
                 var stack = new StackPanel();
@@ -169,14 +167,18 @@ namespace Cobra.UI.Views
                 var badge = new Border
                 {
                     Background = tmpl.Category == "3D"
-                        ? new SolidColorBrush(Color.FromRgb(78, 110, 180))
-                        : new SolidColorBrush(Color.FromRgb(45, 90, 65)),
+                        ? new SolidColorBrush(Color.FromRgb(42, 30, 18))
+                        : new SolidColorBrush(Color.FromRgb(35, 35, 40)),
+                    BorderBrush = tmpl.Category == "3D"
+                        ? new SolidColorBrush(Color.FromRgb(255, 140, 0))
+                        : new SolidColorBrush(Color.FromRgb(56, 56, 64)),
+                    BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(3),
                     Padding = new Thickness(6, 2, 6, 2),
                     Child = new TextBlock
                     {
                         Text = $"{tmpl.Category} • {tmpl.Framework}",
-                        Foreground = Brushes.White,
+                        Foreground = tmpl.Category == "3D" ? new SolidColorBrush(Color.FromRgb(255, 140, 0)) : Brushes.White,
                         FontSize = 10,
                         FontWeight = FontWeights.SemiBold
                     }
@@ -189,10 +191,11 @@ namespace Cobra.UI.Views
                 var descText = new TextBlock
                 {
                     Text = tmpl.Description,
-                    Foreground = new SolidColorBrush(Color.FromRgb(160, 160, 160)),
+                    Foreground = new SolidColorBrush(Color.FromRgb(161, 161, 170)),
                     FontSize = 11,
-                    TextWrapping = TextWrapping.Wrap,
-                    Margin = new Thickness(0, 4, 0, 0)
+                    TextWrapping = TextWrapping.NoWrap,
+                    TextTrimming = TextTrimming.CharacterEllipsis,
+                    Margin = new Thickness(0, 3, 0, 0)
                 };
 
                 stack.Children.Add(headerRow);
@@ -285,13 +288,11 @@ namespace Cobra.UI.Views
             if (PythonService.IsPythonInstalled(configured))
             {
                 string version = PythonService.GetPythonVersion(configured);
-                PythonStatusText.Text = version;
-                PythonStatusText.Foreground = new SolidColorBrush(Color.FromRgb(78, 201, 176));
+                GlobalFooter?.SetPythonStatus(version);
             }
             else
             {
-                PythonStatusText.Text = "Python not found in PATH (Configure in Settings)";
-                PythonStatusText.Foreground = new SolidColorBrush(Color.FromRgb(220, 53, 69));
+                GlobalFooter?.SetPythonStatus("Python not found in PATH", false);
             }
         }
 
@@ -683,9 +684,12 @@ namespace Cobra.UI.Views
                     {
                         Title = $"Project Settings - {project.Name}",
                         Content = settingsView,
-                        Width = 1150,
-                        Height = 760,
+                        Width = 1440,
+                        Height = 900,
                         WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                        WindowState = WindowState.Maximized,
+                        MaxHeight = SystemParameters.WorkArea.Height,
+                        MaxWidth = SystemParameters.WorkArea.Width,
                         Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
                         WindowStyle = WindowStyle.None
                     };
@@ -847,9 +851,12 @@ namespace Cobra.UI.Views
             {
                 Title = "Cobra IDE - Settings",
                 Content = settingsView,
-                Width = 1150,
-                Height = 760,
+                Width = 1440,
+                Height = 900,
                 WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                WindowState = WindowState.Maximized,
+                MaxHeight = SystemParameters.WorkArea.Height,
+                MaxWidth = SystemParameters.WorkArea.Width,
                 Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
                 WindowStyle = WindowStyle.None
             };
@@ -991,6 +998,8 @@ namespace Cobra.UI.Views
                 Height = 900,
                 WindowStartupLocation = WindowStartupLocation.CenterScreen,
                 WindowState = WindowState.Maximized,
+                MaxHeight = SystemParameters.WorkArea.Height,
+                MaxWidth = SystemParameters.WorkArea.Width,
                 WindowStyle = WindowStyle.None
             };
             WindowChrome.SetWindowChrome(editorWindow, new WindowChrome { CaptionHeight = 35, ResizeBorderThickness = new Thickness(5), GlassFrameThickness = new Thickness(0), CornerRadius = new CornerRadius(0) });

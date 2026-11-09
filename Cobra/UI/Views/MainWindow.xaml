@@ -9,7 +9,9 @@
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=local:MainWindow}"
         d:DesignHeight="900" d:DesignWidth="1400"
-        Background="#1e1e1e"
+        Width="1280" Height="720" MinWidth="980" MinHeight="560"
+        WindowState="Maximized"
+        Background="#18181b"
         Icon="/Assets/AppIcon.png"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None">
@@ -22,14 +24,16 @@
     </WindowChrome.WindowChrome>
 
     <Window.Resources>
+        <!-- studio dashboard card style -->
         <Style x:Key="DashboardCardStyle" TargetType="Border">
-            <Setter Property="Background" Value="#252526"/>
-            <Setter Property="BorderBrush" Value="#3c3c3c"/>
+            <Setter Property="Background" Value="#202024"/>
+            <Setter Property="BorderBrush" Value="#2e2e33"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="4"/>
-            <Setter Property="Padding" Value="14"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="12,8"/>
         </Style>
 
+        <!-- rounded button style -->
         <Style x:Key="CommonRoundedButtonStyle" TargetType="Button">
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -47,7 +51,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="btnBorder" Property="Opacity" Value="0.88"/>
+                                <Setter TargetName="btnBorder" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="btnBorder" Property="Opacity" Value="0.75"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -55,23 +62,53 @@
             </Setter>
         </Style>
 
+        <!-- category tab button style -->
         <Style x:Key="CategoryTabButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#2d2d30"/>
-            <Setter Property="Foreground" Value="#aaaaaa"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="10,4"/>
-            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="Background" Value="#2b2b30"/>
+            <Setter Property="Foreground" Value="#a1a1aa"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#383840"/>
+            <Setter Property="Padding" Value="14,6"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
             <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="TabBorder" Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="TabBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="TabBorder" Property="Background" Value="#3c3c3c"/>
+                                <Setter TargetName="TabBorder" Property="Background" Value="#333338"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- quick action tool button style -->
+        <Style x:Key="QuickToolButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#26262b"/>
+            <Setter Property="BorderBrush" Value="#323238"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="#d4d4d8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="#303036"/>
+                                <Setter TargetName="b" Property="BorderBrush" Value="#ff8c00"/>
                                 <Setter Property="Foreground" Value="White"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -83,8 +120,12 @@
 
     <Grid>
         <Grid.RowDefinitions>
+            <!-- window titlebar -->
             <RowDefinition Height="35"/>
+            <!-- main studio view -->
             <RowDefinition Height="*"/>
+            <!-- global thin compact footer -->
+            <RowDefinition Height="30"/>
         </Grid.RowDefinitions>
 
         <local:TitleBarControl Grid.Row="0" 
@@ -109,223 +150,222 @@
                                AboutClicked="OnAboutClicked"
                                SettingsIconClicked="OnSettingsIconClicked"/>
 
-        <!-- edge-to-edge responsive main dashboard -->
-        <Grid Grid.Row="1" Margin="16,12,16,12">
+        <!-- main studio workspace layout -->
+        <Grid Grid.Row="1" Margin="8,6,8,6">
             <Grid.RowDefinitions>
+                <!-- row 1: cobra studio full-width section -->
                 <RowDefinition Height="Auto"/>
+                <!-- row 2: project templates and recent projects (two columns) -->
                 <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- top header and primary action bar -->
-            <Grid Grid.Row="0" Margin="0,0,0,12">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <!-- row 1: cobra studio full-width section -->
+            <Border Grid.Row="0" Style="{StaticResource DashboardCardStyle}" Margin="0,0,0,6" Padding="14,6">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <!-- left brand & description -->
+                        <ColumnDefinition Width="*"/>
+                        <!-- right primary actions and quick tools -->
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="Cobra IDE" 
-                                   FontSize="18" 
-                                   Foreground="White" 
-                                   FontWeight="Bold"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,10,0"/>
-                        <Border Background="#2d2d30" BorderBrush="#ff8c00" BorderThickness="1" CornerRadius="3" Padding="8,2" VerticalAlignment="Center">
-                            <TextBlock Text="Python Game Studio &amp; 3D Engine" Foreground="#ff8c00" FontSize="11" FontWeight="SemiBold"/>
-                        </Border>
+                    <!-- brand identity & description -->
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <iconPacks:PackIconMaterial Kind="CodeTags" Width="18" Height="18" Foreground="#ff8c00" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="Cobra Studio" Foreground="White" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <Border Background="#2a1e12" BorderBrush="#ff8c00" BorderThickness="1" CornerRadius="3" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="v2.0" Foreground="#ff8c00" FontSize="10" FontWeight="Bold"/>
+                            </Border>
+                        </StackPanel>
+                        <TextBlock Text="Python Game Studio &amp; 3D World Engine — Create games with Pygame-CE, Panda3D, and Ursina." 
+                                   Foreground="#a1a1aa" 
+                                   FontSize="11" 
+                                   Margin="0,2,0,0"/>
                     </StackPanel>
-                    <TextBlock Text="Build, design 3D environments, edit Python scripts, and package games with Pygame, Panda3D, and Ursina." 
-                               FontSize="12" 
-                               Foreground="#aaaaaa"
-                               Margin="0,4,0,0"/>
-                </StackPanel>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Click="OnNewProjectClicked"
-                            Background="#ff8c00"
-                            Foreground="White"
-                            Height="34"
-                            Padding="14,0"
-                            Margin="0,0,8,0"
-                            Style="{StaticResource CommonRoundedButtonStyle}"
-                            ToolTip="New project (Ctrl+N)"
-                            FontSize="12">
-                        <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="FolderPlus" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="New Project" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
+                    <!-- right actions & quick tool bar -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- primary new project button -->
+                        <Button Click="OnNewProjectClicked"
+                                Background="#ff8c00"
+                                Foreground="White"
+                                Height="30"
+                                Padding="10,0"
+                                Margin="0,0,8,0"
+                                Style="{StaticResource CommonRoundedButtonStyle}"
+                                ToolTip="Create a new 2D or 3D project (Ctrl+N)">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="FolderPlus" Width="14" Height="14" Foreground="White" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="New Project" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
 
-                    <Button Click="OnOpenProjectClicked"
-                            Background="#3c3c3c"
-                            Foreground="White"
-                            Height="34"
-                            Padding="14,0"
-                            Margin="0,0,8,0"
-                            Style="{StaticResource CommonRoundedButtonStyle}"
-                            ToolTip="Open project (Ctrl+O)"
-                            FontSize="12">
-                        <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="FolderOpen" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="Open Project" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
+                        <!-- primary open project button -->
+                        <Button Click="OnOpenProjectClicked"
+                                Background="#26262b"
+                                BorderBrush="#383840"
+                                BorderThickness="1"
+                                Foreground="White"
+                                Height="30"
+                                Padding="10,0"
+                                Margin="0,0,10,0"
+                                Style="{StaticResource CommonRoundedButtonStyle}"
+                                ToolTip="Open existing project folder (Ctrl+O)">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="FolderOpen" Width="14" Height="14" Foreground="#a1a1aa" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Open Project" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
 
-                    <Button Click="OnCheckPythonClicked"
-                            Background="#2d2d30"
-                            BorderBrush="#4c4c4c"
-                            BorderThickness="1"
-                            Foreground="White"
-                            Width="34"
-                            Height="34"
-                            Margin="0,0,8,0"
-                            Style="{StaticResource CommonRoundedButtonStyle}"
-                            ToolTip="Check Python Interpreter">
-                        <iconPacks:PackIconMaterial Kind="LanguagePython" Width="16" Height="16" Foreground="#4ec9b0"/>
-                    </Button>
+                        <Border Width="1" Height="20" Background="#2e2e33" Margin="0,0,10,0"/>
 
-                    <Button Click="OnOpenTerminalClicked"
-                            Background="#2d2d30"
-                            BorderBrush="#4c4c4c"
-                            BorderThickness="1"
-                            Foreground="White"
-                            Width="34"
-                            Height="34"
-                            Margin="0,0,8,0"
-                            Style="{StaticResource CommonRoundedButtonStyle}"
-                            ToolTip="Open Integrated Terminal">
-                        <iconPacks:PackIconMaterial Kind="Console" Width="15" Height="15" Foreground="#e0e0e0"/>
-                    </Button>
+                        <!-- quick developer tools -->
+                        <Button Click="OnOpenTerminalClicked" Style="{StaticResource QuickToolButtonStyle}" Width="30" Height="30" Margin="0,0,6,0" ToolTip="Open integrated terminal">
+                            <iconPacks:PackIconMaterial Kind="Console" Width="13" Height="13" Foreground="#ff8c00"/>
+                        </Button>
 
-                    <Button Click="OnSettingsIconClicked"
-                            Background="#2d2d30"
-                            BorderBrush="#4c4c4c"
-                            BorderThickness="1"
-                            Foreground="White"
-                            Width="34"
-                            Height="34"
-                            Style="{StaticResource CommonRoundedButtonStyle}"
-                            ToolTip="IDE Settings">
-                        <iconPacks:PackIconMaterial Kind="Cog" Width="15" Height="15"/>
-                    </Button>
-                </StackPanel>
-            </Grid>
+                        <Button Click="OnCheckPythonClicked" Style="{StaticResource QuickToolButtonStyle}" Width="30" Height="30" Margin="0,0,6,0" ToolTip="Check Python interpreter">
+                            <iconPacks:PackIconMaterial Kind="LanguagePython" Width="13" Height="13" Foreground="#ff8c00"/>
+                        </Button>
 
-            <!-- main responsive split area -->
-            <Grid Grid.Row="1" Margin="0,0,0,12">
+                        <Button Click="OnSettingsIconClicked" Style="{StaticResource QuickToolButtonStyle}" Width="30" Height="30" Margin="0,0,6,0" ToolTip="Configure IDE preferences">
+                            <iconPacks:PackIconMaterial Kind="Cog" Width="13" Height="13" Foreground="#a1a1aa"/>
+                        </Button>
+
+                        <Button Click="OnDocumentationClicked" Style="{StaticResource QuickToolButtonStyle}" Width="30" Height="30" ToolTip="Open Cobra IDE user guide">
+                            <iconPacks:PackIconMaterial Kind="BookOpenVariant" Width="13" Height="13" Foreground="#a1a1aa"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- row 2: project templates and recent projects (two columns) -->
+            <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="400" MinWidth="340" MaxWidth="500"/>
-                    <ColumnDefinition Width="12"/>
-                    <ColumnDefinition Width="*"/>
+                    <!-- column 0: project templates -->
+                    <ColumnDefinition Width="4*" MinWidth="380"/>
+                    <!-- separator column -->
+                    <ColumnDefinition Width="10"/>
+                    <!-- column 2: recent projects -->
+                    <ColumnDefinition Width="6*" MinWidth="460"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- left column: project templates -->
-                <Border Grid.Column="0" Style="{StaticResource DashboardCardStyle}">
+                <Border Grid.Column="0" Style="{StaticResource DashboardCardStyle}" Margin="0">
                     <Grid>
                         <Grid.RowDefinitions>
+                            <!-- header -->
                             <RowDefinition Height="Auto"/>
+                            <!-- category filter tabs (only 2D Game and 3D Worlds) -->
                             <RowDefinition Height="Auto"/>
+                            <!-- templates scrollable list -->
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" 
-                                   Text="Project Templates" 
-                                   FontSize="13" 
-                                   Foreground="White" 
-                                   FontWeight="SemiBold"
-                                   Margin="0,0,0,8"/>
+                        <!-- templates header -->
+                        <StackPanel Grid.Row="0" Margin="0,0,0,6">
+                            <TextBlock Text="Project Templates" Foreground="White" FontSize="14" FontWeight="Bold"/>
+                            <TextBlock Text="Choose a preconfigured starter to jump right in" Foreground="#a1a1aa" FontSize="11" Margin="0,2,0,0"/>
+                        </StackPanel>
 
-                        <!-- template category tabs -->
-                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
-                            <Button x:Name="TabAllTemplates" Click="OnTemplateCategoryClicked" Tag="All" Content="All" Style="{StaticResource CategoryTabButtonStyle}" Background="#ff8c00" Foreground="White"/>
-                            <Button x:Name="Tab2DTemplates" Click="OnTemplateCategoryClicked" Tag="2D" Content="2D Games" Style="{StaticResource CategoryTabButtonStyle}"/>
+                        <!-- category tabs: only 2D Game and 3D Worlds -->
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,6">
+                            <Button x:Name="Tab2DTemplates" Click="OnTemplateCategoryClicked" Tag="2D" Content="2D Game" Style="{StaticResource CategoryTabButtonStyle}" Background="#ff8c00" Foreground="White" BorderBrush="#ff8c00"/>
                             <Button x:Name="Tab3DTemplates" Click="OnTemplateCategoryClicked" Tag="3D" Content="3D Worlds" Style="{StaticResource CategoryTabButtonStyle}"/>
                         </StackPanel>
 
-                        <!-- templates list -->
-                        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                            <StackPanel x:Name="TemplateShowcasePanel"/>
-                        </ScrollViewer>
+                        <!-- templates showcase scrollable panel -->
+                        <Border Grid.Row="2" Background="#18181b" BorderBrush="#2e2e33" BorderThickness="1" CornerRadius="4" Padding="4">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <StackPanel x:Name="TemplateShowcasePanel"/>
+                            </ScrollViewer>
+                        </Border>
                     </Grid>
                 </Border>
 
-                <!-- right column: recent projects -->
-                <Border Grid.Column="2" Style="{StaticResource DashboardCardStyle}">
+                <!-- right column: recent projects hub -->
+                <Border Grid.Column="2" Style="{StaticResource DashboardCardStyle}" Margin="0">
                     <Grid>
                         <Grid.RowDefinitions>
+                            <!-- header and toolbar -->
                             <RowDefinition Height="Auto"/>
+                            <!-- search filter bar -->
                             <RowDefinition Height="Auto"/>
+                            <!-- recent projects list -->
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <!-- header actions -->
+                        <!-- header and actions toolbar -->
                         <Grid Grid.Row="0" Margin="0,0,0,8">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="Recent Projects" 
-                                           FontSize="13" 
-                                           Foreground="White" 
-                                           FontWeight="SemiBold"
-                                           VerticalAlignment="Center"
-                                           Margin="0,0,10,0"/>
-                                <Border Background="#1e1e1e" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="10" Padding="8,1">
-                                    <TextBlock x:Name="ProjectCountText" Text="0" Foreground="#aaaaaa" FontSize="11" FontWeight="SemiBold"/>
+                            <!-- title and project count -->
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Recent Projects" Foreground="White" FontSize="15" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <Border Background="#18181b" BorderBrush="#2e2e33" BorderThickness="1" CornerRadius="10" Padding="8,1" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock x:Name="ProjectCountText" Text="0" Foreground="#ff8c00" FontSize="11" FontWeight="Bold"/>
+                                        <TextBlock Text=" projects" Foreground="#71717a" FontSize="11"/>
+                                    </StackPanel>
                                 </Border>
                             </StackPanel>
 
-                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <!-- action buttons -->
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                 <Button Click="OnOpenSelectedProject"
                                         Background="#ff8c00"
                                         Foreground="White"
-                                        Height="28"
+                                        Height="30"
                                         Padding="12,0"
                                         Margin="0,0,6,0"
                                         Style="{StaticResource CommonRoundedButtonStyle}"
-                                        ToolTip="Open selected project"
-                                        FontSize="12">
+                                        ToolTip="Open selected project">
                                     <StackPanel Orientation="Horizontal">
-                                        <iconPacks:PackIconMaterial Kind="CodeBraces" Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Open Project" VerticalAlignment="Center"/>
+                                        <iconPacks:PackIconMaterial Kind="FolderOpenOutline" Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Open Selected" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
 
                                 <Button Click="OnProjectSettingsClicked"
-                                        Background="#3c3c3c"
-                                        Foreground="White"
-                                        Height="28"
+                                        Background="#26262b"
+                                        BorderBrush="#383840"
+                                        BorderThickness="1"
+                                        Foreground="#e4e4e7"
+                                        Height="30"
                                         Padding="10,0"
                                         Margin="0,0,6,0"
                                         Style="{StaticResource CommonRoundedButtonStyle}"
-                                        ToolTip="Project settings"
-                                        FontSize="12">
+                                        ToolTip="Project Settings">
                                     <StackPanel Orientation="Horizontal">
                                         <iconPacks:PackIconMaterial Kind="Tune" Width="13" Height="13" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Settings" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Settings" FontSize="11" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
 
                                 <Button Click="OnRemoveRecentProjectClicked"
-                                        Background="#3c3c3c"
-                                        Foreground="#ff6b6b"
-                                        Width="28"
-                                        Height="28"
+                                        Background="#26262b"
+                                        BorderBrush="#383840"
+                                        BorderThickness="1"
+                                        Foreground="#a1a1aa"
+                                        Width="30"
+                                        Height="30"
                                         Margin="0,0,6,0"
                                         Style="{StaticResource CommonRoundedButtonStyle}"
-                                        ToolTip="Remove from recent list">
+                                        ToolTip="Remove from recent projects list">
                                     <iconPacks:PackIconMaterial Kind="Close" Width="13" Height="13"/>
                                 </Button>
 
                                 <Button Click="OnRefreshClicked"
-                                        Background="#3c3c3c"
-                                        Foreground="White"
-                                        Width="28"
-                                        Height="28"
+                                        Background="#26262b"
+                                        BorderBrush="#383840"
+                                        BorderThickness="1"
+                                        Foreground="#a1a1aa"
+                                        Width="30"
+                                        Height="30"
                                         Style="{StaticResource CommonRoundedButtonStyle}"
                                         ToolTip="Refresh list">
                                     <iconPacks:PackIconMaterial Kind="Refresh" Width="13" Height="13"/>
@@ -333,96 +373,121 @@
                             </StackPanel>
                         </Grid>
 
-                        <!-- project search box -->
-                        <Border Grid.Row="1" Background="#1e1e1e" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="3" Padding="8,4" Margin="0,0,0,8">
+                        <!-- search filter bar -->
+                        <Border Grid.Row="1" Background="#18181b" BorderBrush="#2e2e33" BorderThickness="1" CornerRadius="4" Padding="10,5" Margin="0,0,0,8">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="20"/>
+                                    <ColumnDefinition Width="22"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <iconPacks:PackIconMaterial Grid.Column="0" Kind="Magnify" Width="13" Height="13" Foreground="#777777" VerticalAlignment="Center"/>
+                                <iconPacks:PackIconMaterial Grid.Column="0" Kind="Magnify" Width="14" Height="14" Foreground="#71717a" VerticalAlignment="Center"/>
                                 <TextBox Grid.Column="1" x:Name="RecentProjectsFilterText" Background="Transparent" Foreground="White" BorderThickness="0" FontSize="11" CaretBrush="White" VerticalAlignment="Center" TextChanged="RecentProjectsFilterText_TextChanged"/>
-                                <TextBlock Grid.Column="1" x:Name="RecentProjectsWatermark" Text="Filter projects by name or framework..." Foreground="#555555" FontSize="11" IsHitTestVisible="False" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" x:Name="RecentProjectsWatermark" Text="Search recent projects by name, framework, or location..." Foreground="#52525b" FontSize="11" IsHitTestVisible="False" VerticalAlignment="Center"/>
                             </Grid>
                         </Border>
 
-                        <!-- recent projects list with edge-to-edge fill -->
-                        <Border Grid.Row="2" 
-                                Background="#1e1e1e"
-                                BorderBrush="#3c3c3c"
-                                BorderThickness="1"
-                                CornerRadius="3">
-                            <ListBox x:Name="RecentProjectsList"
-                                     Background="Transparent"
-                                     BorderThickness="0"
-                                     FontSize="12"
-                                     MouseDoubleClick="OnRecentProjectDoubleClick"
-                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                     HorizontalContentAlignment="Stretch"
-                                     SelectionChanged="OnProjectSelected">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type proj:ProjectModel}">
-                                        <Grid Margin="8,6">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="28"/>
-                                                <ColumnDefinition Width="200"/>
-                                                <ColumnDefinition Width="130"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="130"/>
-                                            </Grid.ColumnDefinitions>
-                                            <iconPacks:PackIconMaterial Grid.Column="0" Kind="GamepadVariant" Width="15" Height="15" Foreground="#ff8c00" VerticalAlignment="Center"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="White" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                            <Border Grid.Column="2" Background="#2d2d30" CornerRadius="3" Padding="6,2" HorizontalAlignment="Left" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding Framework}" Foreground="#4ec9b0" FontSize="11"/>
-                                            </Border>
-                                            <TextBlock Grid.Column="3" Text="{Binding Path}" Foreground="#888888" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,10,0"/>
-                                            <TextBlock Grid.Column="4" Text="{Binding LastModified}" Foreground="#777777" FontSize="11" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                                        </Grid>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
+                        <!-- recent projects list container -->
+                        <Border Grid.Row="2" Background="#18181b" BorderBrush="#2e2e33" BorderThickness="1" CornerRadius="4">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="28"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- column header strip -->
+                                <Border Grid.Row="0" Background="#1e1e22" BorderBrush="#2e2e33" BorderThickness="0,0,0,1" Padding="10,0">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="28"/>
+                                            <ColumnDefinition Width="220"/>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="130"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="1" Text="PROJECT NAME" Foreground="#71717a" FontSize="10" FontWeight="Bold" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2" Text="FRAMEWORK" Foreground="#71717a" FontSize="10" FontWeight="Bold" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="3" Text="PATH" Foreground="#71717a" FontSize="10" FontWeight="Bold" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="4" Text="LAST MODIFIED" Foreground="#71717a" FontSize="10" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- listbox -->
+                                <ListBox Grid.Row="1" 
+                                         x:Name="RecentProjectsList"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         FontSize="12"
+                                         MouseDoubleClick="OnRecentProjectDoubleClick"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                         HorizontalContentAlignment="Stretch"
+                                         SelectionChanged="OnProjectSelected">
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                            <Setter Property="BorderBrush" Value="#222227"/>
+                                            <Setter Property="Padding" Value="6,4"/>
+                                            <Setter Property="Cursor" Value="Hand"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ListBoxItem">
+                                                        <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="3" Margin="0,1" Padding="{TemplateBinding Padding}">
+                                                            <ContentPresenter/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="ItemBorder" Property="Background" Value="#25252b"/>
+                                                            </Trigger>
+                                                            <Trigger Property="IsSelected" Value="True">
+                                                                <Setter TargetName="ItemBorder" Property="Background" Value="#2a2016"/>
+                                                                <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#ff8c00"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type proj:ProjectModel}">
+                                            <Grid Margin="4,4">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="28"/>
+                                                    <ColumnDefinition Width="220"/>
+                                                    <ColumnDefinition Width="120"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="130"/>
+                                                </Grid.ColumnDefinitions>
+                                                <iconPacks:PackIconMaterial Grid.Column="0" Kind="GamepadVariant" Width="15" Height="15" Foreground="#ff8c00" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="White" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                <Border Grid.Column="2" Background="#26262b" BorderBrush="#383840" BorderThickness="1" CornerRadius="3" Padding="6,2" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Framework}" Foreground="#ff8c00" FontSize="10" FontWeight="SemiBold"/>
+                                                </Border>
+                                                <TextBlock Grid.Column="3" Text="{Binding Path}" Foreground="#88888e" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,10,0"/>
+                                                <TextBlock Grid.Column="4" Text="{Binding LastModified}" Foreground="#71717a" FontSize="11" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
                         </Border>
                     </Grid>
                 </Border>
             </Grid>
-
-            <!-- bottom status strip -->
-            <Border Grid.Row="2" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12,8">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                        <iconPacks:PackIconMaterial Kind="LanguagePython" Width="14" Height="14" Foreground="#4ec9b0" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="Python: " Foreground="#888888" FontSize="11" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="PythonStatusText" Text="Checking..." Foreground="White" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,16,0"/>
-
-                        <Border Width="1" Height="12" Background="#3c3c3c" Margin="0,0,16,0"/>
-
-                        <TextBlock Text="Supported: " Foreground="#888888" FontSize="11" VerticalAlignment="Center"/>
-                        <TextBlock Text="Pygame-CE (2D) • Panda3D &amp; Ursina (3D)" Foreground="#cccccc" FontSize="11" VerticalAlignment="Center" Margin="0,0,16,0"/>
-
-                        <Border Width="1" Height="12" Background="#3c3c3c" Margin="0,0,16,0"/>
-
-                        <iconPacks:PackIconMaterial Kind="Console" Width="13" Height="13" Foreground="#ff8c00" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="TerminalStatusText" Text="Terminal: Windows PowerShell / Git Bash" Foreground="#cccccc" FontSize="11" VerticalAlignment="Center"/>
-                    </StackPanel>
-
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="Template • Scene Designer • Run and Debug • Package Exe" Foreground="#777777" FontSize="11" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
         </Grid>
 
+        <!-- global footer stretching edge-to-edge -->
+        <local:GlobalFooterControl Grid.Row="2" x:Name="GlobalFooter" Panel.ZIndex="10"/>
+
         <!-- toast notification overlay -->
-        <Grid x:Name="ToastOverlay" Grid.Row="0" Grid.RowSpan="2" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,30" Visibility="Collapsed">
-            <Border Background="#2d2d30" CornerRadius="4" Padding="18,10" BorderBrush="#ff8c00" BorderThickness="1" SnapsToDevicePixels="True">
+        <Grid x:Name="ToastOverlay" Grid.Row="0" Grid.RowSpan="3" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,70" Visibility="Collapsed" Panel.ZIndex="1000">
+            <Border Background="#202024" CornerRadius="6" Padding="18,10" BorderBrush="#ff8c00" BorderThickness="1" SnapsToDevicePixels="True">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="20" Opacity="0.4" ShadowDepth="3" Color="Black"/>
+                </Border.Effect>
                 <StackPanel Orientation="Horizontal">
-                    <iconPacks:PackIconMaterial x:Name="ToastIcon" Kind="CheckCircle" Width="14" Height="14" Foreground="#4ec9b0" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                    <iconPacks:PackIconMaterial x:Name="ToastIcon" Kind="CheckCircle" Width="14" Height="14" Foreground="#ff8c00" Margin="0,0,10,0" VerticalAlignment="Center"/>
                     <TextBlock x:Name="ToastMessage" Text="Project ready!" Foreground="White" FontSize="12" VerticalAlignment="Center"/>
                 </StackPanel>
             </Border>

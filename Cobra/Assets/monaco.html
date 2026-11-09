@@ -31,6 +31,9 @@
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
     <script>
         let editor;
+        let isReady = false;
+        let pendingContent = null;
+        let pendingLanguage = 'python';
         let breakpointLines = new Set();
         let breakpointDecorations = [];
 
@@ -38,9 +41,12 @@
         require(['vs/editor/editor.main'], function () {
             RegisterPythonGameCompletions();
 
+            const initialValue = pendingContent !== null ? pendingContent : '# Welcome to Cobra IDE\n# Write your Python game code here\n';
+            const initialLang = pendingLanguage || 'python';
+
             editor = monaco.editor.create(document.getElementById('editor'), {
-                value: '# Welcome to Cobra IDE\n# Write your Python game code here\n',
-                language: 'python',
+                value: initialValue,
+                language: initialLang,
                 theme: 'vs-dark',
                 automaticLayout: true,
                 fontSize: 14,
@@ -54,6 +60,8 @@
                 fontFamily: 'Consolas, monospace'
             });
 
+            isReady = true;
+
             editor.onMouseDown(function (e) {
                 if (e.target.type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN ||
                     e.target.type === monaco.editor.MouseTargetType.GUTTER_LINE_NUMBERS) {
@@ -63,16 +71,19 @@
             });
 
             editor.onDidChangeModelContent(function () {
-                postHostMessage({ type: 'contentChanged' });
+                postHostMessage({ type: 'contentChanged', content: editor.getValue() });
             });
 
             editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, function () {
+                postHostMessage({ type: 'saveRequested', content: editor.getValue() });
                 postHostMessage({ type: 'saveShortcut' });
             });
 
             editor.addCommand(monaco.KeyCode.F5, function () {
                 postHostMessage({ type: 'runShortcut' });
             });
+
+            postHostMessage({ type: 'editorReady' });
         });
 
         function postHostMessage(payload) {
@@ -80,6 +91,35 @@
                 window.chrome.webview.postMessage(JSON.stringify(payload));
             }
         }
+
+        window.setEditorContent = function (content, lang) {
+            pendingContent = content;
+            pendingLanguage = lang || 'python';
+            if (editor && monaco) {
+                const model = editor.getModel();
+                if (model && lang) {
+                    monaco.editor.setModelLanguage(model, lang);
+                }
+                editor.setValue(content !== null && content !== undefined ? content : '');
+            }
+        };
+
+        window.getEditorContent = function () {
+            return editor ? editor.getValue() : (pendingContent || '');
+        };
+
+        window.triggerEditorAction = function (action) {
+            if (!editor) return;
+            switch (action) {
+                case 'undo': undo(); break;
+                case 'redo': redo(); break;
+                case 'find': find(); break;
+                case 'replace': replace(); break;
+                case 'foldAll': foldAll(); break;
+                case 'unfoldAll': unfoldAll(); break;
+                case 'renameSymbol': renameSymbol(); break;
+            }
+        };
 
         function toggleBreakpoint(line) {
             if (breakpointLines.has(line)) {
@@ -109,13 +149,11 @@
         }
 
         function setCode(code) {
-            if (editor) {
-                editor.setValue(code);
-            }
+            window.setEditorContent(code, pendingLanguage);
         }
 
         function getCode() {
-            return editor ? editor.getValue() : '';
+            return window.getEditorContent();
         }
 
         function revealLine(line, col) {
@@ -147,6 +185,13 @@
         function foldAll() { if (editor) editor.trigger('keyboard', 'editor.foldAll'); }
         function unfoldAll() { if (editor) editor.trigger('keyboard', 'editor.unfoldAll'); }
         function renameSymbol() { if (editor) editor.trigger('keyboard', 'editor.action.rename'); }
+
+        window.setCode = setCode;
+        window.getCode = getCode;
+        window.revealLine = revealLine;
+        window.setDiagnostics = setDiagnostics;
+        window.toggleBreakpoint = toggleBreakpoint;
+        window.getBreakpoints = getBreakpoints;
 
         function RegisterPythonGameCompletions() {
             const items = [

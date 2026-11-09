@@ -64,7 +64,7 @@ namespace Cobra.UI.Views
                 Width = 100,
                 Height = 32,
                 Margin = new Thickness(5, 0, 0, 0),
-                Background = Brushes.Gray,
+                Background = new SolidColorBrush(Color.FromRgb(43, 43, 48)),
                 Foreground = Brushes.White,
                 FontSize = 14,
                 Cursor = System.Windows.Input.Cursors.Hand

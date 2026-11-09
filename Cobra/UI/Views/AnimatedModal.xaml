@@ -19,20 +19,21 @@
 
     <Grid>
         <!-- overlay background -->
-        <Border Background="#252526" Opacity="0.5"/>
+        <Border Background="#09090b" Opacity="0.6"/>
 
-        <!-- modal content -->
-        <Border Background="#2d2d30" 
-                CornerRadius="3,3,0,0"
-                BorderBrush="#3c3c3c" 
+        <!-- modal content with floating shadow effect -->
+        <Border Background="#202024" 
+                CornerRadius="8"
+                BorderBrush="#383840" 
                 BorderThickness="1"
                 Width="700"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center">
             <Border.Effect>
-                <DropShadowEffect BlurRadius="50" 
-                                Opacity="0.5" 
-                                ShadowDepth="4"
+                <DropShadowEffect BlurRadius="40" 
+                                Opacity="0.55" 
+                                ShadowDepth="8"
+                                Direction="270"
                                 Color="Black"/>
             </Border.Effect>
 
@@ -45,9 +46,11 @@
 
                 <!-- title bar -->
                 <Border Grid.Row="0" 
-                        Background="#252526" 
-                        CornerRadius="3,3,0,0"
-                        Padding="15,5">
+                        Background="#18181b" 
+                        CornerRadius="8,8,0,0"
+                        BorderBrush="#2e2e33"
+                        BorderThickness="0,0,0,1"
+                        Padding="16,10">
                     <Grid>
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial x:Name="TitleIcon" 
@@ -96,7 +99,7 @@
                 </Border>
 
                 <!-- content area -->
-                <Border Grid.Row="1" Background="#2d2d30" Padding="15">
+                <Border Grid.Row="1" Background="#202024" Padding="16">
                     <StackPanel x:Name="ContentPanel">
                         <!-- content will be added here -->
                     </StackPanel>
@@ -104,9 +107,11 @@
 
                 <!-- button area -->
                 <Border Grid.Row="2" 
-                        Background="#252526" 
-                        CornerRadius="3"
-                        Padding="15,5">
+                        Background="#18181b" 
+                        CornerRadius="0,0,8,8"
+                        BorderBrush="#2e2e33"
+                        BorderThickness="0,1,0,0"
+                        Padding="16,10">
                     <StackPanel x:Name="ButtonsPanel" Orientation="Horizontal" HorizontalAlignment="Right">
                         <!-- buttons will be added here -->
                     </StackPanel>

@@ -17,16 +17,18 @@
         <ScaleTransform ScaleX="1" ScaleY="1"/>
     </Window.RenderTransform>
 
-    <Border Background="#2d2d30" 
-            CornerRadius="3" 
-            BorderBrush="#3c3c3c" 
+    <Border Background="#202024" 
+            CornerRadius="8" 
+            BorderBrush="#383840" 
             BorderThickness="1"
+            Margin="24"
             Padding="0">
         <Border.Effect>
-            <DropShadowEffect BlurRadius="50" 
-                            Opacity="0.4" 
-                            ShadowDepth="3"
-                            Color="Black"/>
+            <DropShadowEffect BlurRadius="35" 
+                            Opacity="0.6" 
+                            ShadowDepth="8"
+                            Direction="270"
+                            Color="#000000"/>
         </Border.Effect>
 
         <Grid>
@@ -38,9 +40,10 @@
 
             <!-- title bar -->
             <Border Grid.Row="0" 
-                    Background="#252526" 
-                    CornerRadius="3,3,0,0"
-                    BorderBrush="#3c3c3c" 
+                    Background="#18181b" 
+                    CornerRadius="8,8,0,0"
+                    BorderBrush="#2e2e33" 
+                    BorderThickness="0,0,0,1"
                     Padding="20,12">
                 <Grid>
                     <StackPanel Orientation="Horizontal">
@@ -90,11 +93,11 @@
             </Border>
 
             <!-- content -->
-            <Border Grid.Row="1" Background="#2d2d30" Padding="20">
+            <Border Grid.Row="1" Background="#202024" Padding="20">
                 <StackPanel>
                     <TextBlock x:Name="MessageText" 
                                Text="Message" 
-                               Foreground="#e0e0e0" 
+                               Foreground="#e4e4e7" 
                                FontSize="12"
                                TextWrapping="Wrap"
                                Margin="0,0,0,20"/>
@@ -105,8 +108,10 @@
 
             <!-- buttons -->
             <Border Grid.Row="2" 
-                    Background="#252526" 
-                    CornerRadius="0,0,3,3"
+                    Background="#18181b" 
+                    CornerRadius="0,0,8,8" 
+                    BorderBrush="#2e2e33"
+                    BorderThickness="0,1,0,0"
                     Padding="15,12">
                 <StackPanel x:Name="ButtonsPanel" 
                             Orientation="Horizontal" 
@@ -126,7 +131,7 @@
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="Border" 
                                         Background="{TemplateBinding Background}" 
-                                        CornerRadius="3">
+                                        CornerRadius="4">
                                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 <ControlTemplate.Triggers>
@@ -143,8 +148,8 @@
                             Width="80"
                             Height="30"
                             Margin="5,0,0,0"
-                            Background="#3c3c3c"
-                            Foreground="White"
+                            Background="#2b2b30"
+                            Foreground="#f4f4f5"
                             BorderThickness="0"
                             Cursor="Hand"
                             FontSize="12"
@@ -154,12 +159,12 @@
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="Border" 
                                         Background="{TemplateBinding Background}" 
-                                        CornerRadius="3">
+                                        CornerRadius="4">
                                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="Border" Property="Background" Value="#4c4c4c"/>
+                                        <Setter TargetName="Border" Property="Background" Value="#383840"/>
                                     </Trigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>

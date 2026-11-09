@@ -1,0 +1,65 @@
+<UserControl x:Class="Cobra.UI.Views.GlobalFooterControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             mc:Ignorable="d" 
+             d:DesignHeight="30" d:DesignWidth="1200">
+
+    <!-- global thin compact footer stretching edge-to-edge -->
+    <Border Background="#121215" 
+            BorderBrush="#383840" 
+            BorderThickness="0,1,0,0" 
+            Height="30" 
+            Padding="14,0"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- environment and runtime indicators -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- python status -->
+                <iconPacks:PackIconMaterial Kind="LanguagePython" Width="13" Height="13" Foreground="#ff8c00" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <TextBlock x:Name="FooterPythonText" Text="Python: Ready" Foreground="#d4d4d8" FontSize="11" VerticalAlignment="Center" Margin="0,0,16,0"/>
+
+                <Border Width="1" Height="14" Background="#383840" Margin="0,0,16,0"/>
+
+                <!-- terminal status -->
+                <iconPacks:PackIconMaterial Kind="ConsoleLine" Width="13" Height="13" Foreground="#ff8c00" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <TextBlock x:Name="FooterTerminalText" Text="Terminal: PowerShell" Foreground="#d4d4d8" FontSize="11" VerticalAlignment="Center" Margin="0,0,16,0"/>
+
+                <!-- framework info if active -->
+                <Border x:Name="FooterFrameworkSeparator" Width="1" Height="14" Background="#383840" Margin="0,0,16,0" Visibility="Collapsed"/>
+                <TextBlock x:Name="FooterFrameworkText" Text="" Foreground="#ff8c00" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" Margin="0,0,16,0" Visibility="Collapsed"/>
+
+                <!-- git branch info if active -->
+                <Border x:Name="FooterGitSeparator" Width="1" Height="14" Background="#383840" Margin="0,0,16,0" Visibility="Collapsed"/>
+                <TextBlock x:Name="FooterGitText" Text="" Foreground="#d4d4d8" FontSize="11" VerticalAlignment="Center" Margin="0,0,16,0" Visibility="Collapsed"/>
+
+                <Border Width="1" Height="14" Background="#383840" Margin="0,0,16,0"/>
+
+                <!-- engines -->
+                <TextBlock Text="Engines: Pygame-CE • Panda3D • Ursina" Foreground="#a1a1aa" FontSize="11" VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- flexible space -->
+            <TextBlock Grid.Column="1" x:Name="FooterCenterText" Text="" Foreground="#d4d4d8" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+            <!-- right: studio version, encoding and status -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="UTF-8" Foreground="#a1a1aa" FontSize="11" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                <TextBlock Text="Cobra Studio v2.0" Foreground="#d4d4d8" FontSize="11" VerticalAlignment="Center" Margin="0,0,16,0"/>
+
+                <!-- ready dot indicator -->
+                <Ellipse x:Name="FooterStatusDot" Width="6" Height="6" Fill="#ff8c00" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <TextBlock x:Name="FooterStatusText" Text="Ready" Foreground="#ffffff" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

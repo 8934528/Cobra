@@ -14,6 +14,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using System.Windows.Shell;
 using MahApps.Metro.IconPacks;
 using Cobra.Core.AI;
 using Cobra.Core.Assets;
@@ -190,7 +191,7 @@ namespace Cobra.UI.Views
             _gameRunner.ProcessExited += (code, crashed) => Dispatcher.Invoke(() =>
             {
                 _isDebuggingSession = false;
-                StatusRightText.Text = crashed ? $"Game exited with code {code}" : "Ready";
+                GlobalFooter?.SetStatus(crashed ? $"Game exited with code {code}" : "Ready");
                 DebuggerStatusLabel.Text = $"Process exited (Code {code})";
             });
 
@@ -432,9 +433,10 @@ namespace Cobra.UI.Views
             bool is3DFramework = _projectConfig.Framework.Equals("Panda3D", StringComparison.OrdinalIgnoreCase)
                               || _projectConfig.Framework.Equals("Ursina", StringComparison.OrdinalIgnoreCase);
 
-            StatusFrameworkText.Text = is3DFramework
-                ? $"Framework: {_projectConfig.Framework} (3D)"
-                : "Framework: Pygame (2D)";
+            string frameworkLabel = is3DFramework
+                ? $"{_projectConfig.Framework} (3D)"
+                : "Pygame (2D)";
+            GlobalFooter?.SetFramework(frameworkLabel);
 
             SaveSceneUndoSnapshot();
             RedrawScene();
@@ -724,9 +726,10 @@ namespace Cobra.UI.Views
             }
 
             string interpreter = PythonService.ResolveProjectPython(_projectPath, _projectConfig.PythonInterpreter);
-            StatusInterpreterText.Text = _isVenvActive
-                ? "Python: Project Venv (Active)"
-                : $"Python: {Path.GetFileName(interpreter)}";
+            string pyStatus = _isVenvActive
+                ? "Project Venv (Active)"
+                : Path.GetFileName(interpreter);
+            GlobalFooter?.SetPythonStatus(pyStatus);
         }
 
         private void PopulateStartupFiles()
@@ -1025,10 +1028,17 @@ namespace Cobra.UI.Views
                 ".py" => "LanguagePython",
                 ".cobra" => "GamepadVariant",
                 ".json" => "CodeJson",
-                ".md" or ".txt" => "FileDocumentOutline",
+                ".md" or ".txt" or ".gitignore" => "FileDocumentOutline",
+                ".js" or ".ts" => "LanguageJavascript",
+                ".html" or ".htm" => "LanguageHtml5",
+                ".css" => "LanguageCss3",
+                ".xml" or ".xaml" or ".svg" => "FileCodeOutline",
+                ".cs" => "LanguageCsharp",
+                ".cpp" or ".c" or ".h" or ".hpp" => "LanguageCpp",
+                ".yaml" or ".yml" or ".toml" or ".ini" or ".cfg" => "FileDocumentOutline",
                 ".png" or ".jpg" or ".jpeg" or ".bmp" or ".gif" => "FileImage",
                 ".wav" or ".ogg" or ".mp3" => "FileMusic",
-                ".obj" or ".gltf" or ".glb" => "CubeOutline",
+                ".obj" or ".gltf" or ".glb" or ".fbx" => "CubeOutline",
                 _ => "FileOutline"
             };
         }
@@ -1041,6 +1051,27 @@ namespace Cobra.UI.Views
         private void ExplorerFilterCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (IsLoaded) LoadFiles();
+        }
+
+        private void OnFileTreeMouseUp(object sender, MouseButtonEventArgs e)
+        {
+            try
+            {
+                DependencyObject? source = e.OriginalSource as DependencyObject;
+                while (source != null && source is not TreeViewItem)
+                {
+                    source = VisualTreeHelper.GetParent(source);
+                }
+
+                if (source is TreeViewItem { DataContext: FileNode { IsDirectory: false } node })
+                {
+                    OpenFileInTab(node.FullPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
         }
 
         private void OnFileTreeSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
@@ -1060,79 +1091,65 @@ namespace Cobra.UI.Views
                 InstallReqButton.Visibility = Visibility.Collapsed;
             }
 
-            if (path.EndsWith(".Cobra", StringComparison.OrdinalIgnoreCase))
-            {
-                try
-                {
-                    _currentScene = Scene.Load(path);
-                    _currentScenePath = path;
-                    ActiveSceneNameLabel.Text = _currentScene.SceneName;
-                    SwitchWorkspace("SceneEditor", NavSceneEditor);
-                    RedrawScene();
-                    ShowToast($"Loaded scene: {_currentScene.SceneName}");
-                }
-                catch (Exception ex)
-                {
-                    OutputConsole.AppendText($"Failed to load scene: {ex.Message}\n");
-                }
-                return;
-            }
-
             OpenFileInTab(path);
         }
 
-        private void OpenFileInTab(string filePath)
-        {
-            if (!File.Exists(filePath)) return;
-
-            var existing = _openTabs.FirstOrDefault(t => t.FilePath.Equals(filePath, StringComparison.OrdinalIgnoreCase));
-            if (existing != null)
-            {
-                FileTabs.SelectedItem = existing;
-                return;
-            }
-
-            string content = File.ReadAllText(filePath);
-            var newTab = new OpenTabItem
-            {
-                FilePath = filePath,
-                Name = Path.GetFileName(filePath),
-                Content = content,
-                Icon = GetFileIcon(filePath),
-                IsDirty = false
-            };
-
-            _openTabs.Add(newTab);
-            FileTabs.SelectedItem = newTab;
-            SwitchWorkspace("CodeEditor", NavCodeEditor);
-        }
-
-        private async void OnTabSelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void OpenFileInTab(string filePath)
         {
             try
             {
-                if (FileTabs.SelectedItem is not OpenTabItem tab) return;
+                if (!File.Exists(filePath)) return;
 
-                _currentFilePath = tab.FilePath;
-                if (SplitEditorBorder.Visibility == Visibility.Visible)
+                if (filePath.EndsWith(".Cobra", StringComparison.OrdinalIgnoreCase))
                 {
-                    SplitPreviewTextBox.Text = tab.Content;
+                    try
+                    {
+                        _currentScene = Scene.Load(filePath);
+                        _currentScenePath = filePath;
+                        ActiveSceneNameLabel.Text = _currentScene.SceneName;
+                        SwitchWorkspace("SceneEditor", NavSceneEditor);
+                        RedrawScene();
+                        ShowToast($"Loaded scene: {_currentScene.SceneName}");
+                    }
+                    catch (Exception ex)
+                    {
+                        OutputConsole.AppendText($"Failed to load scene: {ex.Message}\n");
+                    }
+                    return;
                 }
 
-                if (!_isWebViewReady || CodeWebView.CoreWebView2 == null) return;
-
-                string lang = DetectMonacoLanguage(tab.FilePath);
-                string escapedContent = JsonSerializer.Serialize(tab.Content);
-                await CodeWebView.CoreWebView2.ExecuteScriptAsync($"if (window.setEditorContent) window.setEditorContent({escapedContent}, '{lang}');");
-
-                if (tab.FilePath.EndsWith(".py", StringComparison.OrdinalIgnoreCase))
+                var existing = _openTabs.FirstOrDefault(t => t.FilePath.Equals(filePath, StringComparison.OrdinalIgnoreCase));
+                if (existing != null)
                 {
-                    await UpdatePythonIntelligenceForFileAsync(tab.FilePath);
+                    FileTabs.SelectedItem = existing;
+                    SwitchWorkspace("CodeEditor", NavCodeEditor);
+                    await UpdateEditorContentForTabAsync(existing);
+                    return;
                 }
-                else
+
+                string content = string.Empty;
+                try
                 {
-                    SymbolOutlineCombo.ItemsSource = null;
+                    content = await File.ReadAllTextAsync(filePath);
                 }
+                catch (Exception ex)
+                {
+                    OutputConsole.AppendText($"Failed to read file: {ex.Message}\n");
+                }
+
+                var newTab = new OpenTabItem
+                {
+                    FilePath = filePath,
+                    Name = Path.GetFileName(filePath),
+                    Content = content,
+                    Icon = GetFileIcon(filePath),
+                    IsDirty = false
+                };
+
+                _openTabs.Add(newTab);
+                FileTabs.SelectedItem = newTab;
+                SwitchWorkspace("CodeEditor", NavCodeEditor);
+                await UpdateEditorContentForTabAsync(newTab);
             }
             catch (Exception ex)
             {
@@ -1140,15 +1157,64 @@ namespace Cobra.UI.Views
             }
         }
 
+        private async void OnTabSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                if (FileTabs.SelectedItem is not OpenTabItem tab) return;
+                await UpdateEditorContentForTabAsync(tab);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async Task UpdateEditorContentForTabAsync(OpenTabItem tab)
+        {
+            _currentFilePath = tab.FilePath;
+            if (SplitEditorBorder.Visibility == Visibility.Visible)
+            {
+                SplitPreviewTextBox.Text = tab.Content;
+            }
+
+            if (!_isWebViewReady || CodeWebView.CoreWebView2 == null) return;
+
+            string lang = DetectMonacoLanguage(tab.FilePath);
+            string escapedContent = JsonSerializer.Serialize(tab.Content);
+            await CodeWebView.CoreWebView2.ExecuteScriptAsync($"if (window.setEditorContent) window.setEditorContent({escapedContent}, '{lang}');");
+
+            if (tab.FilePath.EndsWith(".py", StringComparison.OrdinalIgnoreCase))
+            {
+                await UpdatePythonIntelligenceForFileAsync(tab.FilePath);
+            }
+            else
+            {
+                SymbolOutlineCombo.ItemsSource = null;
+            }
+        }
+
         private static string DetectMonacoLanguage(string path)
         {
-            return Path.GetExtension(path).ToLowerInvariant() switch
+            string ext = Path.GetExtension(path).ToLowerInvariant();
+            return ext switch
             {
                 ".py" => "python",
                 ".json" or ".cobra" => "json",
                 ".md" => "markdown",
-                ".html" => "html",
+                ".html" or ".htm" => "html",
                 ".css" => "css",
+                ".js" => "javascript",
+                ".ts" => "typescript",
+                ".xml" or ".xaml" or ".svg" => "xml",
+                ".yaml" or ".yml" => "yaml",
+                ".ini" or ".toml" or ".cfg" => "ini",
+                ".cs" => "csharp",
+                ".cpp" or ".c" or ".h" or ".hpp" => "cpp",
+                ".sh" or ".bash" => "shell",
+                ".bat" or ".cmd" => "bat",
+                ".ps1" => "powershell",
+                ".sql" => "sql",
                 _ => "plaintext"
             };
         }
@@ -1448,7 +1514,7 @@ namespace Cobra.UI.Views
                 bool started = await _gameRunner.StartGameAsync(config);
                 if (started)
                 {
-                    StatusRightText.Text = $"Running {config.StartupFile}";
+                    GlobalFooter?.SetStatus($"Running {config.StartupFile}");
                     ShowToast($"Running {config.StartupFile}");
                 }
             }
@@ -1472,7 +1538,7 @@ namespace Cobra.UI.Views
                 bool started = await _gameRunner.StartGameAsync(config);
                 if (started)
                 {
-                    StatusRightText.Text = $"Debugging {config.StartupFile}";
+                    GlobalFooter?.SetStatus($"Debugging {config.StartupFile}");
                     ShowToast("Debugger started");
                 }
             }
@@ -1486,7 +1552,7 @@ namespace Cobra.UI.Views
         {
             _isDebuggingSession = false;
             _gameRunner.StopGame();
-            StatusRightText.Text = "Ready";
+            GlobalFooter?.SetStatus("Ready");
             ShowToast("Game stopped");
         }
 
@@ -2231,7 +2297,7 @@ namespace Cobra.UI.Views
                         Child = new TextBlock
                         {
                             Text = isInstalled ? "Installed & Enabled" : "Available",
-                            Foreground = isInstalled ? new SolidColorBrush(Color.FromRgb(78, 201, 176)) : Brushes.Silver,
+                            Foreground = isInstalled ? new SolidColorBrush(Color.FromRgb(255, 140, 0)) : Brushes.Silver,
                             FontSize = 10
                         }
                     };
@@ -3293,7 +3359,7 @@ namespace Cobra.UI.Views
             {
                 _projectConfig.PythonInterpreter = info.Path;
                 _projectConfig.SaveManifest();
-                StatusInterpreterText.Text = $"Python: {info.Version}";
+                GlobalFooter?.SetPythonStatus(info.Version);
             }
         }
 
@@ -3457,7 +3523,7 @@ namespace Cobra.UI.Views
             double max = Math.Max(100, _memoryHistory.Max() * 1.2);
             var poly = new Polyline
             {
-                Stroke = new SolidColorBrush(Color.FromRgb(78, 201, 176)),
+                Stroke = new SolidColorBrush(Color.FromRgb(255, 140, 0)),
                 StrokeThickness = 2
             };
 
@@ -3478,13 +3544,13 @@ namespace Cobra.UI.Views
                 GitBranchLabel.Text = "Branch: (No Repo)";
                 GitStatusList.ItemsSource = null;
                 GitHistoryList.ItemsSource = null;
-                StatusGitText.Text = "Git: Not initialized";
+                GlobalFooter?.SetGitBranch("Not initialized");
                 return;
             }
 
             string branch = await GitService.GetCurrentBranchAsync(_projectPath);
             GitBranchLabel.Text = $"Branch: {branch}";
-            StatusGitText.Text = $"Git: {branch}";
+            GlobalFooter?.SetGitBranch(branch);
 
             var entries = await GitService.GetStatusAsync(_projectPath);
             GitStatusList.ItemsSource = entries;
@@ -3770,6 +3836,53 @@ namespace Cobra.UI.Views
         }
 
         private string _currentTerminalShell = TerminalService.TerminalPowerShell;
+        private readonly List<string> _commandHistory = [];
+        private int _historyIndex = -1;
+
+        private void TerminalContainer_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            TerminalInput?.Focus();
+        }
+
+        private void TerminalInput_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Up)
+            {
+                if (_commandHistory.Count > 0)
+                {
+                    if (_historyIndex > 0)
+                    {
+                        _historyIndex--;
+                    }
+                    else if (_historyIndex == -1)
+                    {
+                        _historyIndex = _commandHistory.Count - 1;
+                    }
+
+                    TerminalInput.Text = _commandHistory[_historyIndex];
+                    TerminalInput.CaretIndex = TerminalInput.Text.Length;
+                    e.Handled = true;
+                }
+            }
+            else if (e.Key == Key.Down)
+            {
+                if (_commandHistory.Count > 0 && _historyIndex != -1)
+                {
+                    if (_historyIndex < _commandHistory.Count - 1)
+                    {
+                        _historyIndex++;
+                        TerminalInput.Text = _commandHistory[_historyIndex];
+                        TerminalInput.CaretIndex = TerminalInput.Text.Length;
+                    }
+                    else
+                    {
+                        _historyIndex = -1;
+                        TerminalInput.Text = string.Empty;
+                    }
+                    e.Handled = true;
+                }
+            }
+        }
 
         private void InitTerminalShell()
         {
@@ -3782,6 +3895,7 @@ namespace Cobra.UI.Views
                              ?? terminals.First();
 
                 _currentTerminalShell = active.DisplayName;
+                GlobalFooter?.SetTerminalStatus(active.DisplayName, active.IsAvailable);
 
                 if (TerminalShellSelector != null)
                 {
@@ -3816,6 +3930,7 @@ namespace Cobra.UI.Views
                 SettingsManager.Instance.CurrentSettings.PreferredTerminal = shellName;
                 SettingsManager.Instance.Save();
                 UpdateTerminalPrompt();
+                GlobalFooter?.SetTerminalStatus(shellName);
                 TerminalConsole.AppendText($"\n[Switched to {shellName} shell]\n");
                 TerminalConsole.ScrollToEnd();
             }
@@ -3839,6 +3954,12 @@ namespace Cobra.UI.Views
                 if (e.Key != Key.Enter) return;
                 string command = TerminalInput.Text.Trim();
                 if (string.IsNullOrEmpty(command)) return;
+
+                if (_commandHistory.Count == 0 || _commandHistory[^1] != command)
+                {
+                    _commandHistory.Add(command);
+                }
+                _historyIndex = _commandHistory.Count;
 
                 string promptPrefix = _currentTerminalShell.Equals(TerminalService.TerminalGitBash, StringComparison.OrdinalIgnoreCase)
                     ? $"bash:{Path.GetFileName(_projectPath)}$ {command}\n"
@@ -4161,17 +4282,44 @@ namespace Cobra.UI.Views
             Application.Current.Shutdown();
         }
 
+        private void OpenSettings(FolderSettings? folderSettings = null)
+        {
+            if (NavigationService != null)
+            {
+                var view = folderSettings != null ? new SettingsView(folderSettings) : new SettingsView();
+                NavigationService.Navigate(view);
+                return;
+            }
+
+            var settingsView = folderSettings != null ? new SettingsView(folderSettings) : new SettingsView();
+            var settingsWindow = new Window
+            {
+                Title = folderSettings != null ? "Cobra IDE - Project Settings" : "Cobra IDE - Settings",
+                Content = settingsView,
+                Width = 1440,
+                Height = 900,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                WindowState = WindowState.Maximized,
+                MaxHeight = SystemParameters.WorkArea.Height,
+                MaxWidth = SystemParameters.WorkArea.Width,
+                Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
+                WindowStyle = WindowStyle.None
+            };
+            WindowChrome.SetWindowChrome(settingsWindow, new WindowChrome { CaptionHeight = 35, ResizeBorderThickness = new Thickness(5), GlassFrameThickness = new Thickness(0), CornerRadius = new CornerRadius(0) });
+            settingsWindow.ShowDialog();
+        }
+
         private void OnPreferencesClicked(object sender, RoutedEventArgs e)
-            => NavigationService?.Navigate(new SettingsView());
+            => OpenSettings();
 
         private void OnSettingsClicked(object sender, RoutedEventArgs e)
-            => NavigationService?.Navigate(new SettingsView());
+            => OpenSettings();
 
         private void OnSettingsIconClicked(object sender, RoutedEventArgs e)
-            => NavigationService?.Navigate(new SettingsView());
+            => OpenSettings();
 
         private void OnProjectSettingsClicked(object sender, RoutedEventArgs e)
-            => NavigationService?.Navigate(new SettingsView(new FolderSettings(_projectPath)));
+            => OpenSettings(new FolderSettings(_projectPath));
 
         private void OnToggleFullScreenClicked(object sender, RoutedEventArgs e)
         {

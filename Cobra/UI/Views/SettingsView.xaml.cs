@@ -60,6 +60,14 @@ namespace Cobra.UI.Views
                     sb.AppendLine($"• {t.DisplayName}: {status} ({t.ExecutablePath})");
                 }
                 TerminalDetectionSummary.Text = sb.ToString().TrimEnd();
+
+                var activeTerminal = terminals.FirstOrDefault(t => t.DisplayName.Equals(active.PreferredTerminal, StringComparison.OrdinalIgnoreCase) && t.IsAvailable)
+                                     ?? terminals.FirstOrDefault(t => t.IsAvailable);
+                GlobalFooter?.SetTerminalStatus(activeTerminal != null ? activeTerminal.DisplayName : "PowerShell", activeTerminal != null);
+
+                bool pyInstalled = PythonService.IsPythonInstalled(active.PythonInterpreter);
+                string pyVersion = pyInstalled ? PythonService.GetPythonVersion(active.PythonInterpreter) : "Python Not Found";
+                GlobalFooter?.SetPythonStatus(pyVersion, pyInstalled);
             }
             catch (Exception ex)
             {
@@ -238,6 +246,8 @@ namespace Cobra.UI.Views
 
                 if (NavigationService is { CanGoBack: true })
                     NavigationService.GoBack();
+                else
+                    owner?.Close();
             }
             catch (Exception ex)
             {
@@ -259,6 +269,8 @@ namespace Cobra.UI.Views
 
                     if (NavigationService is { CanGoBack: true })
                         NavigationService.GoBack();
+                    else
+                        owner?.Close();
                 }
             }
             catch (Exception ex)

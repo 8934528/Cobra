@@ -61,15 +61,15 @@ namespace Cobra.UI.Views
                         break;
                     case DialogIcon.Success:
                         dialog.TitleIcon.Kind = PackIconMaterialKind.CheckCircle;
-                        dialog.TitleIcon.Foreground = new SolidColorBrush(MediaColor.FromRgb(78, 201, 176));
+                        dialog.TitleIcon.Foreground = new SolidColorBrush(MediaColor.FromRgb(255, 140, 0));
                         break;
                     case DialogIcon.Warning:
                         dialog.TitleIcon.Kind = PackIconMaterialKind.Alert;
-                        dialog.TitleIcon.Foreground = new SolidColorBrush(MediaColor.FromRgb(255, 193, 7));
+                        dialog.TitleIcon.Foreground = new SolidColorBrush(MediaColor.FromRgb(255, 140, 0));
                         break;
                     case DialogIcon.Error:
                         dialog.TitleIcon.Kind = PackIconMaterialKind.CloseCircle;
-                        dialog.TitleIcon.Foreground = new SolidColorBrush(MediaColor.FromRgb(220, 53, 69));
+                        dialog.TitleIcon.Foreground = new SolidColorBrush(MediaColor.FromRgb(255, 140, 0));
                         break;
                     case DialogIcon.Question:
                         dialog.TitleIcon.Kind = PackIconMaterialKind.HelpCircle;

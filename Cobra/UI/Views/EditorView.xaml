@@ -112,7 +112,7 @@
             <RowDefinition Height="35"/>
             <RowDefinition Height="38"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="24"/>
+            <RowDefinition Height="30"/>
         </Grid.RowDefinitions>
 
         <!-- row 0: title bar control -->
@@ -261,7 +261,7 @@
 
                         <Border x:Name="NavSceneEditor" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="SceneEditor" ToolTip="Scene Editor">
                             <StackPanel Orientation="Horizontal">
-                                <iconPacks:PackIconMaterial Kind="Palette" Width="14" Height="14" Foreground="#4ec9b0" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <iconPacks:PackIconMaterial Kind="Palette" Width="14" Height="14" Foreground="#ff8c00" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Scene Editor" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
@@ -333,7 +333,7 @@
 
                         <Border x:Name="NavAiAssistant" Style="{StaticResource NavButtonStyle}" Background="Transparent" MouseLeftButtonDown="NavItem_Click" Tag="AiAssistant" ToolTip="AI Assistant">
                             <StackPanel Orientation="Horizontal">
-                                <iconPacks:PackIconMaterial Kind="RobotOutline" Width="14" Height="14" Foreground="#4ec9b0" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <iconPacks:PackIconMaterial Kind="RobotOutline" Width="14" Height="14" Foreground="#ff8c00" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="AI Assistant" Foreground="#e0e0e0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
@@ -475,7 +475,7 @@
                             <Border Width="1" Height="18" Background="#3c3c3c" Margin="6,0"/>
 
                             <CheckBox x:Name="SnapToGridCheck" Content="Snap" Foreground="#cccccc" FontSize="11" IsChecked="True" VerticalAlignment="Center" Margin="4,0"/>
-                            <CheckBox x:Name="ShowCollidersCheck" Content="Colliders" Foreground="#4ec9b0" FontSize="11" IsChecked="True" VerticalAlignment="Center" Margin="6,0" Checked="OnSceneOverlayOptionChanged" Unchecked="OnSceneOverlayOptionChanged"/>
+                            <CheckBox x:Name="ShowCollidersCheck" Content="Colliders" Foreground="#ff8c00" FontSize="11" IsChecked="True" VerticalAlignment="Center" Margin="6,0" Checked="OnSceneOverlayOptionChanged" Unchecked="OnSceneOverlayOptionChanged"/>
 
                             <Button Click="OnSceneZoomInClicked" Style="{StaticResource SceneToolButton}" ToolTip="Zoom In">
                                 <iconPacks:PackIconMaterial Kind="MagnifyPlus" Width="12" Height="12"/>
@@ -753,7 +753,7 @@
                                             <iconPacks:PackIconMaterial Grid.Column="0" Kind="{Binding IconKind}" Width="14" Height="14" Foreground="#ff8c00" VerticalAlignment="Center"/>
                                             <TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="White" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
                                             <TextBlock Grid.Column="2" Text="{Binding FormattedSize}" Foreground="#aaaaaa" FontSize="11" VerticalAlignment="Center"/>
-                                            <TextBlock Grid.Column="3" Text="{Binding DimensionsOrInfo}" Foreground="#4ec9b0" FontSize="11" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding DimensionsOrInfo}" Foreground="#a1a1aa" FontSize="11" VerticalAlignment="Center"/>
                                             <TextBlock Grid.Column="4" Text="{Binding RelativePath}" Foreground="#777777" FontSize="11" VerticalAlignment="Center"/>
                                         </Grid>
                                     </DataTemplate>
@@ -843,7 +843,7 @@
                                         <Button Click="OnBrowseInterpreterClicked" Style="{StaticResource SceneToolButton}" Height="28" Margin="6,0,0,0" Content="Browse..."/>
                                         <Button Click="OnCreateOrValidateVenvClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" Height="28" Margin="6,0,0,0" Content="Create / Check Venv"/>
                                     </StackPanel>
-                                    <TextBlock x:Name="EnvValidationStatusText" Text="Environment status: Ready" Foreground="#4ec9b0" FontSize="11" Margin="0,6,0,0"/>
+                                    <TextBlock x:Name="EnvValidationStatusText" Text="Environment status: Ready" Foreground="#ff8c00" FontSize="11" Margin="0,6,0,0"/>
                                 </StackPanel>
                             </Grid>
                         </Border>
@@ -922,7 +922,7 @@
                                         <TextBox x:Name="DebugWatchInput" Width="220" Height="26" Background="#1e1e1e" Foreground="White" BorderBrush="#444" Padding="5,3" FontSize="11" ToolTip="Evaluate expression"/>
                                         <Button Click="OnEvaluateWatchClicked" Style="{StaticResource SceneToolButton}" Background="#ff8c00" Margin="6,0,0,0" Content="Evaluate"/>
                                     </StackPanel>
-                                    <ListBox x:Name="DebugLocalsList" Background="#1e1e1e" Foreground="#4ec9b0" BorderBrush="#3c3c3c" FontFamily="Consolas" FontSize="11"/>
+                                    <ListBox x:Name="DebugLocalsList" Background="#18181b" Foreground="#f4f4f5" BorderBrush="#2e2e33" FontFamily="Consolas" FontSize="11"/>
                                 </DockPanel>
                             </Border>
                         </Grid>
@@ -947,7 +947,7 @@
                             <Border Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12" Margin="4,0">
                                 <StackPanel>
                                     <TextBlock Text="IDE MEMORY" Foreground="#888888" FontSize="10" FontWeight="Bold"/>
-                                    <TextBlock x:Name="ProfIdeMemText" Text="0.0 MB" Foreground="#4ec9b0" FontSize="20" FontWeight="Bold" Margin="0,4,0,0"/>
+                                    <TextBlock x:Name="ProfIdeMemText" Text="0.0 MB" Foreground="#ff8c00" FontSize="20" FontWeight="Bold" Margin="0,4,0,0"/>
                                 </StackPanel>
                             </Border>
                             <Border Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="12" Margin="4,0">
@@ -985,7 +985,7 @@
                         <Border Grid.Row="0" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="8,0" Margin="0,0,0,12">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <Button Click="OnGitInitClicked" Style="{StaticResource SceneToolButton}" Content="Init Repo"/>
-                                <TextBlock x:Name="GitBranchLabel" Text="Branch: main" Foreground="#4ec9b0" FontWeight="Bold" FontSize="11" VerticalAlignment="Center" Margin="10,0"/>
+                                <TextBlock x:Name="GitBranchLabel" Text="Branch: main" Foreground="#ff8c00" FontWeight="Bold" FontSize="11" VerticalAlignment="Center" Margin="10,0"/>
                                 <Button Click="OnGitSwitchBranchClicked" Style="{StaticResource SceneToolButton}" Content="Switch / New Branch"/>
                                 <Button Click="OnGitStageAllClicked" Style="{StaticResource SceneToolButton}" Content="Stage All"/>
                                 <Button Click="OnGitPullClicked" Style="{StaticResource SceneToolButton}" Content="Pull"/>
@@ -1033,7 +1033,7 @@
                     <Border Background="#252526" BorderBrush="#3c3c3c" BorderThickness="1" CornerRadius="4" Padding="18">
                         <StackPanel MaxWidth="680" HorizontalAlignment="Left">
                             <TextBlock Text="BUILD &amp; PACKAGE (PyInstaller)" Foreground="#bbbbbb" FontSize="12" FontWeight="Bold" Margin="0,0,0,6"/>
-                            <TextBlock Text="Packages your game, virtual environment, assets, and scenes into a Windows executable." Foreground="#4ec9b0" FontSize="11" Margin="0,0,0,16"/>
+                            <TextBlock Text="Packages your game, virtual environment, assets, and scenes into a Windows executable." Foreground="#a1a1aa" FontSize="11" Margin="0,0,0,16"/>
 
                             <Grid Margin="0,0,0,10">
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition Width="320"/></Grid.ColumnDefinitions>
@@ -1091,7 +1091,7 @@
                                                 <ColumnDefinition Width="150"/>
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Grid.Column="0" Text="{Binding Name}" Foreground="White" FontWeight="SemiBold"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding Version}" Foreground="#4ec9b0"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Version}" Foreground="#ff8c00"/>
                                             <TextBlock Grid.Column="2" Text="{Binding Category}" Foreground="#ff8c00"/>
                                             <TextBlock Grid.Column="3" Text="{Binding Description}" Foreground="#aaaaaa" TextTrimming="CharacterEllipsis"/>
                                             <TextBlock Grid.Column="4" Text="{Binding StatusMessage}" Foreground="#cccccc" HorizontalAlignment="Right"/>
@@ -1186,6 +1186,7 @@
                                   DragEnter="OnTreeViewDragEnter"
                                   Drop="OnTreeViewDrop"
                                   PreviewMouseRightButtonDown="OnTreeViewPreviewRightClick"
+                                  MouseLeftButtonUp="OnFileTreeMouseUp"
                                   SelectedItemChanged="OnFileTreeSelectedItemChanged">
                             <TreeView.ItemContainerStyle>
                                 <Style TargetType="TreeViewItem">
@@ -1242,7 +1243,7 @@
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Center">
                                 <StackPanel x:Name="TerminalShellPanel" Orientation="Horizontal" Visibility="Collapsed" Margin="0,0,10,0" VerticalAlignment="Center">
                                     <TextBlock Text="Shell:" Foreground="#888888" FontSize="11" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                    <ComboBox x:Name="TerminalShellSelector" Width="160" Height="22" Background="#1e1e1e" Foreground="White" BorderBrush="#3c3c3c" FontSize="11" SelectionChanged="TerminalShellSelector_SelectionChanged">
+                                    <ComboBox x:Name="TerminalShellSelector" MinWidth="180" Height="24" Background="#1e1e1e" Foreground="White" BorderBrush="#3c3c3c" FontSize="11" SelectionChanged="TerminalShellSelector_SelectionChanged" Padding="6,2">
                                         <ComboBoxItem Content="Windows PowerShell" IsSelected="True"/>
                                         <ComboBoxItem Content="Git Bash"/>
                                         <ComboBoxItem Content="Command Prompt"/>
@@ -1263,15 +1264,15 @@
 
                     <Grid Grid.Row="1">
                         <!-- output -->
-                        <TextBox x:Name="OutputConsole" Visibility="Visible" Background="#1e1e1e" Foreground="#4ec9b0" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Padding="8"/>
+                        <TextBox x:Name="OutputConsole" Visibility="Visible" Background="#1e1e1e" Foreground="#f4f4f5" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Padding="8"/>
 
                         <!-- terminal -->
-                        <Grid x:Name="TerminalContainer" Visibility="Collapsed">
+                        <Grid x:Name="TerminalContainer" Visibility="Collapsed" PreviewMouseLeftButtonDown="TerminalContainer_PreviewMouseLeftButtonDown">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="*"/>
                                 <RowDefinition Height="26"/>
                             </Grid.RowDefinitions>
-                            <TextBox x:Name="TerminalConsole" Grid.Row="0" Background="#1e1e1e" Foreground="#cccccc" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Padding="8,6"/>
+                            <TextBox x:Name="TerminalConsole" Grid.Row="0" Background="#1e1e1e" Foreground="#cccccc" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Padding="8,6" PreviewMouseLeftButtonDown="TerminalContainer_PreviewMouseLeftButtonDown"/>
                             <Border Grid.Row="1" Background="#252526" Padding="8,0">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -1279,7 +1280,7 @@
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock x:Name="TerminalPromptLabel" Text="PS &gt; " Foreground="#ff8c00" VerticalAlignment="Center" FontFamily="Consolas" FontSize="11"/>
-                                    <TextBox x:Name="TerminalInput" Grid.Column="1" Background="Transparent" Foreground="White" BorderThickness="0" CaretBrush="White" FontFamily="Consolas" FontSize="12" VerticalAlignment="Center" KeyDown="TerminalInput_KeyDown"/>
+                                    <TextBox x:Name="TerminalInput" Grid.Column="1" Background="Transparent" Foreground="White" BorderThickness="0" CaretBrush="White" FontFamily="Consolas" FontSize="12" VerticalAlignment="Center" KeyDown="TerminalInput_KeyDown" PreviewKeyDown="TerminalInput_PreviewKeyDown"/>
                                 </Grid>
                             </Border>
                         </Grid>
@@ -1291,7 +1292,7 @@
                         <ListBox x:Name="ProblemsListBox" Visibility="Collapsed" Background="#1e1e1e" Foreground="#f48771" BorderThickness="0" FontFamily="Consolas" FontSize="11" MouseDoubleClick="ProblemsListBox_MouseDoubleClick"/>
 
                         <!-- test results -->
-                        <TextBox x:Name="TestResultsBox" Visibility="Collapsed" Background="#1e1e1e" Foreground="#4ec9b0" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Padding="8"/>
+                        <TextBox x:Name="TestResultsBox" Visibility="Collapsed" Background="#1e1e1e" Foreground="#f4f4f5" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Padding="8"/>
 
                         <!-- build output -->
                         <TextBox x:Name="BuildOutputBox" Visibility="Collapsed" Background="#1e1e1e" Foreground="#d4d4d4" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Padding="8"/>
@@ -1303,24 +1304,14 @@
             </Border>
         </Grid>
 
-        <!-- row 3: status bar -->
-        <Border Grid.Row="3" Background="#252526" BorderBrush="#3c3c3c" BorderThickness="0,1,0,0" Padding="12,0">
-            <Grid>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <iconPacks:PackIconMaterial Kind="LanguagePython" Width="12" Height="12" Foreground="#4ec9b0" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                    <TextBlock x:Name="StatusInterpreterText" Text="Python: Detecting..." Foreground="#cccccc" FontSize="11" VerticalAlignment="Center" Margin="0,0,16,0"/>
-                    <TextBlock x:Name="StatusFrameworkText" Text="Framework: Pygame" Foreground="#ff8c00" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,16,0"/>
-                    <TextBlock x:Name="StatusGitText" Text="Git: --" Foreground="#aaaaaa" FontSize="11" VerticalAlignment="Center"/>
-                </StackPanel>
-                <TextBlock x:Name="StatusRightText" Text="Ready" Foreground="#aaaaaa" FontSize="11" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-            </Grid>
-        </Border>
+        <!-- row 3: global thin compact footer -->
+        <views:GlobalFooterControl x:Name="GlobalFooter" Grid.Row="3" Panel.ZIndex="10"/>
 
         <!-- notification toast -->
-        <Grid x:Name="ToastOverlay" Grid.Row="0" Grid.RowSpan="4" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,36" Visibility="Collapsed">
+        <Grid x:Name="ToastOverlay" Grid.Row="0" Grid.RowSpan="4" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,85" Visibility="Collapsed" Panel.ZIndex="1000">
             <Border Background="#2d2d30" CornerRadius="4" Padding="16,10" BorderBrush="#ff8c00" BorderThickness="1" SnapsToDevicePixels="True">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <iconPacks:PackIconMaterial x:Name="ToastIcon" Kind="CheckCircle" Width="14" Height="14" Foreground="#4ec9b0" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                    <iconPacks:PackIconMaterial x:Name="ToastIcon" Kind="CheckCircle" Width="14" Height="14" Foreground="#ff8c00" Margin="0,0,8,0" VerticalAlignment="Center"/>
                     <TextBlock x:Name="ToastMessage" Text="Action completed" Foreground="White" FontSize="12" VerticalAlignment="Center"/>
                 </StackPanel>
             </Border>
